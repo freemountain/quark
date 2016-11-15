@@ -1,0 +1,3 @@
+module Quark
+Store 1.0 Store.qml
+ListModel 1.0 ListModel.qml

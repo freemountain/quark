@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>src/qml/Quark/Store.qml</file>
+        <file>src/qml/Quark/qmldir</file>
+        <file>src/qml/Quark/jsonpath.js</file>
+        <file>src/qml/Quark/ListModel.qml</file>
+    </qresource>
+</RCC>
