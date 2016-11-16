@@ -30,7 +30,9 @@ QuarkProcess::QuarkProcess(QProcessEnvironment env, QObject *parent) : QObject(p
     connect(&this->proc, &QProcess::readyReadStandardOutput, this, &QuarkProcess::onData);
     connect(this->rootStore, &RootStore::action, this, &QuarkProcess::onAction);
     connect(this, &QuarkProcess::loadQml, this, &QuarkProcess::handleLoadQml);
-
+    connect(&this->proc, &QProcess::errorOccurred, [=](const QProcess::ProcessError &error)  {
+        qDebug() << "error: " << error;
+    });
     connect(this->rootStore, &RootStore::data, [this](const QString &line)  {
         this->proc.write(line.toUtf8());
     });
@@ -49,7 +51,11 @@ void QuarkProcess::onAction(QString type, QJsonValue payload) {
 }
 
 void QuarkProcess::start(QString cmd, QStringList arguments) {
-    this->proc.start(cmd, arguments);
+    QFileInfo info(cmd);
+    if(info.isFile())
+        this->proc.start(cmd, arguments);
+    else
+        qDebug() << "could not find cmd: " << QDir::fromNativeSeparators(cmd);
 }
 
 void QuarkProcess::onData() {
@@ -65,6 +71,6 @@ void QuarkProcess::terminate() {
 
 void QuarkProcess::handleLoadQml(QString path) {
     qDebug() << "loadQml: " <<path;
-    this->qmlEngine->load(QUrl(path));
+    this->qmlEngine->load(QDir::toNativeSeparators(path));
 }
 

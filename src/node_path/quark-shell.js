@@ -96,6 +96,7 @@ module.exports = (handler) => {
 
   const options = parseArgv(process.argv);
   const qml = {
+	parseQDir: p => p.slice(1).replace(new RegExp("/", "g"),"\\"),
     load: url => actionOut.emit('data', { type: 'loadQml', payload: { url } }),
     startProcess: payload => actionOut.emit('data', { type: 'startProcess', payload }),
   };

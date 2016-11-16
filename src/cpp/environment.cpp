@@ -27,6 +27,11 @@ Environment::Environment(QStringList args, QObject *parent) : QObject(parent)
 QString Environment::getBundledCommand(QString name) {
     QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
     QString path = binPath + "/" + name;
+
+    #ifdef _WIN32
+        path = path + ".exe";
+    #endif
+
     QFileInfo info = QFileInfo(path);
 
     if(info.exists() && info.isFile()) return QDir::toNativeSeparators(path);
@@ -51,19 +56,24 @@ QString Environment::getSystemCommand(QString name) {
 }
 
 QString Environment::getCommand(QString name) {
-    QString envCmd = this->env.value("QUARK_CMD_" + name.toUpper(), NULL);
+    QString cmd = NULL;
 
-    if(envCmd != NULL) return envCmd;
+    QString envCmd = this->env.value("QUARK_CMD_" + name.toUpper(), NULL);    
+    if(envCmd != NULL) cmd = QDir::fromNativeSeparators(envCmd);
 
     QString bundledCmd = this->getBundledCommand(name);
-
-    if(bundledCmd != NULL) return bundledCmd;
+    if(cmd == NULL && bundledCmd != NULL) cmd = bundledCmd;
 
     QString shellCmd = this->getShellCommand(name);
+    if(cmd == NULL && shellCmd != NULL) cmd = shellCmd;
 
-    if(shellCmd != NULL) return shellCmd;
+    QString sysCmd = this->getSystemCommand(name);
+    if(cmd == NULL && sysCmd != NULL) cmd = sysCmd;
 
-    return this->getSystemCommand(name);
+    if(cmd == NULL) return NULL;
+
+    QFileInfo info(cmd);
+    return info.isFile() && info.isExecutable() ? cmd : NULL;
 }
 
 QString Environment::getShellCommand(QString name) {
@@ -130,7 +140,7 @@ QProcessEnvironment Environment::getProcEnv() {
     QString nodePath = NULL;
 
     #ifdef _WIN32
-
+        nodePath = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath() + "/node_path";
     #elif __linux__
 
     #elif __APPLE__
@@ -140,7 +150,7 @@ QProcessEnvironment Environment::getProcEnv() {
     QProcessEnvironment procEnv = QProcessEnvironment(this->env);
 
     if(nodePath != NULL)
-        procEnv.insert("NODE_PATH", nodePath);
+        procEnv.insert("NODE_PATH", QDir::toNativeSeparators(nodePath));
     else
         qDebug() << "could not set NODE_PATH";
 
@@ -193,7 +203,6 @@ Either<QMap<QString, QString>, QJsonParseError> Environment::loadJson(QString pa
     QJsonParseError err;
     QMap<QString, QString> result;
     QDir baseDir = QDir(QFileInfo(path).path());
-
     file.open(QIODevice::ReadOnly | QIODevice::Text);
     data = file.readAll();
     json = QJsonDocument::fromJson(data.toUtf8(), &err).object();
@@ -208,10 +217,10 @@ Either<QMap<QString, QString>, QJsonParseError> Environment::loadJson(QString pa
     initialQml = json.value("initialQml").toString("");
 
     if(initialQml != "") {
-        result.insert("initialQml", QDir::cleanPath(baseDir.absolutePath() + QDir::separator() + initialQml));
+        result.insert("initialQml", QDir::toNativeSeparators(baseDir.absolutePath() + "/" + initialQml));
     }
 
-    result.insert("main", baseDir.filePath(main));
+    result.insert("main", QDir::toNativeSeparators(baseDir.absolutePath() + "/" + main));
     result.insert("name", json.value("name").toString(hashPath(path)));
 
     return some(result);

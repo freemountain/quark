@@ -1,3 +1,4 @@
+
 const shell = require('quark-shell');
 const path = require('path');
 
@@ -24,7 +25,7 @@ shell((values, actions, qml, options) => {
   actions.on('data', action => {
     const type = action.type;
     const payload = action.payload;
-    if(type === 'startProcess') qml.startProcess(payload);
+    if(type === 'startProcess') qml.startProcess(qml.parseQDir(payload));
     if(type === 'deployApp') deployPath(bundle, payload.pkg, payload.target);
   });
 
