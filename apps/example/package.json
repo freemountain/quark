@@ -1,5 +1,7 @@
 {
   "name"    : "todo-list",
   "version" : "0.1.0",
-  "main"    : "main.js"
+  "main"    : "main.js",
+  "initialQml": "Controls1.qml"
+
 }

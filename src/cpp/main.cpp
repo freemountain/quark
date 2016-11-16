@@ -15,8 +15,11 @@ int main(int argc, char *argv[])
     QuarkProcess* proc;
 
     qDebug() << "node:" << env->getCommand("node");
+    qDebug() << "NODE_PATH" << env->getProcEnv().value("NODE_PATH");
     qDebug() << "script:" << env->getScriptPath();
     qDebug() << "data:" << env->getDataPath().path();
+    qDebug() << "bundled app:" << env->getBundledAppPath();
+
 
     if(env->getScriptPath() == "") {
         proc = env->startProcess(env->getBundledAppPath());

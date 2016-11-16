@@ -29,7 +29,6 @@ public:
     QString getSystemCommand(QString name);
 
     QString getScriptPath();
-    QString getShell();
     QDir getDataPath();
     QString getConfigPath();
     QProcessEnvironment getProcEnv();

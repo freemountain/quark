@@ -37,5 +37,5 @@ shell((values, actions, qml, options) => {
     values.emit('data', todos);
   });
 
-  qml.load(path.join(__dirname, 'index.qml'));
+  qml.load(path.join(__dirname, 'Controls2.qml'));
 });

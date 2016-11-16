@@ -20,9 +20,11 @@ ApplicationWindow {
         path: "$"
     }
 
-        Row {
+        RowLayout {
           id: row
+          width: window.width
           TextField {
+              Layout.fillWidth: true
             id: textField
             text: ""
             placeholderText: "add todo item..."

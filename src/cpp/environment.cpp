@@ -24,30 +24,28 @@ Environment::Environment(QStringList args, QObject *parent) : QObject(parent)
     parser->process(args);
 }
 
-QString Environment::getShell() {
-    return env.value("SHELL", "/bin/bash");
-}
-
 QString Environment::getBundledCommand(QString name) {
     QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
     QString path = binPath + "/" + name;
     QFileInfo info = QFileInfo(path);
 
-    if(info.exists() && info.isFile()) return path;
+    if(info.exists() && info.isFile()) return QDir::toNativeSeparators(path);
 
     return NULL;
 }
 
 QString Environment::getSystemCommand(QString name) {
-    QString files[] = {"/bin/", "/usr/bin/", "/usr/local/bin/"};
+    #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+        QString files[] = {"/bin/", "/usr/bin/", "/usr/local/bin/"};
 
-    for( unsigned int i = 0; i < sizeof(files); i = i + 1 )
-    {
-        QString current = files[i] + name;
-        QFileInfo info = QFileInfo(current);
-        bool isFile = info.exists() && info.isFile();
-        if(isFile) return current;
-    }
+        for( unsigned int i = 0; i < sizeof(files); i = i + 1 )
+        {
+            QString current = files[i] + name;
+            QFileInfo info = QFileInfo(current);
+            bool isFile = info.exists() && info.isFile();
+            if(isFile) return current;
+        }
+    #endif
 
     return NULL;
 }
@@ -69,23 +67,28 @@ QString Environment::getCommand(QString name) {
 }
 
 QString Environment::getShellCommand(QString name) {
-    QProcess proc;
-    QString cmd = "which " + name;
-    proc.start(this->getShell(), QStringList() << "-c" << cmd);
+    #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+        QProcess proc;
+        QString cmd = "which " + name;
+        QString shell = env.value("SHELL", "/bin/bash");
+        proc.start(shell, QStringList() << "-c" << cmd);
 
-    if (!proc.waitForStarted()) {
-        qDebug() << "not started";
-        return nullptr;
-    }
-
-    if (!proc.waitForFinished()) {
-        qDebug() << "not finished";
+        if (!proc.waitForStarted()) {
+            qDebug() << "not started";
             return nullptr;
-    }
+        }
 
-    QString result =  proc.readAll(); // contains \n
-    int n = result.size() - 1;
-    return result.left(n);
+        if (!proc.waitForFinished()) {
+            qDebug() << "not finished";
+                return nullptr;
+        }
+
+        QString result =  proc.readAll(); // contains \n
+        int n = result.size() - 1;
+        return result.left(n);
+    #else
+        return NULL;
+    #endif
 }
 
 QString Environment::getConfigPath() {
@@ -100,9 +103,18 @@ QDir Environment::getDataPath() {
 }
 
 QString Environment::getBundledAppPath() {
-    QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
+    QString result = NULL;
+    #ifdef _WIN32
 
-    return binPath + "/../Resources/app/package.json";
+    #elif __linux__
+
+    #elif __APPLE__
+        QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
+
+        result =  binPath + "/../Resources/app/package.json";
+    #endif
+
+    return result;
 }
 
 QString Environment::getScriptPath() {
@@ -115,9 +127,22 @@ QString Environment::getScriptPath() {
 }
 
 QProcessEnvironment Environment::getProcEnv() {
+    QString nodePath = NULL;
+
+    #ifdef _WIN32
+
+    #elif __linux__
+
+    #elif __APPLE__
+        nodePath = QDir( QCoreApplication::applicationFilePath() + "/../../Resources/" ).absoluteFilePath("node_path");
+    #endif
+
     QProcessEnvironment procEnv = QProcessEnvironment(this->env);
-    QString nodePath = QDir( QCoreApplication::applicationFilePath() + "/../../Resources/" ).absoluteFilePath("node_path");
-    procEnv.insert("NODE_PATH", nodePath);
+
+    if(nodePath != NULL)
+        procEnv.insert("NODE_PATH", nodePath);
+    else
+        qDebug() << "could not set NODE_PATH";
 
     return procEnv;
 }

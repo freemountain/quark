@@ -3,7 +3,7 @@
 The Quark shell lets you write and pack cross-platform desktop applications using JavaScript and QML. It is based on Node.js 7.0 and Qt 5.7.
 
 ## How does it works
-A Quark application consist of a node.js process and a qml render process. They communicate through stdin and stdout in a redux like manner. The node js acts like a store, it emits a value and can react to actions. The qml process listen on value changes and can dispatch actions on user events to the store.
+A Quark application consist of a node.js process and a qml render process. They communicate through stdin and stdout in a redux like manner. The node process acts like a store, it emits a value and can react to actions. The qml process listen on value changes and can dispatch actions on user events to the store.
 
 
 ## Downloads
