@@ -1,105 +1,138 @@
-const util = require('util');
-const Stream = require('stream');
-const StringDecoder = require('string_decoder').StringDecoder;
+const util          = require("util");
+const Stream        = require("stream");
+const StringDecoder = require("string_decoder").StringDecoder;
+const Transform     = Stream.Transform;
+const Duplex        = Stream.Duplex;
 
-const Transform = Stream.Transform;
+const set = (obj, key, x) => { 
+    obj[key] = x;
 
-const msgTransform = type => new Transform({
-  readableObjectMode: true,
-  writableObjectMode: true,
-  transform(payload, encoding, callback) {
-    callback(null, { type, payload });
-  },
-});
-
-const msgFilter = type => new Transform({
-  readableObjectMode: true,
-  writableObjectMode: true,
-  transform(msg, encoding, callback) {
-    if (msg.type === type) callback(null, msg.payload);
-  },
-});
-
-const stringify = () => new Transform({
-  writableObjectMode: true,
-  readableObjectMode: true,
-  transform(chunk, encoding, callback) {
-    callback(null, `${JSON.stringify(chunk)}\n`);
-  },
-});
-
-const parse = () => new Transform({
-  writableObjectMode: true,
-  readableObjectMode: true,
-  transform(chunk, encoding, callback) {
-    callback(null, JSON.parse(chunk));
-  },
-});
-
-const splitLines = () => {
-  const decoder = new StringDecoder('utf8');
-  let buffer = '';
-  return new Transform({
-    transform(chunk, encoding, callback) {
-      const str = decoder.write(chunk);
-      for (let i = 0, len = str.length; i < len; i++) {
-        const current = str[i];
-
-        if (current !== '\n') {
-          buffer = buffer + current;
-        } else {
-          callback(null, buffer);
-          buffer = '';
-        }
-      }
-    },
-  }).setEncoding('utf8');
-};
-
-const createOut = (type) => {
-  const out = new Stream({ objectMode: true });
-
-  out
-    .pipe(msgTransform(type))
-    .pipe(stringify())
-    .pipe(process.stdout);
-
-  return out;
-};
-
-const createLog = (logOut) => {
-  const log = payload => logOut.emit('data', payload);
-  log.error = e => log(`error: ${util.inspect(e)}`);
-
-  return log;
-};
-
-const parseArgv = (argv) => {
-  const result = {};
-  let key, value
-  for (var i = 2; i < argv.length; i = i + 2) {
-    key = argv[i].slice(2);
-    value = argv[i + 1];
-    result[key] = value;
-  }
-  return result;
+    return obj;
 }
-module.exports = (handler) => {
-  const actionOut = createOut('action');
-  const valueOut = createOut('value');
 
-  const actions = process.stdin
-    .pipe(splitLines())
-    .pipe(parse())
-    .pipe(msgFilter('action'))
-    ;
+const MessageTransformer = type => new Transform({
+    objectMode: true,
 
-  const options = parseArgv(process.argv);
-  const qml = {
-	parseQDir: p => p.slice(1).replace(new RegExp("/", "g"),"\\"),
-    load: url => actionOut.emit('data', { type: 'loadQml', payload: { url } }),
-    startProcess: payload => actionOut.emit('data', { type: 'startProcess', payload }),
-  };
+    transform(payload, enc, cb) {
+       cb(null, { type, payload });
+    }
+});
 
-  handler(valueOut, actions, qml, options);
+const MessageFilter = type => new Transform({
+    objectMode: true,
+
+    transform(msg, enc, cb) {
+       return msg.type === type ? cb(null, msg.payload) : cb();
+    }
+});
+
+const JSONStringifier = () => new Transform({
+    objectMode: true,
+
+    transform(chunk, enc, cb) {
+       cb(null, `${JSON.stringify(chunk)}\n`);
+    }
+});
+
+const JSONParser = () => new Transform({
+    objectMode: true,
+
+    transform(chunk, enc, cb) {
+       cb(null, JSON.parse(chunk));
+    }
+});
+
+const LineSplitter = () => {
+    const decoder = new StringDecoder("utf8");
+
+    return new Transform({
+        transform(chunk, encoding, cb) {
+            decoder
+                .write(chunk)
+                .split("\n")
+                .forEach(line => this.push(line));
+
+            cb();
+        }
+    }).setEncoding("utf8");
 };
+
+const Output = type => {
+    const out = new Stream({ objectMode: true });
+
+    out
+        .pipe(MessageTransformer(type))
+        .pipe(JSONStringifier())
+        .pipe(process.stdout);
+
+    return out;
+};
+
+module.exports = class View extends Duplex {
+    static of(...args) {
+        return new View(...args);
+    }
+
+    constructor(qmlPath) {
+        super({
+            objectMode: true    
+        });
+
+        this.initialLoad = true;
+        this.qmlPath     = qmlPath;
+        this.valueOut    = Output("value");
+        this.actionOut   = Output("action");
+        this.actions     = process.stdin
+            .pipe(LineSplitter())
+            .pipe(JSONParser())
+            .pipe(MessageFilter("action"));
+
+        this.actions.on("data", data => this.push(data));
+    }
+
+    load(url) {
+        this.initialLoad = false;
+
+        this.actionOut.emit("data", {
+            type:    "loadQml",
+            payload: {
+                url 
+            }
+        });
+
+        return url;
+    }
+
+    _write(data, enc, next) {
+        this.valueOut.emit("data", data);
+
+        this.qmlPath = this.initialLoad ? this.load(this.qmlPath) : this.qmlPath;
+        this.qmlPath = !this.initialLoad && data.qml && data.qml !== this.qmlPath ? this.load(data.qml) : this.qmlPath;
+        next();
+    }
+
+    _read() {}
+}
+
+/* module.exports = (qmlPath, handler) => {
+    const obj = {
+        valueOut:  Output("value"),
+        actionOut: Output("action"),
+        actions:   process.stdin
+            .pipe(LineSplitter())
+            .pipe(JSONParser())
+            .pipe(MessageFilter("action")),
+
+        load(url) {
+            this.actionOut.emit('data', { type: 'loadQml', payload: { url } })
+        },
+
+        write(data) {
+            this.valueOut.emit("data", data);
+        }
+    };
+
+    obj.load(qmlPath);
+
+    return obj;
+};*/

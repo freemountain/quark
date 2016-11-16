@@ -1,5 +1,8 @@
 {
-  "name"    : "todo-list",
-  "version" : "0.1.0",
-  "main"    : "main.js"
+  "name": "todo-list",
+  "version": "0.1.0",
+  "main": "main.js",
+  "dependencies": {
+    "immutable": "^3.8.1"
+  }
 }

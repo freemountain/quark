@@ -4,3 +4,4 @@ vendor
 Makefile
 apps/*/node_modules
 build
+qpm
