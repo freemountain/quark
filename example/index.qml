@@ -8,7 +8,7 @@ ApplicationWindow {
     width: 300
     id:window
 
-    Store {
+    Gluon {
         /*
           This component holds the application state.
           The property value holds the current value.
@@ -22,7 +22,7 @@ ApplicationWindow {
         Button {
             anchors.left: window.left
             text: "-"
-            onClicked: store.dispatch("sub", 1)
+            onClicked: store.trigger("sub")
         }
         Label {
             Layout.fillWidth: true
@@ -32,7 +32,7 @@ ApplicationWindow {
         }
         Button {
             text: "+"
-            onClicked: store.dispatch("add")
+            onClicked: store.trigger("add")
         }
     }
 }

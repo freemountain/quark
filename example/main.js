@@ -1,11 +1,11 @@
 const Quark = require("quark-shell");
 const path  = require("path");
 
-const qml          = path.join(__dirname, "index.qml");
-const initialState = { count: 0 };
-const intents      = {
-    onSub: state => state.update("count", count => count - 1)
-    onAdd: state => state.update("count", count => count + 1)
-};
-
-const app = Quark.of({ qml, intents, initialState });
+const app = Quark.of({
+    qml:          path.join(__dirname, "index.qml"),
+    initialState: { count: 0 },
+    intents:      {
+        onSub: state => state.update("count", count => count - 1),
+        onAdd: state => state.update("count", count => count + 1)
+    }
+});

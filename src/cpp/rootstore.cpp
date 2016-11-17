@@ -34,7 +34,7 @@ void RootStore::writeData(QString data) {
     qDebug() << "root store invalid line: " << data;
 }
 
-void RootStore::dispatch(QString type, QJsonValue payload) {
+void RootStore::trigger(QString type, QJsonValue payload) {
     QJsonObject msg;
     QJsonObject msgPayload;
     msg.insert("type", "action");
