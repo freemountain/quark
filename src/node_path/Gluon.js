@@ -3,29 +3,11 @@ const Stream        = require("stream");
 const StringDecoder = require("string_decoder").StringDecoder;
 const Transform     = Stream.Transform;
 const Duplex        = Stream.Duplex;
+const JSONStream    = require("JSONStream2");
+const Filter        = require("through2-filter");
+const Mapper        = require("through2-map");
 
-const set = (obj, key, x) => { 
-    obj[key] = x;
-
-    return obj;
-}
-
-const MessageTransformer = type => new Transform({
-    objectMode: true,
-
-    transform(payload, enc, cb) {
-       cb(null, { type, payload });
-    }
-});
-
-const MessageFilter = type => new Transform({
-    objectMode: true,
-
-    transform(msg, enc, cb) {
-       return msg.type === type ? cb(null, msg.payload) : cb();
-    }
-});
-
+// hier das is wg qt seite komisch
 const JSONStringifier = () => new Transform({
     objectMode: true,
 
@@ -34,43 +16,20 @@ const JSONStringifier = () => new Transform({
     }
 });
 
-const JSONParser = () => new Transform({
-    objectMode: true,
-
-    transform(chunk, enc, cb) {
-       cb(null, JSON.parse(chunk));
-    }
-});
-
-const LineSplitter = () => {
-    const decoder = new StringDecoder("utf8");
-
-    return new Transform({
-        transform(chunk, encoding, cb) {
-            decoder
-                .write(chunk)
-                .split("\n")
-                .forEach(line => this.push(line));
-
-            cb();
-        }
-    }).setEncoding("utf8");
-};
-
-const Output = type => {
-    const out = new Stream({ objectMode: true });
-
-    out
-        .pipe(MessageTransformer(type))
-        .pipe(JSONStringifier())
-        .pipe(process.stdout);
-
-    return out;
-};
-
-module.exports = class Gluon extends Duplex {
+class Gluon extends Duplex {
     static of(...args) {
         return new Gluon(...args);
+    }
+
+    static Output(type) {
+        const out = new Stream(Gluon.opts);;
+
+        out
+            .pipe(Mapper(Gluon.opts, payload => ({ type, payload })))
+            .pipe(JSONStringifier())
+            .pipe(process.stdout);
+
+        return out;
     }
 
     constructor(qmlPath) {
@@ -80,12 +39,12 @@ module.exports = class Gluon extends Duplex {
 
         this.initialLoad = true;
         this.qmlPath     = qmlPath;
-        this.valueOut    = Output("value");
-        this.actionOut   = Output("action");
+        this.valueOut    = Gluon.Output("value");
+        this.actionOut   = Gluon.Output("action");
         this.actions     = process.stdin
-            .pipe(LineSplitter())
-            .pipe(JSONParser())
-            .pipe(MessageFilter("action"));
+            .pipe(JSONStream.parse())
+            .pipe(Filter(Gluon.opts, msg => msg.type === "action"))
+            .pipe(Mapper(Gluon.opts, msg => msg.payload));
 
         this.actions.on("data", data => this.push(data));
     }
@@ -134,3 +93,9 @@ module.exports = class Gluon extends Duplex {
 
     _read() {}
 }
+
+Gluon.opts = {
+    objectMode: true
+};
+
+module.exports = Gluon;

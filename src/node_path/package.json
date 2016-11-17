@@ -4,6 +4,9 @@
   "main": "quark.js",
   "dependencies": {
     "immutable": "^3.8.1",
-    "lodash.set": "^4.3.2"
+    "jsonstream2": "^1.1.1",
+    "lodash.set": "^4.3.2",
+    "through2-filter": "^2.0.0",
+    "through2-map": "^3.0.0"
   }
 }
