@@ -6,3 +6,4 @@ apps/*/node_modules
 build
 qpm
 setupfile
+*/node_modules
