@@ -14,10 +14,11 @@ module.exports = class Quark extends Duplex {
             objectMode: true
         });
 
-        this.store = Store.of(Object.assign({ qml }, state || {}));
-        this.gcd   = GCD.of(intents || {});
-        this.view  = View.of(qml);
-        this.qml   = qml;
+        this.store   = Store.of(Object.assign({ qml }, state || {}));
+        this.gcd     = GCD.of(intents || {});
+        this.view    = View.of(qml);
+        this.qml     = qml;
+        this.timeout = 0;
 
         this.store.on("data", this.push.bind(this));
         this.view
@@ -26,8 +27,16 @@ module.exports = class Quark extends Duplex {
 		    .pipe(this.view);
     }
 
+    after(timeout) {
+        this.timeout = timeout;
+
+        return this;
+    }
+
     trigger(type, payload) {
-        this.write({ type, payload });
+        setTimeout(() => this.write({ type, payload }), this.timeout);
+
+        return this.after(0);
     }
 
     listen(path) {

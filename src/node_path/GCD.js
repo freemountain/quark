@@ -12,7 +12,7 @@ module.exports = class GCD extends Transform {
             objectMode: true    
         });
 
-		this.intents = intents;
+        this.intents = intents;
     }
 
     ucfirst(str) {
@@ -25,13 +25,21 @@ module.exports = class GCD extends Transform {
     _transform(data, enc, cb) {
         assert(data && typeof data.type === "string", `Your action is in the wrong format. Expected an object with key type, but got '${data}' of type ${typeof data}.`);
 
-        const intent = this.intents[`on${this.ucfirst(data.type)}`];
+        const key    = `on${this.ucfirst(data.type)}`;
+        const intent = this.intents[key];
 
-        assert(typeof intent === "function", `intent '${intent}' not found in intents ${Object.keys(this.intents)}.`);
+        assert(typeof intent === "function", `intent for '${key}' not found in intents ${Object.keys(this.intents)}.`);
+
+        let timeout = 0;
 
         this.push({
             intent: intent.bind({
-                trigger: (type, payload) => this.write({ type, payload })
+                after(time) {
+                    timeout = time
+                    return this;
+                },
+
+                trigger: (type, payload) => setTimeout(() => this.write({ type, payload }), timeout)
             }),
 		    payload: data.payload
         });
