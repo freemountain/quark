@@ -119,3 +119,18 @@ make
 #if you want to deploy:
 ./../tools/deploy_mac.sh quark.app /path/to/node
 ```
+
+### WIN (using mingw)
+### OSX
+```bash
+export PATH=$PATH:/c/Qt/5.7/mingw53_32/bin
+export PATH=$PATH:/c/Qt/Tools/mingw530_32/bin/
+
+qpm install
+mkdir build
+cd build
+qmake ..
+make
+#if you want to deploy:
+./../tools/deploy_win.sh quark.exe /path/to/node.exe
+```
