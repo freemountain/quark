@@ -1,0 +1,8 @@
+{
+  "name": "quark-js",
+  "version": "0.1.0",
+  "main": "quark.js",
+  "dependencies": {
+    "immutable": "^3.8.1"
+  }
+}

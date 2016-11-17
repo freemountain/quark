@@ -20,6 +20,9 @@ module.exports = class Store extends Transform {
     onResult(cb, state) {
         assert(state instanceof Immutable.Map, "unexpected state");
 
+        if(this.state === state) return cb();
+
+        // TODO: diff here
         this.state = state;
     	this.push(this.state.toJS());
 	    cb();

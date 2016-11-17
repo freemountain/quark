@@ -68,9 +68,9 @@ const Output = type => {
     return out;
 };
 
-module.exports = class View extends Duplex {
+module.exports = class Gluon extends Duplex {
     static of(...args) {
-        return new View(...args);
+        return new Gluon(...args);
     }
 
     constructor(qmlPath) {
@@ -113,26 +113,3 @@ module.exports = class View extends Duplex {
 
     _read() {}
 }
-
-/* module.exports = (qmlPath, handler) => {
-    const obj = {
-        valueOut:  Output("value"),
-        actionOut: Output("action"),
-        actions:   process.stdin
-            .pipe(LineSplitter())
-            .pipe(JSONParser())
-            .pipe(MessageFilter("action")),
-
-        load(url) {
-            this.actionOut.emit('data', { type: 'loadQml', payload: { url } })
-        },
-
-        write(data) {
-            this.valueOut.emit("data", data);
-        }
-    };
-
-    obj.load(qmlPath);
-
-    return obj;
-};*/
