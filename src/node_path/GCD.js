@@ -1,31 +1,34 @@
 const stream    = require("stream");
 const Transform = stream.Transform;
 const assert    = require("assert");
+const set       = require("lodash.set");
 
 module.exports = class GCD extends Transform {
     static of(...args) {
         return new GCD(...args);    
     }
 
-    constructor(intents) {
+    constructor(intents, mappings = {}) {
         super({
             objectMode: true    
         });
 
-        this.intents = intents;
+        this.intents  = intents;
+        this.mappings = Object.assign(Object.keys(intents)
+            .reduce((dest, key) => set(dest, this.toAction(key), key), {}), mappings);
     }
 
-    ucfirst(str) {
-        return str
-            .slice(0, 1)
-            .toUpperCase()
-            .concat(str.slice(1));
+    toAction(key) {
+        return key
+            .slice(2, 3)
+            .toLowerCase()
+            .concat(key.slice(3));
     }
 
     _transform(data, enc, cb) {
         assert(data && typeof data.type === "string", `Your action is in the wrong format. Expected an object with key type, but got '${data}' of type ${typeof data}.`);
 
-        const key    = `on${this.ucfirst(data.type)}`;
+        const key    = this.mappings[data.type];
         const intent = this.intents[key];
 
         assert(typeof intent === "function", `intent for '${key}' not found in intents ${Object.keys(this.intents)}.`);

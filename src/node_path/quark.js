@@ -9,14 +9,14 @@ module.exports = class Quark extends Duplex {
         return new Quark(...args);
     }
  
-    constructor({ initialState: state, intents, qml }) {
+    constructor({ initialState: state, intents, qml, mappings }) {
         super({
             objectMode: true
         });
 
         // TODO options parsen und hinzufügen
         this.store   = Store.of(Object.assign({ qml, processes: [] }, state || {}));
-        this.gcd     = GCD.of(intents || {});
+        this.gcd     = GCD.of(intents || {}, mappings);
         this.view    = View.of(qml);
         this.qml     = qml;
         this.timeout = 0;
