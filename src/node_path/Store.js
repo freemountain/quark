@@ -2,6 +2,7 @@ const stream    = require("stream");
 const Transform = stream.Transform;
 const assert    = require("assert");
 const Immutable = require("immutable");
+const Selector  = require("./Selector");
 
 module.exports = class Store extends Transform {
     static of(...args) {
@@ -34,5 +35,9 @@ module.exports = class Store extends Transform {
 	    if(result.then) return result.then(this.onResult.bind(this, cb)).catch(cb);
          
 	    this.onResult(cb, result);
+    }
+
+    listen(path) {
+        return this.pipe(Selector.of(path));
     }
 }

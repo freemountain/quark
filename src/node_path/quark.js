@@ -30,6 +30,10 @@ module.exports = class Quark extends Duplex {
         this.write({ type, payload });
     }
 
+    listen(path) {
+        return this.store.listen(path); 
+    }
+
     write(...args) {
         super.write(...args);
 
