@@ -5,3 +5,4 @@ Makefile
 apps/*/node_modules
 build
 qpm
+setupfile
