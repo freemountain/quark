@@ -14,7 +14,8 @@ module.exports = class Quark extends Duplex {
             objectMode: true
         });
 
-        this.store   = Store.of(Object.assign({ qml }, state || {}));
+        // TODO options parsen und hinzufügen
+        this.store   = Store.of(Object.assign({ qml, processes: [] }, state || {}));
         this.gcd     = GCD.of(intents || {});
         this.view    = View.of(qml);
         this.qml     = qml;

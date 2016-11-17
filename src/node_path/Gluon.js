@@ -90,6 +90,8 @@ module.exports = class Gluon extends Duplex {
         this.actions.on("data", data => this.push(data));
     }
 
+    // sowohl load als auch start/kill sollten später als io
+    // über das plugin system gelöst werden iwie ?
     load(url) {
         this.initialLoad = false;
 
@@ -103,10 +105,29 @@ module.exports = class Gluon extends Duplex {
         return url;
     }
 
+    start(process) {
+        this.actionOut.emit("data", {
+            type:    "startProcess",
+            // hier die regexp weg
+            payload: process.slice(1).replace(new RegExp("/", "g"),"\\")
+        });
+
+        return process;
+    }
+
+    kill(process) {
+        this.actionOut.emit("data", {
+            type:    "killProcess",
+            payload: process
+        });
+
+        return process;
+    }
+
     _write(data, enc, next) {
         this.valueOut.emit("data", data);
 
-        this.qmlPath = this.initialLoad ? this.load(this.qmlPath) : this.qmlPath;
+        this.qmlPath = this.initialLoad && this.qmlPath ? this.load(this.qmlPath) : this.qmlPath;
         this.qmlPath = !this.initialLoad && data.qml && data.qml !== this.qmlPath ? this.load(data.qml) : this.qmlPath;
         next();
     }

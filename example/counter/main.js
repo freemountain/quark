@@ -1,4 +1,4 @@
-const Quark = require("quark-shell");
+const Quark = require("quark");
 const path  = require("path");
 
 const app = Quark.of({
