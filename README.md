@@ -1,13 +1,13 @@
 # Quark
 ## :arrow_right: electron :heavy_minus_sign: chromium :heavy_plus_sign: Qt quick
-The Quark shell lets you write and pack cross-platform desktop applications using JavaScript and QML. It is based on Node.js 7.0 and Qt 5.7.
+The Quark shell lets you write and pack cross-platform desktop applications using JavaScript and [QML](https://en.wikipedia.org/wiki/QML). It is based on Node.js 7.0 and Qt 5.7.
 
 ## How does it works
-A Quark application consist of a node.js process and a qml render process. They communicate through stdin and stdout in a redux like manner. The node process acts like a store, it emits a value and can react to actions. The qml process listen on value changes and can dispatch actions on user events to the store.
+A Quark application consist of a node.js process and a qml render process. They communicate through stdin and stdout in a [redux](https://github.com/reactjs/redux) like manner. The node process acts like a [store](http://redux.js.org/docs/basics/Store.html), it emits a value and can react to [actions](http://redux.js.org/docs/basics/Actions.html). The qml process listen on value changes and can dispatch actions on user events to the store.
 
 
 ## Downloads
-Prebuilt binaries for OSX can be found on the releases page.
+Prebuilt binaries for OSX can be found on the [releases page](https://github.com/freemountain/quark/releases).
 
 ## Basic Example
 A basic Quark application needs just these files:
@@ -16,7 +16,7 @@ A basic Quark application needs just these files:
 - `main.js` - Starts the app and creates a Qt window to render QML.
 - `index.qml` - A qml window to render
 
-### package.json
+### [package.json](https://github.com/freemountain/quark/blob/master/apps/counter/package.json)
 ```json
 {
   "name"    : "counter",
@@ -25,7 +25,7 @@ A basic Quark application needs just these files:
 }
 ```
 
-### main.js
+### [main.js](https://github.com/freemountain/quark/blob/master/apps/counter/main.js)
 ```js
 const shell = require('quark-shell');
 const path = require('path');
@@ -53,7 +53,7 @@ shell((values, actions, qml) => {
 });
 ```
 
-### index.qml
+### [index.qml](https://github.com/freemountain/quark/blob/master/apps/counter/index.qml)
 ```qml
 import QtQuick 2.2
 import QtQuick.Controls 2.0
@@ -105,6 +105,10 @@ ApplicationWindow {
 ```
 
 ## Building
+### Requirements
+
+- Qt 5.7
+- [qpm](https://github.com/Cutehacks/qpm)
 
 ### OSX
 ```bash
@@ -119,10 +123,11 @@ make
 ```
 
 ### WIN (using mingw)
-### OSX
+The created executable will only run on systems with Qt installed. The windeployqt script (called from tools/deploy_win.sh) dosent works.
+
 ```bash
 export PATH=$PATH:/c/Qt/5.7/mingw53_32/bin
-export PATH=$PATH:/c/Qt/Tools/mingw530_32/bin/
+export PATH=$PATH:/c/Qt/Tools/mingw530_32/bin
 
 qpm install
 mkdir build
