@@ -42,9 +42,10 @@ QString Environment::getBundledCommand(QString name) {
 QString Environment::getSystemCommand(QString name) {
     #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
         QString files[] = {"/bin/", "/usr/bin/", "/usr/local/bin/"};
-
-        for( unsigned int i = 0; i < sizeof(files); i = i + 1 )
+        qDebug() << "files" << sizeof(files) << files;
+        for( unsigned int i = 0; i < 3; i = i + 1 )
         {
+            qDebug() << "get " << name ;
             QString current = files[i] + name;
             QFileInfo info = QFileInfo(current);
             bool isFile = info.exists() && info.isFile();
@@ -117,11 +118,13 @@ QString Environment::getBundledAppPath() {
     #ifdef _WIN32
 
     #elif __linux__
+        QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
 
+        result =  binPath + "/default/package.json";
     #elif __APPLE__
         QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
 
-        result =  binPath + "/../Resources/app/package.json";
+        result =  binPath + "/../Resources/default/package.json";
     #endif
 
     return result;
@@ -142,7 +145,7 @@ QProcessEnvironment Environment::getProcEnv() {
     #ifdef _WIN32
         nodePath = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath() + "/node_path";
     #elif __linux__
-
+        nodePath = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath() + "/node_path";
     #elif __APPLE__
         nodePath = QDir( QCoreApplication::applicationFilePath() + "/../../Resources/" ).absoluteFilePath("node_path");
     #endif

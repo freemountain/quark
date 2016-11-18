@@ -19,12 +19,22 @@ HEADERS += \
 
 RESOURCES += qml.qrc
 
-#copy stuff
-macx: copydata.commands = $(COPY_DIR) $$PWD/src/node_path $$OUT_PWD/$$TARGET".app"/Contents/Resources/
-first.depends = $(first) copydata
+#copy node_path
+macx: copy_node_path.commands = $(COPY_DIR) $$PWD/src/node_path $$OUT_PWD/$$TARGET".app"/Contents/Resources/
+linux: copy_node_path.commands = $(COPY_DIR) $$PWD/src/node_path $$OUT_PWD/
+
+
+
+#copy default app
+macx: copy_app.commands = $(COPY_DIR) $$PWD/apps/default $$OUT_PWD/$$TARGET".app"/Contents/Resources/
+linux: copy_app.commands = $(COPY_DIR) $$PWD/apps/default $$OUT_PWD/
+
+first.depends = $(first) copy_node_path copy_app
 export(first.depends)
-export(copydata.commands)
-QMAKE_EXTRA_TARGETS += first copydata
+export(copy_node_path.commands)
+export(copy_app.commands)
+
+QMAKE_EXTRA_TARGETS += first copy_node_path copy_app
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
