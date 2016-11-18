@@ -25,7 +25,7 @@ signals:
 
 public slots:
     void writeData(QString data);
-    void dispatch(QString type, QJsonValue payload);
+    void trigger(QString type, QJsonValue payload);
 };
 
 #endif // ROOTSTORE_H

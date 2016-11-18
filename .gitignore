@@ -4,3 +4,7 @@ vendor
 Makefile
 apps/*/node_modules
 build
+qpm
+setupfile
+coverage
+src/node_path/node_modules

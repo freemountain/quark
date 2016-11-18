@@ -11,7 +11,7 @@ JsonListModel {
         const items = JSONPath({path: model.path, json: value})[0];
 
         if(!Array.isArray(items)) {
-            console.log('JsonListModel Error: Value from' + model.path + " is not an array: " + JSON.stringify(items));
+            console.log('JsonListModel Error: Extract from ' + JSON.stringify(value) + ' at ' + model.path + " is not an array, got " + JSON.stringify(items)) + " instead.";
             return;
         }
         model.clear();

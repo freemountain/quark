@@ -4,8 +4,8 @@ Item {
     id: item
     property var value: QtObject
 
-    function dispatch(type, payload) {
-        backend.dispatch(type, payload);
+    function trigger(type, payload) {
+        backend.trigger(type, payload);
     }
 
     Component.onCompleted: {

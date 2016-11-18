@@ -4,11 +4,11 @@ import QtQuick.Layouts 1.3
 import Quark 1.0
 
 ApplicationWindow {
+    id:      window
     visible: true
-    width: 300
-    id:window
+    width:   300
 
-    Store {
+    Gluon {
         /*
           This component holds the application state.
           The property value holds the current value.
@@ -19,20 +19,23 @@ ApplicationWindow {
 
     RowLayout {
         anchors.fill: parent
+
         Button {
             anchors.left: window.left
-            text: "-"
-            onClicked: store.dispatch("sub")
+            text:         "-"
+
+            onClicked: store.trigger("sub")
         }
         Label {
-            Layout.fillWidth: true
+            Layout.fillWidth:    true
             horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            text: JSON.stringify(store.value.count);
+            verticalAlignment:   Text.AlignVCenter
+            text:                JSON.stringify(store.value.count);
         }
+
         Button {
-            text: "+"
-            onClicked: store.dispatch("add")
+            text:      "+"
+            onClicked: store.trigger("add")
         }
     }
 }

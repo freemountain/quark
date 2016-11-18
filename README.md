@@ -1,20 +1,34 @@
 # Quark
 ## :arrow_right: electron :heavy_minus_sign: chromium :heavy_plus_sign: Qt quick
+<<<<<<< HEAD
+Quark is the easiest way to write and ship cross-platform desktop applications using JavaScript and QML. It uses Node.js 7.0 and Qt 5.7 under the hood.
+
+## How does it work
+A Quark application consists of a Node.js host process and a QML-based rendering process.
+=======
 The Quark shell lets you write and pack cross-platform desktop applications using JavaScript and [QML](https://en.wikipedia.org/wiki/QML). It is based on Node.js 7.0 and Qt 5.7.
 
 ## How does it works
 A Quark application consist of a node.js process and a qml render process. They communicate through stdin and stdout in a [redux](https://github.com/reactjs/redux) like manner. The node process acts like a [store](http://redux.js.org/docs/basics/Store.html), it emits a value and can react to [actions](http://redux.js.org/docs/basics/Actions.html). The qml process listen on value changes and can dispatch actions on user events to the store.
+>>>>>>> master
 
+This architecture is used to make it possible to script the whole application logic in JavaScript, while leveraging QT's declarative, cross-platform view-layer (QML).
+Both processes are always being aware of the whole application state (think Elm or Redux), using stdin and stdout to exchange updates and or actions in a unidirectional way.
 
+<<<<<<< HEAD
+To wrap it all up, a basic Quark application just needs three files in order to work:
+=======
 ## Downloads
 Prebuilt binaries for OSX can be found on the [releases page](https://github.com/freemountain/quark/releases).
+>>>>>>> master
 
-## Basic Example
-A basic Quark application needs just these files:
+- a `package.json` - points to the app's main file and lists its details and dependencies
+- a `<main>.js` - contains the business logic
+- an `index.qml` - QML description of the view
 
-- `package.json` - Points to the app's main file and lists its details and dependencies.
-- `main.js` - Starts the app and creates a Qt window to render QML.
-- `index.qml` - A qml window to render
+## Example
+
+So let's implement a very primitive counter as a basic example of how to use this thing:
 
 ### [package.json](https://github.com/freemountain/quark/blob/master/apps/counter/package.json)
 ```json
@@ -27,29 +41,16 @@ A basic Quark application needs just these files:
 
 ### [main.js](https://github.com/freemountain/quark/blob/master/apps/counter/main.js)
 ```js
-const shell = require('quark-shell');
-const path = require('path');
+const Quark = require("quark");
+const path  = require("path");
 
-shell((values, actions, qml) => {
-  // initial state
-  const value = {
-    count: 0
-  }
-
-  // emit initial state
-  values.emit('data', value);
-
-  // subscribe to actions
-  actions.on('data', action => {
-    if(action.type === 'add') value.count += 1
-    if(action.type === 'sub') value.count -= 1
-
-    // emit new state
-    values.emit('data', value);
-  });
-
-  // load application window
-  qml.load(path.join(__dirname, 'index.qml'));
+Quark.of({
+    qml:          path.join(__dirname, "index.qml"),
+    initialState: { count: 0 },
+    intents:      {
+        onSub: state => state.update("count", count => count - 1),
+        onAdd: state => state.update("count", count => count + 1)
+    }
 });
 ```
 
@@ -94,21 +95,31 @@ ApplicationWindow {
     }
 }
 ```
-### run the example
-#### Gui
+### Running the Example
+
+This example can either be run by using the GUI app or by invoking the terminal.
+
+#### GUI
 - run the prebuilt quark app
-- drop the package.json on __run__
+- drag&drop the package.json on the __run__ button
 
 #### Terminal
 ```
 ./path/to/quark ./path/to/package.json
 ```
 
+<<<<<<< HEAD
+## Downloads
+Prebuilt binaries for OSX can be found on the releases page.
+
+## Development
+=======
 ## Building
 ### Requirements
 
 - Qt 5.7
 - [qpm](https://github.com/Cutehacks/qpm)
+>>>>>>> master
 
 ### OSX
 ```bash

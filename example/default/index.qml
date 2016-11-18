@@ -10,60 +10,65 @@ ApplicationWindow {
     height: 200
     id:window
 
-    Store {
+    Gluon {
         id: store
     }
 
     ActionRect {
-        id: run;
-        height: window.height / 2;
-        width: window.width
+        id:          run;
+        height:      window.height / 2
+        width:       window.width
         anchors.top: window.top
-        color: "lightsteelblue"
-        text: "Run"
+        color:       "lightsteelblue"
+        text:        "Run"
 
         onAction: {
-            store.dispatch("startProcess", url);
+            store.trigger("startProcess", url);
         }
     }
 
     ActionRect {
-        id: deploy;
-        color: "steelblue"
-        height: window.height / 2;
-        width: window.width
+        id:          deploy
+        color:       "steelblue"
+        height:      window.height / 2
+        width:       window.width
         anchors.top: run.bottom
-        text: "Deploy"
+        text:        "Deploy"
+
         property var pkgPath
         property var targetPath
 
         onAction: {
-            fd.visible = true;
+            fd.visible     = true;
             deploy.pkgPath = url
         }
+
         FileDialog {
-            id: fd
-            title: "Please choose output directory"
-            folder: shortcuts.home
+            id:           fd
+            title:        "Please choose output directory"
+            folder:       shortcuts.home
             selectFolder: true
 
             onAccepted: {
                 deploy.targetPath = fd.fileUrls[0].slice(7) // contains file:///User/..
-                md.visible = true;
-                fd.visible = false;
-                store.dispatch("deployApp", {
-                  pkg: deploy.pkgPath,
+                md.visible        = true;
+                fd.visible        = false;
+
+                store.trigger("deployApp", {
+                  pkg:    deploy.pkgPath,
                   target: deploy.targetPath
                 });
             }
+
             onRejected: {
                 fd.visible = false;
             }
         }
+
         MessageDialog {
-            id: md
+            id:    md
             title: "Bundling..."
-            text: "Deplyed " + deploy.pkgPath + " to " + deploy.targetPath
+            text:  "Deplyed " + deploy.pkgPath + " to " + deploy.targetPath
         }
     }
 }
