@@ -104,12 +104,11 @@ Prebuilt binaries for OSX can be found on the releases page.
 ## Building
 ### Requirements
 - Qt 5.7
-- [qpm](https://github.com/Cutehacks/qpm)
 
 ### OSX
 ```bash
 export PATH=$PATH:/path/to/Qt/5.7/clang_64/bin
-qpm install
+./tools/bootstrap.sh
 mkdir build
 cd build
 qmake ..
@@ -124,8 +123,7 @@ The created executable will only run on systems with Qt installed. The windeploy
 ```bash
 export PATH=$PATH:/c/Qt/5.7/mingw53_32/bin
 export PATH=$PATH:/c/Qt/Tools/mingw530_32/bin
-
-qpm install
+./tools/bootstrap.sh
 mkdir build
 cd build
 qmake ..
@@ -139,7 +137,7 @@ Currently there is no linuxdeployqt scripty, you need to use the following: [lin
 ```bash
 export PATH=/path/to/Qt/5.7/clang_64/bin:/path/to/linuxdeployqt:$PATH
 sudo apt-get install mesa-common-dev libglu1-mesa-dev patchelf
-qpm install
+./tools/bootstrap.sh
 mkdir build
 cd build
 qmake ..

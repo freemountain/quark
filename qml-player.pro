@@ -19,22 +19,26 @@ HEADERS += \
 
 RESOURCES += qml.qrc
 
+#copy node binary
+NODE_CMD = $$system(tools/downloadNode.sh)
+macx: copy_node.commands = $(COPY_DIR) $$NODE_CMD $$OUT_PWD/$$TARGET".app"/Contents/MacOS/
+linux: copy_node.commands = $(COPY_DIR) $$NODE_CMD $$OUT_PWD/
+
 #copy node_path
 macx: copy_node_path.commands = $(COPY_DIR) $$PWD/src/node_path $$OUT_PWD/$$TARGET".app"/Contents/Resources/
 linux: copy_node_path.commands = $(COPY_DIR) $$PWD/src/node_path $$OUT_PWD/
 
-
-
 #copy default app
-macx: copy_app.commands = $(COPY_DIR) $$PWD/apps/default $$OUT_PWD/$$TARGET".app"/Contents/Resources/
-linux: copy_app.commands = $(COPY_DIR) $$PWD/apps/default $$OUT_PWD/
+macx: copy_app.commands = $(COPY_DIR) $$PWD/example/default $$OUT_PWD/$$TARGET".app"/Contents/Resources/
+linux: copy_app.commands = $(COPY_DIR) $$PWD/example/default $$OUT_PWD/
 
-first.depends = $(first) copy_node_path copy_app
+first.depends = $(first) copy_node_path copy_app copy_node
 export(first.depends)
 export(copy_node_path.commands)
 export(copy_app.commands)
+export(copy_node.commands)
 
-QMAKE_EXTRA_TARGETS += first copy_node_path copy_app
+QMAKE_EXTRA_TARGETS += first copy_node_path copy_app copy_node
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
