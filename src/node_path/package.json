@@ -4,12 +4,14 @@
   "main": "quark.js",
   "dependencies": {
     "immutable": "^3.8.1",
+    "immutablediff": "^0.4.4",
     "jsonstream2": "^1.1.1",
     "lodash.set": "^4.3.2",
     "through2-filter": "^2.0.0",
     "through2-map": "^3.0.0"
   },
   "devDependencies": {
+    "@circle/core-assert": "^0.3.2",
     "chai": "^3.5.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.1.2",

@@ -26,8 +26,8 @@ linux: copy_node_path.commands = $(COPY_DIR) $$PWD/src/node_path $$OUT_PWD/
 
 
 #copy default app
-macx: copy_app.commands = $(COPY_DIR) $$PWD/apps/default $$OUT_PWD/$$TARGET".app"/Contents/Resources/
-linux: copy_app.commands = $(COPY_DIR) $$PWD/apps/default $$OUT_PWD/
+macx: copy_app.commands = $(COPY_DIR) $$PWD/example/default $$OUT_PWD/$$TARGET".app"/Contents/Resources/
+linux: copy_app.commands = $(COPY_DIR) $$PWD/example/default $$OUT_PWD/
 
 first.depends = $(first) copy_node_path copy_app
 export(first.depends)

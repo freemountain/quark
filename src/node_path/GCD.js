@@ -2,13 +2,14 @@ const stream    = require("stream");
 const Transform = stream.Transform;
 const assert    = require("assert");
 const set       = require("lodash.set");
+const Intent    = require("./Intent");
 
 module.exports = class GCD extends Transform {
     static of(...args) {
         return new GCD(...args);    
     }
 
-    constructor(intents, mappings = {}) {
+    constructor(intents = {}, mappings = {}) {
         super({
             objectMode: true    
         });
@@ -16,6 +17,8 @@ module.exports = class GCD extends Transform {
         this.intents  = intents;
         this.mappings = Object.assign(Object.keys(intents)
             .reduce((dest, key) => set(dest, this.toAction(key), key), {}), mappings);
+
+        this.mappingsString = JSON.stringify(this.mappings);
     }
 
     toAction(key) {
@@ -26,26 +29,17 @@ module.exports = class GCD extends Transform {
     }
 
     _transform(data, enc, cb) {
-        assert(data && typeof data.type === "string", `Your action is in the wrong format. Expected an object with key type, but got '${data}' of type ${typeof data}.`);
+        assert(data && typeof data.type === "string", `Your action is in the wrong format. Expected an object with key type, but got '${JSON.stringify(data)}' of type ${typeof data}.`);
 
-        const key    = this.mappings[data.type];
+        const key = this.mappings[data.type];
+
+        assert(typeof key === "string", `There is exists no mapping for '${data.type}' in ${this.mappingsString}.`);
+
         const intent = this.intents[key];
 
-        assert(typeof intent === "function", `intent for '${key}' not found in intents ${Object.keys(this.intents)}.`);
+        assert(typeof intent === "function", `No intent found for '${data.type}' -> '${key}' in intents [${Object.keys(this.intents)}].`);
 
-        let timeout = 0;
-
-        this.push({
-            intent: intent.bind({
-                after(time) {
-                    timeout = time
-                    return this;
-                },
-
-                trigger: (type, payload) => setTimeout(() => this.write({ type, payload }), timeout)
-            }),
-		    payload: data.payload
-        });
+        this.push(Intent.of(intent, data.payload, this));
 		cb();
     }
 }

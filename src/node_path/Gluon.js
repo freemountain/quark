@@ -22,7 +22,7 @@ class Gluon extends Duplex {
     }
 
     static Output(type) {
-        const out = new Stream(Gluon.opts);;
+        const out = new Stream(Gluon.opts);
 
         out
             .pipe(Mapper(Gluon.opts, payload => ({ type, payload })))
