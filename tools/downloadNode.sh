@@ -29,7 +29,7 @@ if [ -f "$NODE_CMD" ]; then
 fi
 
 cd "$BASE_PATH/.."
-curl -0 https://nodejs.org/dist/v7.1.0/node-v7.1.0-darwin-x64.tar.xz|tar -xz
+curl -0 "$URL"|tar -xJ
 popd > /dev/null
 
 echo "$NODE_CMD"
