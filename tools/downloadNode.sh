@@ -27,7 +27,7 @@ if [ "$OS" == "win" ]; then
 
   if [ ! -f "$BIN_PATH/npm" ]; then
     cd "$BIN_PATH"
-    ln -s "$PROJECT_PATH/tmp/npm-3.10.9/bin/npm" npm
+    ln -s "$PROJECT_PATH/tmp/npm-3.10.9/cli.js" npm
   fi
 
   echo $NODE_CMD
