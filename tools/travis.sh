@@ -11,7 +11,7 @@ if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
   sudo apt-get -y install \
     qt57declarative qt57quickcontrols qt57quickcontrols2 qt57graphicaleffects qt57tools qt57svg \
     mesa-common-dev libglu1-mesa-dev
-
+  cat /opt/qt57/bin/qt57-env.sh
   source /opt/qt57/bin/qt57-env.sh
   tools/bootstrap.sh
   mkdir build && cd build && qmake .. && make && make clean && cd ..

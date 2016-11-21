@@ -11,7 +11,6 @@ BASE_PATH="$PROJECT_PATH/tmp/qpm-$VERSION-$OS-$ARCH"
 pushd . > /dev/null
 mkdir -p "$BASE_PATH"
 
-URL="$BASE_URL/$OS""_$ARCH/qpm"
 CMD="$BASE_PATH/qpm"
 
 case "$OS" in
@@ -26,7 +25,6 @@ if [ -f "$CMD" ]; then
   exit
 fi
 
-echo "download: $CMD from $URL"
 cd "$BASE_PATH"
 curl -O "$URL"
 chmod +x "$CMD"
