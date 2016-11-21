@@ -12,22 +12,22 @@ BIN_PATH="$PROJECT_PATH/tmp/bin-$($PROJECT_PATH/tools/arch.sh -o)-$($PROJECT_PAT
 
 pushd . > /dev/null
 
-if [ ! -d "$PROJECT_PATH/tmp/npm-3.10.9" ]; then
-  cd "$PROJECT_PATH/tmp"
-  curl -L -0 "https://github.com/npm/npm/archive/v3.10.9.tar.gz"|tar xvz
-fi
-
-if [ ! -f "$BIN_PATH/npm" ]; then
-  cd "$BIN_PATH"
-  ln -s "$PROJECT_PATH/tmp/npm-3.10.9/bin/npm-cli.js" npm
-fi
-
 if [ "$OS" == "win" ]; then
   URL="$BASE_URL/win-$ARCH/node.exe"
   NODE_CMD="$BIN_PATH/node.exe"
   echo "download node windows $NODE_CMD $URL" >&2
   curl -o "$NODE_CMD" "$URL"
   echo "$(ls $BIN_PATH)" >&2
+
+  if [ ! -d "$PROJECT_PATH/tmp/npm-3.10.9" ]; then
+    cd "$PROJECT_PATH/tmp"
+    curl -L -0 "https://github.com/npm/npm/archive/v3.10.9.tar.gz"|tar xz
+  fi
+
+  if [ ! -f "$BIN_PATH/npm" ]; then
+    cd "$BIN_PATH"
+    ln -s "$PROJECT_PATH/tmp/npm-3.10.9/bin/npm" npm
+  fi
 
   echo $NODE_CMD
   exit
@@ -46,6 +46,11 @@ fi
 
 if [ ! -f "$BIN_PATH/node" ]; then
   cp "$BASE_PATH/bin/node" "$BIN_PATH/node"
+fi
+
+if [ ! -f "$BIN_PATH/npm" ]; then
+  cd "$BIN_PATH"
+  ln -s "$BASE_PATH/bin/npm" npm
 fi
 
 popd > /dev/null
