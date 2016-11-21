@@ -18,7 +18,7 @@ case "$OS" in
   darwin) URL="$BASE_URL/darwin_386/qpm";;
   linux) URL="$BASE_URL/linux_386/qpm";;
   windows) URL="$BASE_URL/windows_386/qpm.exe" CMD="$BASE_PATH/qpm.exe" ;;
-  *)  echo "could not parse uname -m output: $arcg" ; exit 1;
+  *)  echo "could not parse uname -m output: $OS" >&2 ; exit 1;
 esac
 
 if [ -f "$CMD" ]; then
@@ -26,6 +26,7 @@ if [ -f "$CMD" ]; then
   exit
 fi
 
+echo "download: $CMD from $URL"
 cd "$BASE_PATH"
 curl -O "$URL"
 chmod +x "$CMD"
