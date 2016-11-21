@@ -114,7 +114,7 @@ cd build
 qmake ..
 make
 #if you want to deploy:
-./../tools/deploy_mac.sh quark.app /path/to/node
+./../tools/deploy_mac.sh quark.app
 ```
 
 ### WIN (using mingw)
