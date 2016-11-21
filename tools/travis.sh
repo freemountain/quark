@@ -12,9 +12,9 @@ if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
     mesa-common-dev libglu1-mesa-dev
 
   source /opt/qt57/bin/qt57-env.sh
-  ./tools/bootstrap.sh
+  tools/bootstrap.sh
   mkdir build && cd build && qmake .. && make && make clean && cd ..
-  ./tools/deploy_linux.sh build/quark
+  tools/deploy_linux.sh build/quark
   mv Quark-x86_64.AppImage build/deploy/Quark-x86_64.AppImage
   ls deploy
 fi
@@ -23,9 +23,9 @@ if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
   brew install qt5
   brew link --force qt5
   which qmake
-  ./tools/bootstrap.sh
+  tools/bootstrap.sh
   mkdir build && cd build && qmake .. && make && make clean && cd ..
-  ./tools/deploy_mac.sh build/quark.app
+  tools/deploy_mac.sh build/quark.app
   mv quark.app build/deploy/quark.app
   ls deploy
 fi
