@@ -11,7 +11,7 @@ BASE_PATH="$PROJECT_PATH/tmp/node-$NODE_VERSION-$OS-$ARCH"
 pushd . > /dev/null
 mkdir -p "$BASE_PATH"
 
-if [ "$OS" == "$win" ]; then
+if [ "$OS" == "win" ]; then
   URL="$BASE_URL/win-$ARCH/node.exe"
   NODE_CMD="$BASE_PATH/node.exe"
 
