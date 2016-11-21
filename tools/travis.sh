@@ -26,6 +26,7 @@ if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
   tools/bootstrap.sh
   mkdir build && cd build && qmake .. && make && make clean && cd ..
   tools/deploy_mac.sh build/quark.app
+  ls build
   mv quark.app build/deploy/quark.app
   ls deploy
 fi

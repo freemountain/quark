@@ -1,0 +1,7 @@
+install:
+  - set QTDIR=C:\Qt\5.7\mingw53_32
+  - set PATH=%PATH%;%QTDIR%\bin;C:\MinGW\bin
+build_script:
+  - dir
+  - bash -lc "./tools/bootstrap.sh"
+  - bash -lc "mkdir build && cd build && qmake .. && mingw32-make && dir"
