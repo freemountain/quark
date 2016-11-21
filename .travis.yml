@@ -7,7 +7,6 @@ install:
   - sudo apt-get update
   - sudo apt-get -y install qt57declarative qt57quickcontrols qt57quickcontrols2 qt57graphicaleffects qt57tools qt57svg
   - sudo apt-get -y install mesa-common-dev libglu1-mesa-dev patchelf
-  - sudo apt-get -y install xvfb
 
 script:
   - source /opt/qt57/bin/qt57-env.sh
