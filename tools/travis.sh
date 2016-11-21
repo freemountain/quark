@@ -15,6 +15,7 @@ if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
   #source /opt/qt57/bin/qt57-env.sh
   export PATH=/opt/qt57/bin:$PATH
   tools/bootstrap.sh
+  tools/bootstrap.sh
   mkdir build && cd build && qmake .. && make && make clean && cd ..
   tools/deploy_linux.sh build/quark
   mv Quark-x86_64.AppImage build/deploy/Quark-x86_64.AppImage

@@ -10,7 +10,7 @@ mkdir -p "$BIN_PATH"
 
 echo "download node..."
 NODE_CMD=$("$PROJECT_PATH/tools/downloadNode.sh")
-NPM_CMD="$(dirname "$NODE_CMD")/npm"
+NPM_CMD="$BIN_PATH/npm"
 echo "download qpm..."
 QPM_CMD=$("$PROJECT_PATH/tools/downloadQpm.sh")
 BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
