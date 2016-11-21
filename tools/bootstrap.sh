@@ -11,7 +11,7 @@ QPM_CMD=$("$PROJECT_PATH/tools/downloadQpm.sh")
 
 pushd . > /dev/null
 
-"$QPM_CMD" install
+"$NPM_CMD" "$QPM_CMD" install
 
 for i in $PROJECT_PATH/example/* ; do
   cd "$i"
@@ -32,7 +32,7 @@ if [ "$OS" = "linux" ]; then
         qmake "../linuxdeployqt-src"
         make
     fi
-    
+
     APPIMG_CMD="$PROJECT_PATH/tmp/appimagetool"
     if [ ! -f "$APPIMG_CMD" ] ; then
         curl -L -o "$APPIMG_CMD" "https://github.com/probonopd/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
