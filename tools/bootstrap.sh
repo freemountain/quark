@@ -34,8 +34,8 @@ if [ "$OS" = "linux" ]; then
 
   if [ ! -d "$PROJECT_PATH/tmp/patchelf-src" ] ; then
       git clone "https://github.com/NixOS/patchelf" "$PROJECT_PATH/tmp/patchelf-src"
-
-      "$PROJECT_PATH/tmp/patchelf-src/bootstrap.sh"
+      cd "$PROJECT_PATH/tmp/patchelf-src/"
+      ./bootstrap.sh
   fi
 
   if [ ! -d "$PROJECT_PATH/tmp/linuxdeployqt-build" ] ; then
