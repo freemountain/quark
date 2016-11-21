@@ -2,7 +2,6 @@ sudo: required
 dist: trusty
 language: generic
 os:
-  - osx
   - linux
 
 script: tools/travis.sh

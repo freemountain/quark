@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
 
