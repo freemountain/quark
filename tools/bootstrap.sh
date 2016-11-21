@@ -4,12 +4,17 @@ PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
 
 OS="$($PROJECT_PATH/tools/arch.sh -o)"
 ARCH="$($PROJECT_PATH/tools/arch.sh -a)"
+BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
+
+mkdir -p "$BIN_PATH"
 
 echo "download node..."
 NODE_CMD=$("$PROJECT_PATH/tools/downloadNode.sh")
 NPM_CMD="$(dirname "$NODE_CMD")/npm"
 echo "download qpm..."
 QPM_CMD=$("$PROJECT_PATH/tools/downloadQpm.sh")
+BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
+
 
 pushd . > /dev/null
 
@@ -25,8 +30,6 @@ cd "$PROJECT_PATH/src/node_path"
 "$NODE_CMD" "$NPM_CMD" install
 
 if [ "$OS" = "linux" ]; then
-  BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
-  mkdir -p "$BIN_PATH"
 
   if [ ! -d "$PROJECT_PATH/tmp/linuxdeployqt-src" ] ; then
       git clone "https://github.com/probonopd/linuxdeployqt" "$PROJECT_PATH/tmp/linuxdeployqt-src"
