@@ -12,7 +12,8 @@ if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
     qt57declarative qt57quickcontrols qt57quickcontrols2 qt57graphicaleffects qt57tools qt57svg \
     mesa-common-dev libglu1-mesa-dev
   cat /opt/qt57/bin/qt57-env.sh
-  source /opt/qt57/bin/qt57-env.sh
+  #source /opt/qt57/bin/qt57-env.sh
+  export PATH=/opt/qt57/bin:$PATH
   tools/bootstrap.sh
   mkdir build && cd build && qmake .. && make && make clean && cd ..
   tools/deploy_linux.sh build/quark

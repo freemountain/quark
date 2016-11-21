@@ -25,8 +25,10 @@ fi
 if [ "$OS" == "win" ]; then
   URL="$BASE_URL/win-$ARCH/node.exe"
   NODE_CMD="$BIN_PATH/node.exe"
-
+  echo "download node windows $NODE_CMD $URL" >&2
   curl -o "$NODE_CMD" "$URL"
+  echo "$(ls $BIN_PATH)" >&2
+
   echo $NODE_CMD
   exit
 fi
