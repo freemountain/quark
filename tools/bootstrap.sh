@@ -11,16 +11,16 @@ QPM_CMD=$("$PROJECT_PATH/tools/downloadQpm.sh")
 
 pushd . > /dev/null
 
-"$NPM_CMD" "$QPM_CMD" install
+"$QPM_CMD" install
 
 for i in $PROJECT_PATH/example/* ; do
   cd "$i"
   echo "npm install $i"
-  "$NPM_CMD" install
+  "$NODE_CMD" "$NPM_CMD" install
 done
 
 cd "$PROJECT_PATH/src/node_path"
-"$NPM_CMD" install
+"$NODE_CMD" "$NPM_CMD" install
 
 if [ "$OS" = "linux" ]; then
     if [ ! -d "$PROJECT_PATH/tmp/linuxdeployqt-src" ] ; then
