@@ -5,6 +5,7 @@ PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
 mkdir -p build/deploy
 
 if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+  echo "on linux" >&2
   sudo add-apt-repository -y ppa:beineri/opt-qt57-trusty
   sudo apt-get update
   sudo apt-get -y install \
@@ -20,6 +21,8 @@ if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
 fi
 
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+  echo "on osx" >&2
+
   brew install qt5
   brew link --force qt5
   which qmake
