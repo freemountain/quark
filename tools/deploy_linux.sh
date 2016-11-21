@@ -2,28 +2,23 @@
 
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../"
 TARGET_APP=$1
-NODE_CMD=$2
 TARGET_PATH=$(dirname "$TARGET_APP")
-QT_PATH="/home/dodo/Qt5.7.0aa/5.7/gcc_64"
+DEPLOY_CMD="$PROJECT_PATH/tmp/linuxdeployqt-build/linuxdeployqt/linuxdeployqt"
+TMP_PATH="$PROJECT_PATH/tmp"
 
-linuxdeployqt $TARGET_APP  --compiler-runtime --qmldir=$PROJECT_PATH/src/qml -bundle-non-qt-libs
+cat << EOF > "$TARGET_PATH/quark.desktop"
+[Desktop Entry]
+Type=Application
+Name=Quark
+Exec=AppRun %F
+Icon=default
+Comment=Edit this default file
+Terminal=true
+EOF
 
-: <<'END'
-mkdir -p "$TARGET_PATH/platforms"
-cp "$QT_PATH/plugins/platforms/libqxcb.so" "$TARGET_PATH/platforms/libqxcb.so"
+cp "$PROJECT_PATH/quark.svg" "$TARGET_PATH/default.svg"
 
+PATH="$TMP_PATH:$PATH" "$DEPLOY_CMD" $TARGET_APP -qmldir=$PROJECT_PATH/src/qml -bundle-non-qt-libs -no-strip
 
-libs=( "libQt5DBus.so.5" )
-#libs=( "libQt5DBus.so.5" "libQt5XcbQpa.so.5" "libicudata.so.56" "libicuuc.so.56"  "libicui18n.so.56" "libQt5Core.so.5" "libQt5Gui.so.5" "libQt5Qml.so.5" "libQt5Network.so.5" "libQt5Widgets.so.5" )
-for lib in ${libs[*]}
-do
-    cp "$QT_PATH/lib/$lib" "$TARGET_PATH/$lib"
-done
-
-
-qmlPlugins=( "QtQuick" "QtQuick.2" "QtQml" )
-for qml in ${qmlPlugins[*]}
-do
-    cp -r "$QT_PATH/qml/$qml" "$TARGET_PATH/$qml"
-done
-END
+# we need to run this two times...
+PATH="$TMP_PATH:$PATH" "$DEPLOY_CMD" $TARGET_APP -appimage -qmldir=$PROJECT_PATH/src/qml -bundle-non-qt-libs -no-strip

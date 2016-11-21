@@ -6,9 +6,3 @@ NODE_CMD=$2
 
 
 macdeployqt $TARGET_APP -qmldir=$PROJECT_PATH/src/qml
-
-rm -f $TARGET_APP/Contents/MacOS/node
-rm -rf $TARGET_APP/Contents/Resources/app
-
-cp $NODE_CMD $TARGET_APP/Contents/MacOS/node
-cp -r $PROJECT_PATH/apps/default $TARGET_APP/Contents/Resources/app
