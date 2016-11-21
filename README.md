@@ -133,7 +133,6 @@ make
 ```
 
 ### Linux (Ubuntu 16.04)
-Currently there is no linuxdeployqt scripty, you need to use the following: [linuxdeployqt](https://github.com/probonopd/linuxdeployqt)
 ```bash
 export PATH=/path/to/Qt/5.7/clang_64/bin:/path/to/linuxdeployqt:$PATH
 sudo apt-get install mesa-common-dev libglu1-mesa-dev patchelf
@@ -143,5 +142,5 @@ cd build
 qmake ..
 make
 #if you want to deploy:
-./../tools/deploy_mac.sh quark.app /path/to/node
+./../tools/deploy_linux.sh quark
 ```
