@@ -1,7 +1,6 @@
 *.pro.user
 *.qmake.stash
 vendor
-Makefile
 example/*/node_modules
 build
 qpm
