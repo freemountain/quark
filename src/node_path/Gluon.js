@@ -3,7 +3,7 @@ const Stream        = require("stream");
 const StringDecoder = require("string_decoder").StringDecoder;
 const Transform     = Stream.Transform;
 const Duplex        = Stream.Duplex;
-const JSONStream    = require("JSONStream2");
+const JSONStream    = require("jsonstream2");
 const Filter        = require("through2-filter");
 const Mapper        = require("through2-map");
 
