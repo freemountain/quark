@@ -11,13 +11,17 @@ module.exports = class Selector extends Transform {
             objectMode: true    
         });
 
-        this.keys      = path.split(".");
+        this.keys      = path.split("/");
         this.selection = null;
     }
 
     _transform(data, enc, cb) {
-        const selection = this.keys.reduce((slice, key) => slice[key], data);
+        const selection = this.keys.reduce((slice, key) => slice && slice[key], data);
 
-        return selection !== this.selection ? cb(null, selection) : cb();
+        if(selection === this.selection) return cb();
+
+        this.selection = selection;
+
+        return cb(null, selection);
     }
 }
