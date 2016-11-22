@@ -3,7 +3,7 @@ set -e
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/.."
 
 mkdir -p build/deploy
-
+pushd .
 if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
   echo "on linux" >&2
   sudo add-apt-repository -y ppa:beineri/opt-qt57-trusty
