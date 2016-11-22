@@ -50,6 +50,7 @@ PATH=$P:$PATH "$P/linuxdeployqt"
 
 ## makefile lösung
   - siehe tools/Makefile
+  - cd tools; && make bootstrap
   - benutzt nur tools/uname
   - restliche shs dann müll
 ## bashscript lösung

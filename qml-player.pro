@@ -20,7 +20,7 @@ HEADERS += \
 RESOURCES += qml.qrc
 
 #copy node binary
-NODE_CMD = $$system(tools/downloadNode.sh)
+NODE_CMD = $$PWD/tmp/bin-$$system(tools/uname.sh -o)-$$system(tools/uname.sh -a)/node
 macx: copy_node.commands = $(COPY_DIR) $$NODE_CMD $$OUT_PWD/$$TARGET".app"/Contents/MacOS/
 linux: copy_node.commands = $(COPY_DIR) $$NODE_CMD $$OUT_PWD/
 
