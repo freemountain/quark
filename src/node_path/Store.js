@@ -32,7 +32,6 @@ module.exports = class Store extends Transform {
 
         const difference = diff(this.state, state).toJSON();
 
-        console.log(state);
         if(difference.length === 0) return cb();
 
         // TODO: diff here

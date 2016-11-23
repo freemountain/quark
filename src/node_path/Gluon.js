@@ -27,7 +27,7 @@ class Gluon extends Duplex {
         out
             .pipe(Mapper(Gluon.opts, payload => ({ type, payload })))
             .pipe(JSONStringifier())
-            .pipe(process.stdout);
+            .pipe(global.process.stdout);
 
         return out;
     }
@@ -41,7 +41,7 @@ class Gluon extends Duplex {
         this.qmlPath     = qmlPath;
         this.valueOut    = Gluon.Output("value");
         this.actionOut   = Gluon.Output("action");
-        this.actions     = process.stdin
+        this.actions     = global.process.stdin
             .pipe(JSONStream.parse())
             .pipe(Filter(Gluon.opts, msg => msg.type === "action"))
             .pipe(Mapper(Gluon.opts, msg => msg.payload));
@@ -64,11 +64,16 @@ class Gluon extends Duplex {
         return url;
     }
 
+    trim(path) {
+        return path
+            .slice(1)
+            .replace(/\//g, "\\");
+    }
+
     start(process) {
         this.actionOut.emit("data", {
             type:    "startProcess",
-            // hier die regexp weg
-            payload: process.slice(1).replace(new RegExp("/", "g"),"\\")
+            payload: this.trim(process)
         });
 
         return process;
@@ -77,7 +82,7 @@ class Gluon extends Duplex {
     kill(process) {
         this.actionOut.emit("data", {
             type:    "killProcess",
-            payload: process
+            payload: this.trim(process)
         });
 
         return process;
