@@ -9,7 +9,7 @@ script:
   - sudo add-apt-repository -y ppa:beineri/opt-qt57-trusty
   - sudo apt-get update
   - sudo apt-get -y install qt57declarative qt57quickcontrols qt57quickcontrols2 qt57graphicaleffects qt57tools qt57svg mesa-common-dev libglu1-mesa-dev
-  - export PATH=/opt/qt57/bin:$PATH; cd tools && export PATH=/opt/qt57/bin:$PATH && cd .. 
+  - export PATH=/opt/qt57/bin:$PATH; cd tools && make bootstrap && cd .. 
   - export PATH=/opt/qt57/bin:$PATH; mkdir build && cd build && qmake .. && make && make clean && cd ..
   - tools/deploy_linux.sh build/quark
   - mv Quark-x86_64.AppImage build/deploy/Quark-x86_64.AppImage
