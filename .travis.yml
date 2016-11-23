@@ -3,6 +3,7 @@ dist: trusty
 language: generic
 os:
   - osx
+  - linux
 
 script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install qt5 p7zip; fi
@@ -14,7 +15,7 @@ script:
   - cd tools && make bootstrap && cd ..
   - mkdir build && cd build && qmake .. && make && make clean
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ../tools/deploy_linux.sh quark && mv Quark-x86_64.AppImage quark-linux-x64.AppImage; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ../tools/deploy_mac.sh quark.app && 7z a quark-osx-x64.7z quark.app; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ../tools/deploy_mac.sh quark.app && ../tools/fixTravis.sh quark.app /usr/local/Cellar/qt5/5.7.0/lib && 7z a quark-osx-x64.7z quark.app; fi
   - ls .
   - pwd
 
