@@ -3,7 +3,8 @@
 #  root directory (Makefile location)
 #
 TOOLS_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-TMP_PATH:=$(TOOLS_PATH)/../tmp
+PROJECT_PATH:=$(realpath $(TOOLS_PATH)/..)
+TMP_PATH:=$(PROJECT_PATH)/tmp
 
 OS:=$(shell $(TOOLS_PATH)/uname.sh -o)
 ARCH:=$(shell $(TOOLS_PATH)/uname.sh -a)
@@ -17,8 +18,8 @@ NODE_VERSION:=v7.1.0
 QPM_VERSION:=v0.10.0
 NPM_VERSION:=3.10.9
 
-NPM_PKGS:=$(sort $(dir $(wildcard $(TOOLS_PATH)/../example/*/)))
-NPM_PKGS+=$(TOOLS_PATH)/../src/node_path
+NPM_PKGS:=$(sort $(dir $(wildcard $(PROJECT_PATH)/example/*/)))
+NPM_PKGS+=$(PROJECT_PATH)/src/node_path
 
 #
 # Node
@@ -60,19 +61,69 @@ $(BIN_PATH)/npm: $(BIN_PATH)/npm-$(NPM_VERSION)
 	echo "require('./npm-$(NPM_VERSION)/bin/npm-cli.js')" > $(BIN_PATH)/npm
 	chmod +x $(BIN_PATH)/npm
 
+	
+#
+# appimagetool
+#
+$(BIN_PATH)/appimagetool:
+	curl -L -o $(BIN_PATH)/appimagetool "https://github.com/probonopd/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+	chmod +x $(BIN_PATH)/appimagetool
+
+#
+#linuxdeployqt
+#
+$(TMP_PATH)/linuxdeployqt-src:
+	git clone https://github.com/probonopd/linuxdeployqt $@
+
+$(TMP_PATH)/linuxdeployqt-build-$(OS)-$(ARCH): $(TMP_PATH)/linuxdeployqt-src
+	mkdir -p $@
+	cd $@ && qmake $(TMP_PATH)/linuxdeployqt-src && make
+
+$(BIN_PATH)/linuxdeployqt: $(TMP_PATH)/linuxdeployqt-build-$(OS)-$(ARCH)
+	cp $(TMP_PATH)/linuxdeployqt-build-$(OS)-$(ARCH)/linuxdeployqt/linuxdeployqt $@
+
+
+#
+#patchelf
+#
+$(TMP_PATH)/patchelf-src:
+	git clone https://github.com/NixOS/patchelf $@
+	cd $@ && ./bootstrap.sh
+
+$(TMP_PATH)/patchelf-build-$(OS)-$(ARCH): $(TMP_PATH)/patchelf-src
+	mkdir -p $@
+	cd $@ && $(TMP_PATH)/patchelf-src/configure --prefix=$@
+	cd $@ && make && make install
+
+$(BIN_PATH)/patchelf: $(TMP_PATH)/patchelf-build-$(OS)-$(ARCH)
+	cp $(TMP_PATH)/patchelf-build-$(OS)-$(ARCH)/bin/patchelf $@
+
+
 $(BIN_PATH):
 	mkdir -p $(BIN_PATH)
 
-
+clean:
+	rm -rf $(PROJECT_PATH)/example/*/node_modules
+	rm -rf $(PROJECT_PATH)/src/node_path/node_modules
+	rm -rf $(PROJECT_PATH)/vendor
+	rm -rf $(PROJECT_PATH)/tmp
+	
 qpm-install:
-	$(QPM_CMD) install
+	cd $(PROJECT_PATH) && $(QPM_CMD) install
 
 npm-install:
 	$(foreach pkg,$(NPM_PKGS),cd $(pkg);$(NPM_CMD) install)
 
-base-tools: $(BIN_PATH) $(NODE_CMD) $(QPM_CMD) $(BIN_PATH)/npm
-	@echo $(NPM_PKGS)
+BASE_TOOLS:=$(BIN_PATH) $(NODE_CMD) $(QPM_CMD) $(BIN_PATH)/npm
+LINUX_TOOLS:=$(BIN_PATH)/appimagetool $(BIN_PATH)/linuxdeployqt $(BIN_PATH)/patchelf
 
-bootstrap: base-tools qpm-install npm-install
-	
-.PHONY: base-tools npm-install qpm-install bootstrap
+TOOLS:=$(BASE_TOOLS)
+ifeq ($(OS), linux)
+TOOLS+=$(LINUX_TOOLS)
+endif
+
+tools: $(TOOLS)
+bootstrap: tools qpm-install npm-install
+
+test: $(TMP_PATH)/linuxdeployqt-build-$(OS)-$(ARCH)
+.PHONY: tools npm-install qpm-install bootstrap clean

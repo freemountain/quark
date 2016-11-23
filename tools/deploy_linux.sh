@@ -3,10 +3,13 @@
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../"
 TARGET_APP=$1
 TARGET_PATH=$(dirname "$TARGET_APP")
-DEPLOY_CMD="$PROJECT_PATH/tmp/linuxdeployqt-build/linuxdeployqt/linuxdeployqt"
-OS="$($PROJECT_PATH/tools/arch.sh -o)"
-ARCH="$($PROJECT_PATH/tools/arch.sh -a)"
+
+OS="$($PROJECT_PATH/tools/uname.sh -o)"
+ARCH="$($PROJECT_PATH/tools/uname.sh -a)"
 BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
+
+DEPLOY_CMD="$BIN_PATH/linuxdeployqt"
+
 
 cat << EOF > "$TARGET_PATH/quark.desktop"
 [Desktop Entry]
