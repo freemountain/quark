@@ -3,7 +3,8 @@
 #  root directory (Makefile location)
 #
 TOOLS_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-TMP_PATH:=$(TOOLS_PATH)/../tmp
+PROJECT_PATH:=$(realpath $(TOOLS_PATH)/..)
+TMP_PATH:=$(PROJECT_PATH)/tmp
 
 OS:=$(shell $(TOOLS_PATH)/uname.sh -o)
 ARCH:=$(shell $(TOOLS_PATH)/uname.sh -a)
@@ -17,8 +18,8 @@ NODE_VERSION:=v7.1.0
 QPM_VERSION:=v0.10.0
 NPM_VERSION:=3.10.9
 
-NPM_PKGS:=$(sort $(dir $(wildcard $(TOOLS_PATH)/../example/*/)))
-NPM_PKGS+=$(TOOLS_PATH)/../src/node_path
+NPM_PKGS:=$(sort $(dir $(wildcard $(PROJECT_PATH)/example/*/)))
+NPM_PKGS+=$(PROJECT_PATH)/src/node_path
 
 #
 # Node
@@ -65,7 +66,7 @@ $(BIN_PATH):
 
 
 qpm-install:
-	$(QPM_CMD) install
+	cd $(PROJECT_PATH) && $(QPM_CMD) install
 
 npm-install:
 	$(foreach pkg,$(NPM_PKGS),cd $(pkg);$(NPM_CMD) install)
