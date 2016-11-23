@@ -36,20 +36,20 @@ clean:
 	rm -rf $(WORKING_DIR)/setupfile
 	rm -rf $(WORKING_DIR)/src/node_path/node_modules
 
-test:
+test: $(WORKING_DIR)/setupfile
 	$(WORKING_DIR)/src/node_path/node_modules/.bin/istanbul cover --root $(WORKING_DIR)/src/node_path -x "**/__tests__/**" $(WORKING_DIR)/src/node_path/node_modules/.bin/_mocha $(shell find $(WORKING_DIR)/src/node_path -name "*Test.js" -not -path "*node_modules*") -- -R spec --require source-map-support/register
 
 ##
 #  builds the qt renderer app
 #
-$(WORKING_DIR)/build/quark.app: test $(WORKING_DIR)/build $(WORKING_DIR)/setupfile
+$(WORKING_DIR)/build/quark.app: test
 	cd $(WORKING_DIR)/build && qmake ..
 	cd $(WORKING_DIR)/build && make
 
 ##
 #  file to save setup status
 #
-$(WORKING_DIR)/setupfile:
+$(WORKING_DIR)/setupfile: $(WORKING_DIR)/build
 	cd $(WORKING_DIR)/src/node_path && npm install
 	qpm install
 	cd $(WORKING_DIR)/tools && make bootstrap
