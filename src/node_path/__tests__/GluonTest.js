@@ -14,6 +14,8 @@ describe("GluonTest", function() {
             return stream;
         });
 
+        const write = global.process.stdout.write;
+
         this.out = new Transform({
             transform(data, enc, cb) {
                 try {
@@ -22,6 +24,7 @@ describe("GluonTest", function() {
                 } catch(e) {
                     // because mocha uses stdout too, we need an easy way to filter it's
                     // messages. Looking for parseability is the easiest one :D
+                    write.call(process.stdout, data);
                 }
             } 
         });

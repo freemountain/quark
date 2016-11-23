@@ -2,7 +2,7 @@ const stream = require("stream");
 const Duplex = stream.Duplex;
 const GCD    = require("./GCD");
 const Store  = require("./Store");
-const View   = require("./Gluon");
+const Gluon  = require("./Gluon");
 
 module.exports = class Quark extends Duplex {
     static of(...args) {
@@ -17,11 +17,12 @@ module.exports = class Quark extends Duplex {
         // TODO options parsen und hinzufügen
         this.store   = Store.of(Object.assign({ qml, processes: [] }, state || {}));
         this.gcd     = GCD.of(intents || {}, mappings);
-        this.view    = View.of(qml);
+        this.view    = Gluon.of(qml);
         this.qml     = qml;
         this.timeout = 0;
+        this.buffer  = [];
 
-        this.store.on("data", this.push.bind(this));
+        this.store.on("data", this.buffer.push.bind(this.buffer));
         this.view
      	    .pipe(this.gcd)
 		    .pipe(this.store)
@@ -55,5 +56,10 @@ module.exports = class Quark extends Duplex {
         cb();
     }
 
-    _read() {}
+    _read() {
+        if(this.buffer.length === 0) return setTimeout(this._read.bind(this), 17);
+            
+        this.buffer.forEach(this.push.bind(this));
+        this.buffer.length = 0;
+    }
 }
