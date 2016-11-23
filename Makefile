@@ -52,6 +52,7 @@ $(WORKING_DIR)/build/quark.app: test $(WORKING_DIR)/build $(WORKING_DIR)/setupfi
 $(WORKING_DIR)/setupfile:
 	cd $(WORKING_DIR)/src/node_path && npm install
 	qpm install
+	cd $(WORKING_DIR)/tools && make bootstrap
 	@echo "setup done" > $(WORKING_DIR)/setupfile
 
 ##
