@@ -12,7 +12,7 @@ script:
   - export PATH=/opt/qt57/bin:$PATH
   - cd tools && make bootstrap && cd .. 
   - mkdir build && cd build && qmake .. && make && make clean
-  - ../deploy_linux.sh quark
+  - ../tools/deploy_linux.sh quark
   - ls .
 
 deploy:
