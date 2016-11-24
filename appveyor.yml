@@ -14,10 +14,9 @@ deploy:
   provider: GitHub
   auth_token:
     secure: u5Kpbjsb3snNA8/9K8ETWWSl8lYVPZTvXX+FlGAKTXFazOqsNAxPgk1pceOyev+S
-  artifact:
-    - path: build/release/quark-windows-x86.zip
-      name: quark-windows-x86
+  artifact: build/release/quark-windows-x86.zip
   draft: false
+  force_update: false
   prerelease: false
   on:
     branch: master
