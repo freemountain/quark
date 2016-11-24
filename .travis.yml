@@ -3,6 +3,7 @@ dist: trusty
 language: generic
 os:
   - osx
+  - linux
 
 script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install qt5 p7zip; fi
