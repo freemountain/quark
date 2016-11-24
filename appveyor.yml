@@ -15,8 +15,8 @@ deploy:
   auth_token:
     secure: u5Kpbjsb3snNA8/9K8ETWWSl8lYVPZTvXX+FlGAKTXFazOqsNAxPgk1pceOyev+S
   artifact:
-    path: build/release/quark-windows-x86.zip
-    name: quark-windows-x86
+    - path: build/release/quark-windows-x86.zip
+      name: quark-windows-x86
   draft: false
   prerelease: false
   on:
