@@ -10,14 +10,16 @@
 #include <QMap>
 #include <QDir>
 #include <QJsonParseError>
+#include <QTextStream>
 
 #include "quarkprocess.h"
 #include "either.h"
+#include "logger.h"
 
 Q_DECLARE_METATYPE(QJsonParseError)
 
 
-class Environment : public QObject
+class Environment : public QObject, Logger
 {
     Q_OBJECT
 public:
@@ -37,8 +39,11 @@ public:
     QuarkProcess* startProcess(QString path);
     QuarkProcess* startProcess();
 
+    void printLine(QString msg);
+
 
 private:
+    QTextStream* out;
     QCommandLineParser* parser;
     QProcessEnvironment env;
     static QString hashPath(QString path);

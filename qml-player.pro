@@ -15,7 +15,8 @@ HEADERS += \
     src/cpp/rootstore.h \
     src/cpp/environment.h \
     src/cpp/quarkprocess.h \
-    src/cpp/either.h
+    src/cpp/either.h \
+    src/cpp/logger.h
 
 RESOURCES += qml.qrc
 

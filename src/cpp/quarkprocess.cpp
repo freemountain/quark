@@ -1,6 +1,5 @@
 #include "quarkprocess.h"
 
-#include <QDebug>
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QStandardPaths>
@@ -12,8 +11,9 @@
 
 #include "com/cutehacks/gel/gel.h"
 
-QuarkProcess::QuarkProcess(QProcessEnvironment env, QObject *parent) : QObject(parent)
+QuarkProcess::QuarkProcess(QProcessEnvironment env, Logger *log, QObject* parent) : QObject(parent)
 {
+    this->log = log;
     this->qmlEngine = new QQmlApplicationEngine(this);
     this->rootStore = new RootStore(this);
 
@@ -30,9 +30,10 @@ QuarkProcess::QuarkProcess(QProcessEnvironment env, QObject *parent) : QObject(p
     connect(&this->proc, &QProcess::readyReadStandardOutput, this, &QuarkProcess::onData);
     connect(this->rootStore, &RootStore::action, this, &QuarkProcess::onAction);
     connect(this, &QuarkProcess::loadQml, this, &QuarkProcess::handleLoadQml);
-    connect(&this->proc, &QProcess::errorOccurred, [=](const QProcess::ProcessError &error)  {
-        qDebug() << "error: " << error;
-    });
+    /*connect(&this->proc, &QProcess::errorOccurred, [ out ](const QProcess::ProcessError &error)  {
+        //out << QString("process error \n");
+        out.flush();
+    });*/
     connect(this->rootStore, &RootStore::data, [this](const QString &line)  {
         this->proc.write(line.toUtf8());
     });
@@ -55,7 +56,7 @@ void QuarkProcess::start(QString cmd, QStringList arguments) {
     if(info.isFile())
         this->proc.start(cmd, arguments);
     else
-        qDebug() << "could not find cmd: " << QDir::fromNativeSeparators(cmd);
+        this->log->printLine("could not find cmd: " + QDir::fromNativeSeparators(cmd));
 }
 
 void QuarkProcess::onData() {
@@ -70,7 +71,7 @@ void QuarkProcess::terminate() {
 }
 
 void QuarkProcess::handleLoadQml(QString path) {
-    qDebug() << "loadQml: " <<path;
+    this->log->printLine("loadQml: " + path);
     this->qmlEngine->load(QDir::toNativeSeparators(path));
 }
 
