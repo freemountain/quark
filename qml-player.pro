@@ -19,18 +19,32 @@ HEADERS += \
 
 RESOURCES += qml.qrc
 
-#copy node binary
-NODE_CMD = $$PWD/tmp/bin-$$system(tools/uname.sh -o)-$$system(tools/uname.sh -a)/node
-macx: copy_node.commands = $(COPY_DIR) $$NODE_CMD $$OUT_PWD/$$TARGET".app"/Contents/MacOS/
-linux: copy_node.commands = $(COPY_DIR) $$NODE_CMD $$OUT_PWD/
+OUT_PWD_WIN = $${OUT_PWD}
+OUT_PWD_WIN ~= s,/,\\,g
 
-#copy node_path
-macx: copy_node_path.commands = $(COPY_DIR) $$PWD/src/node_path $$OUT_PWD/$$TARGET".app"/Contents/Resources/
-linux: copy_node_path.commands = $(COPY_DIR) $$PWD/src/node_path $$OUT_PWD/
+NODE_CMD = $$PWD/tmp/bin-$$system(bash tools/uname.sh -o)-$$system(bash tools/uname.sh -a)/node
 
-#copy default app
-macx: copy_app.commands = $(COPY_DIR) $$PWD/example/default $$OUT_PWD/$$TARGET".app"/Contents/Resources/
-linux: copy_app.commands = $(COPY_DIR) $$PWD/example/default $$OUT_PWD/
+maxc {
+	copy_node.commands = $(COPY_DIR) $$NODE_CMD $$OUT_PWD/$$TARGET".app"/Contents/MacOS/
+	copy_node_path.commands = $(COPY_DIR) $$PWD/src/node_path $$OUT_PWD/$$TARGET".app"/Contents/Resources/
+	copy_app.commands = $(COPY_DIR) $$PWD/example/default $$OUT_PWD/$$TARGET".app"/Contents/Resources/
+}
+
+linux {
+	copy_node.commands = $(COPY_DIR) $$NODE_CMD $$OUT_PWD/
+	copy_node_path.commands = $(COPY_DIR) $$PWD/src/node_path $$OUT_PWD/
+	copy_app.commands = $(COPY_DIR) $$PWD/example/default $$OUT_PWD/
+}
+
+win32 {
+ 	NODE_CMD = $$PWD/tmp/bin-$$system(bash tools/uname.sh -o)-$$system(bash tools/uname.sh -a)/node.exe
+	OUT_PWD_WIN = $$shell_path($$OUT_PWD/release)
+	CONFIG(debug, debug|release): OUT_PWD_WIN = $$shell_path($$OUT_PWD/debug)
+	
+	copy_node.commands = $(COPY_FILE) $$shell_path($$NODE_CMD) $$OUT_PWD_WIN
+	copy_node_path.commands = $(COPY_DIR) $$shell_path($$PWD/src/node_path) $$OUT_PWD_WIN
+	copy_app.commands = $(COPY_DIR) $$shell_path($$PWD/example/default) $$OUT_PWD_WIN
+}
 
 first.depends = $(first) copy_node_path copy_app copy_node
 export(first.depends)

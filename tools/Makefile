@@ -26,7 +26,7 @@ NPM_PKGS+=$(PROJECT_PATH)/src/node_path
 #
 NODE_CMD:=$(BIN_PATH)/node
 ifeq ($(OS), windows)
-NODE_CMD=$(NODE_CMD).exe
+NODE_CMD=$(BIN_PATH)/node.exe
 endif
 
 $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH):
@@ -36,19 +36,23 @@ $(BIN_PATH)/node: $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)
 	cp $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)/bin/node $(BIN_PATH)/node
 	chmod +x $(BIN_PATH)/node
 
+$(BIN_PATH)/node.exe:
+	curl -o $@ https://nodejs.org/dist/$(NODE_VERSION)/win-$(NODE_ARCH)/node.exe
 
 #
 # qpm
 #
 QPM_CMD:=$(BIN_PATH)/qpm
 ifeq ($(OS), windows)
-QPM_CMD=$(QPM_CMD).exe
+QPM_CMD=$(BIN_PATH)/qpm.exe
 endif
 
 $(BIN_PATH)/qpm:
-	curl -o $(BIN_PATH)/qpm https://www.qpm.io/download/$(QPM_VERSION)/$(OS)_386/qpm
-	cp $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)/bin/node $(BIN_PATH)/node
-	chmod +x $(BIN_PATH)/qpm
+	curl -o $@ https://www.qpm.io/download/$(QPM_VERSION)/$(OS)_386/qpm
+	chmod +x $@
+
+$(BIN_PATH)/qpm.exe:
+	curl -o $@ https://www.qpm.io/download/$(QPM_VERSION)/windows_386/qpm.exe
 #
 # NPM
 #
