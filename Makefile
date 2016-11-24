@@ -1,7 +1,7 @@
 #export PATH=$PATH:/path/to/Qt/5.7/clang_64/bin
 #check for qpm
 
-.PHONY: test, build, run, clean
+.PHONY: test, build, run, clean, example/%
 
 ##
 #  use bash as shell
@@ -61,10 +61,15 @@ run: build
 	@echo "Running app"
 	$(WORKING_DIR)/build/quark.app/Contents/MacOS/quark $(APP)/package.json
 
+force:
+
+example/%: force
+	make run APP=$@
+
 clean:
 	rm -rf $(WORKING_DIR)/setupfile
 	rm -rf $(WORKING_DIR)/src/node_path/node_modules
-	cd $(BUILD_DIR) && make clean
+	cd $(WORKING_DIR)/tools && make clean
 	rm -rf $(BUILD_DIR)
 	rm -rf $(JS_DIR)/lib
 	rm -rf $(JS_DIR)/node_modules
@@ -74,6 +79,7 @@ test: $(OBJECTS) $(BUILD_DIR)/node_modules
 
 
 setup: $(WORKING_DIR)/setupfile
+	@echo "" > /dev/null
 
 ##
 #  builds the qt renderer app
@@ -85,6 +91,9 @@ $(BUILD_DIR)/quark.app: $(INSTALLED_OBJECTS) test
 ##
 #  adds the node modules to build dir
 #  for testing purposes
+#
+#  TODO: hier müssen die files einzeln kopiert werden,
+#  damit der änderungen checkt
 #  
 $(BUILD_DIR)/node_modules: $(WORKING_DIR)/setupfile
 	cp -r $(JS_DIR)/node_modules $@
@@ -94,8 +103,7 @@ $(BUILD_DIR)/node_modules: $(WORKING_DIR)/setupfile
 #
 $(WORKING_DIR)/setupfile:
 	mkdir -p $(BUILD_DIR)
-	cd $(WORKING_DIR)/src/node_path && npm install
-	qpm install
+	cd $(JS_DIR) && npm install
 	cd $(WORKING_DIR)/tools && make bootstrap
 	@echo "setup done" > $@
 
