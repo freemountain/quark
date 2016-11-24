@@ -116,7 +116,9 @@ QDir Environment::getDataPath() {
 QString Environment::getBundledAppPath() {
     QString result = NULL;
     #ifdef _WIN32
+    QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
 
+    result =  binPath + "/default/package.json";
     #elif __linux__
         QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
 

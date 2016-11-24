@@ -9,10 +9,19 @@ TMP_PATH:=$(PROJECT_PATH)/tmp
 OS:=$(shell $(TOOLS_PATH)/uname.sh -o)
 ARCH:=$(shell $(TOOLS_PATH)/uname.sh -a)
 
-BIN_PATH:=$(TMP_PATH)/bin-$(OS)-$(ARCH)
-
 NODE_OS:=$(shell $(TOOLS_PATH)/uname.sh -o -f node)
 NODE_ARCH:=$(shell $(TOOLS_PATH)/uname.sh -a -f node)
+
+ifeq ($(OS), windows)
+	OS:=windows
+	ARCH:=x86
+	NODE_OS:=win
+	NODE_ARCH:=x86
+endif
+
+BIN_PATH:=$(TMP_PATH)/bin-$(OS)-$(ARCH)
+
+
 
 NODE_VERSION:=v7.1.0
 QPM_VERSION:=v0.10.0
@@ -116,7 +125,10 @@ qpm-install:
 	cd $(PROJECT_PATH) && $(QPM_CMD) install
 
 npm-install:
-	$(foreach pkg,$(NPM_PKGS),cd $(pkg);$(NPM_CMD) install)
+	for pkg in $(NPM_PKGS) ; do \
+		cd $$pkg; \
+		$(NPM_CMD) install; \
+	done
 
 BASE_TOOLS:=$(BIN_PATH) $(NODE_CMD) $(QPM_CMD) $(BIN_PATH)/npm
 LINUX_TOOLS:=$(BIN_PATH)/appimagetool $(BIN_PATH)/linuxdeployqt $(BIN_PATH)/patchelf
