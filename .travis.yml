@@ -18,7 +18,12 @@ script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ../tools/deploy_mac.sh quark.app && ../tools/fixTravis.sh quark.app /usr/local/Cellar/qt5/5.7.0/lib && 7z a quark-osx-x64.7z quark.app; fi
   - ls .
   - pwd
-
+before_deploy:
+  - git config --global user.email "builds@travis-ci.com"
+  - git config --global user.name "Travis CI"
+  - export GIT_TAG=$TRAVIS_BRANCH-$TRAVIS_COMMIT
+  - git tag $GIT_TAG -a -m "Generated tag from TravisCI for build $TRAVIS_BUILD_NUMBER"
+  - git push -q https://github.com/freemountain/quark --tags
 deploy:
   - provider: releases
     api_key:
