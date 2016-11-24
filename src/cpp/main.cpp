@@ -3,24 +3,26 @@
 #include <QtGui/QGuiApplication>
 #include <QObject>
 #include <QtDebug>
+#include <QTextStream>
 
 #include "quarkprocess.h"
 #include "environment.h"
 
 int main(int argc, char *argv[])
 {
+    QTextStream out(stderr);
     QGuiApplication app(argc, argv);
 
     Environment* env = new Environment(app.arguments());
     QuarkProcess* proc;
 
-    qDebug() << "node:" << env->getCommand("node");
-    qDebug() << "NODE_PATH" << env->getProcEnv().value("NODE_PATH");
-    qDebug() << "script:" << env->getScriptPath();
-    qDebug() << "data:" << env->getDataPath().path();
-    qDebug() << "bundled app:" << env->getBundledAppPath();
+    out << "\nnode:" << env->getCommand("node");
+    out << "\nNODE_PATH" << env->getProcEnv().value("NODE_PATH");
+    out << "\nscript:" << env->getScriptPath();
+    out << "\ndata:" << env->getDataPath().path();
+    out << "\nbundled app:" << env->getBundledAppPath();
 
-
+    out.flush();
     if(env->getScriptPath() == "") {
         proc = env->startProcess(env->getBundledAppPath());
     } else {
