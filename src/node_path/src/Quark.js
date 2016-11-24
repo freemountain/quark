@@ -2,8 +2,11 @@ import { Duplex } from "stream";
 import GCD from "./GCD";
 import Store from "./Store";
 import Gluon from "./Gluon";
+import Statechart from "./Statechart";
 
 export default class Quark extends Duplex {
+    static Statechart = Statechart;
+
     static of(...args) {
         return new Quark(...args);
     }

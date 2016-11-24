@@ -22,9 +22,14 @@ var _Gluon = require("./Gluon");
 
 var _Gluon2 = _interopRequireDefault(_Gluon);
 
+var _Statechart = require("./Statechart");
+
+var _Statechart2 = _interopRequireDefault(_Statechart);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 class Quark extends _stream.Duplex {
+
     static of(...args) {
         return new Quark(...args);
     }
@@ -82,5 +87,6 @@ class Quark extends _stream.Duplex {
     }
 }
 exports.default = Quark;
+Quark.Statechart = _Statechart2.default;
 
 //# sourceMappingURL=Quark.js.map
