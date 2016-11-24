@@ -95,7 +95,7 @@ QString Environment::getShellCommand(QString name) {
 
         QString result =  proc.readAll(); // contains \n
         int n = result.size() - 1;
-        out.flush();
+
         return result.left(n);
     #else
         return NULL;
