@@ -8,13 +8,15 @@ build_script:
   - bash -lc "cd tools && mingw32-make bootstrap && cd .."
   - bash -lc "mkdir build && cd build && qmake .. && mingw32-make && ../tools/deploy_win.sh release/quark.exe"
   - bash -lc "cd build && mv release quark && rm -rf quark/*.o quark/*.cpp && 7z a quark-windows-x86.zip quark && ls && echo $APPVEYOR_BUILD_FOLDER"
-  - dir 
+  - dir
+artifacts:
+  - path: build/release/quark-windows-x86.zip
+    name: quark-windows-x86
 deploy:
   release: untagged-v$(appveyor_repo_commit)
   provider: GitHub
   auth_token:
     secure: u5Kpbjsb3snNA8/9K8ETWWSl8lYVPZTvXX+FlGAKTXFazOqsNAxPgk1pceOyev+S
-  artifact: build/release/quark-windows-x86.zip
   draft: false
   force_update: false
   prerelease: false
