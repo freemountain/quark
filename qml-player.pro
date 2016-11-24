@@ -9,14 +9,16 @@ include(vendor/vendor.pri)
 SOURCES += src/cpp/main.cpp \
     src/cpp/rootstore.cpp \
     src/cpp/environment.cpp \
-    src/cpp/quarkprocess.cpp
+    src/cpp/quarkprocess.cpp \
+    src/cpp/debugger.cpp
 
 HEADERS += \
     src/cpp/rootstore.h \
     src/cpp/environment.h \
     src/cpp/quarkprocess.h \
     src/cpp/either.h \
-    src/cpp/logger.h
+    src/cpp/logger.h \
+    src/cpp/debugger.h
 
 RESOURCES += qml.qrc
 
