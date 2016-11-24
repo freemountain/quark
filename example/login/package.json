@@ -1,0 +1,6 @@
+{
+  "name": "quark-login",
+  "version": "0.1.0",
+  "main": "main.js",
+  "initialQml": "index.qml"
+}
