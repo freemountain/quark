@@ -1,3 +1,5 @@
+init:
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 install:
   - set QTDIR=C:\Qt\5.7\mingw53_32
   - set PATH=%PATH%;%QTDIR%\bin;C:\MinGW\bin
@@ -19,3 +21,5 @@ deploy:
   prerelease: false
   on:
     appveyor_repo_tag: true
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
