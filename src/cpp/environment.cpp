@@ -42,7 +42,6 @@ QString Environment::getBundledCommand(QString name) {
 QString Environment::getSystemCommand(QString name) {
     #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
         QString files[] = {"/bin/", "/usr/bin/", "/usr/local/bin/"};
-        this->printLine("files" + sizeof(files) + files);
         for( unsigned int i = 0; i < 3; i = i + 1 )
         {
             this->printLine("get " + name);
@@ -89,7 +88,7 @@ QString Environment::getShellCommand(QString name) {
         }
 
         if (!proc.waitForFinished()) {
-            this->printLine("not finished);
+            this->printLine("not finished");
                 return nullptr;
         }
 
