@@ -1,4 +1,4 @@
-module.exports = class Intent {
+export default class Intent {
     static of(...args) {
         return new Intent(...args);
     }
@@ -21,4 +21,4 @@ module.exports = class Intent {
 
         return this;
     }
-};
+}

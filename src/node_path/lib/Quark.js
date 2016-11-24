@@ -1,18 +1,30 @@
 "use strict";
 
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
 var _assign = require("babel-runtime/core-js/object/assign");
 
 var _assign2 = _interopRequireDefault(_assign);
 
+var _stream = require("stream");
+
+var _GCD = require("./GCD");
+
+var _GCD2 = _interopRequireDefault(_GCD);
+
+var _Store = require("./Store");
+
+var _Store2 = _interopRequireDefault(_Store);
+
+var _Gluon = require("./Gluon");
+
+var _Gluon2 = _interopRequireDefault(_Gluon);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const stream = require("stream");
-const Duplex = stream.Duplex;
-const GCD = require("./GCD");
-const Store = require("./Store");
-const Gluon = require("./Gluon");
-
-module.exports = class Quark extends Duplex {
+class Quark extends _stream.Duplex {
     static of(...args) {
         return new Quark(...args);
     }
@@ -23,9 +35,9 @@ module.exports = class Quark extends Duplex {
         });
 
         // TODO options parsen und hinzufügen
-        this.store = Store.of((0, _assign2.default)({ qml, processes: [] }, state || {}));
-        this.gcd = GCD.of(intents || {}, mappings);
-        this.view = Gluon.of(qml);
+        this.store = _Store2.default.of((0, _assign2.default)({ qml, processes: [] }, state || {}));
+        this.gcd = _GCD2.default.of(intents || {}, mappings);
+        this.view = _Gluon2.default.of(qml);
         this.qml = qml;
         this.timeout = 0;
         this.buffer = [];
@@ -68,6 +80,7 @@ module.exports = class Quark extends Duplex {
         this.buffer.forEach(this.push.bind(this));
         this.buffer.length = 0;
     }
-};
+}
+exports.default = Quark;
 
 //# sourceMappingURL=Quark.js.map

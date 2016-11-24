@@ -1,10 +1,9 @@
-const stream    = require("stream");
-const Transform = stream.Transform;
-const assert    = require("assert");
-const set       = require("lodash.set");
-const Intent    = require("./Intent");
+import { Transform } from "stream";
+import assert from "assert";
+import set from "lodash.set";
+import Intent from "./Intent";
 
-module.exports = class GCD extends Transform {
+export default class GCD extends Transform {
     static of(...args) {
         return new GCD(...args);
     }
@@ -42,4 +41,4 @@ module.exports = class GCD extends Transform {
         this.push(Intent.of(intent, data.payload, this));
         cb();
     }
-};
+}

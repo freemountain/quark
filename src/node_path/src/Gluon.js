@@ -1,9 +1,8 @@
-const Stream     = require("stream");
-const Transform  = Stream.Transform;
-const Duplex     = Stream.Duplex;
-const JSONStream = require("jsonstream2");
-const Filter     = require("through2-filter");
-const Mapper     = require("through2-map");
+import { Duplex, Transform } from "stream";
+import Stream from "stream";
+import JSONStream from "jsonstream2";
+import Filter from "through2-filter";
+import Mapper from "through2-map";
 
 // hier das is wg qt seite komisch
 const JSONStringifier = () => new Transform({
@@ -14,7 +13,11 @@ const JSONStringifier = () => new Transform({
     }
 });
 
-class Gluon extends Duplex {
+export default class Gluon extends Duplex {
+    static opts = {
+        objectMode: true
+    };
+
     static of(...args) {
         return new Gluon(...args);
     }
@@ -96,9 +99,3 @@ class Gluon extends Duplex {
 
     _read() {}
 }
-
-Gluon.opts = {
-    objectMode: true
-};
-
-module.exports = Gluon;

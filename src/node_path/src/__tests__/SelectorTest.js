@@ -1,5 +1,5 @@
-const Selector   = require("../Selector");
-const { expect } = require("@circle/core-assert");
+import Selector from "../Selector";
+import { expect } from "@circle/core-assert";
 
 describe("SelectorTest", function() {
     it("uses a selector stream", function(done) {

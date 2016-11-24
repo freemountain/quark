@@ -1,9 +1,12 @@
 "use strict";
 
-const stream = require("stream");
-const Transform = stream.Transform;
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 
-module.exports = class Selector extends Transform {
+var _stream = require("stream");
+
+class Selector extends _stream.Transform {
     static of(...args) {
         return new Selector(...args);
     }
@@ -26,6 +29,7 @@ module.exports = class Selector extends Transform {
 
         return cb(null, selection);
     }
-};
+}
+exports.default = Selector;
 
 //# sourceMappingURL=Selector.js.map

@@ -1,5 +1,9 @@
 "use strict";
 
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
 var _stringify = require("babel-runtime/core-js/json/stringify");
 
 var _stringify2 = _interopRequireDefault(_stringify);
@@ -12,15 +16,23 @@ var _assign = require("babel-runtime/core-js/object/assign");
 
 var _assign2 = _interopRequireDefault(_assign);
 
+var _stream = require("stream");
+
+var _assert = require("assert");
+
+var _assert2 = _interopRequireDefault(_assert);
+
+var _lodash = require("lodash.set");
+
+var _lodash2 = _interopRequireDefault(_lodash);
+
+var _Intent = require("./Intent");
+
+var _Intent2 = _interopRequireDefault(_Intent);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const stream = require("stream");
-const Transform = stream.Transform;
-const assert = require("assert");
-const set = require("lodash.set");
-const Intent = require("./Intent");
-
-module.exports = class GCD extends Transform {
+class GCD extends _stream.Transform {
     static of(...args) {
         return new GCD(...args);
     }
@@ -31,7 +43,7 @@ module.exports = class GCD extends Transform {
         });
 
         this.intents = intents;
-        this.mappings = (0, _assign2.default)((0, _keys2.default)(intents).reduce((dest, key) => set(dest, this.toAction(key), key), {}), mappings);
+        this.mappings = (0, _assign2.default)((0, _keys2.default)(intents).reduce((dest, key) => (0, _lodash2.default)(dest, this.toAction(key), key), {}), mappings);
 
         this.mappingsString = (0, _stringify2.default)(this.mappings);
     }
@@ -41,19 +53,20 @@ module.exports = class GCD extends Transform {
     }
 
     _transform(data, enc, cb) {
-        assert(data && typeof data.type === "string", `Your action is in the wrong format. Expected an object with key type, but got '${ (0, _stringify2.default)(data) }' of type ${ typeof data }.`);
+        (0, _assert2.default)(data && typeof data.type === "string", `Your action is in the wrong format. Expected an object with key type, but got '${ (0, _stringify2.default)(data) }' of type ${ typeof data }.`);
 
         const key = this.mappings[data.type];
 
-        assert(typeof key === "string", `There is exists no mapping for '${ data.type }' in ${ this.mappingsString }.`);
+        (0, _assert2.default)(typeof key === "string", `There is exists no mapping for '${ data.type }' in ${ this.mappingsString }.`);
 
         const intent = this.intents[key];
 
-        assert(typeof intent === "function", `No intent found for '${ data.type }' -> '${ key }' in intents [${ (0, _keys2.default)(this.intents) }].`);
+        (0, _assert2.default)(typeof intent === "function", `No intent found for '${ data.type }' -> '${ key }' in intents [${ (0, _keys2.default)(this.intents) }].`);
 
-        this.push(Intent.of(intent, data.payload, this));
+        this.push(_Intent2.default.of(intent, data.payload, this));
         cb();
     }
-};
+}
+exports.default = GCD;
 
 //# sourceMappingURL=GCD.js.map

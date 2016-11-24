@@ -1,6 +1,6 @@
-const Intent     = require("../Intent");
-const sinon      = require("sinon");
-const { expect } = require("chai");
+import Intent from "../Intent";
+import sinon from "sinon";
+import { expect } from "chai";
 
 const undef = undefined // eslint-disable-line
 

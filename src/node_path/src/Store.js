@@ -1,11 +1,10 @@
-const stream    = require("stream");
-const Transform = stream.Transform;
-const assert    = require("assert");
-const Immutable = require("immutable");
-const Selector  = require("./Selector");
-const diff      = require("immutablediff");
+import { Transform } from "stream";
+import Immutable from "immutable";
+import Selector from "./Selector";
+import diff from "immutablediff";
+import assert from "assert";
 
-module.exports = class Store extends Transform {
+export default class Store extends Transform {
     static of(...args) {
         return new Store(...args);
     }
@@ -53,4 +52,4 @@ module.exports = class Store extends Transform {
     listen(path) {
         return this.pipe(Selector.of(path));
     }
-};
+}

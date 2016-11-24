@@ -1,7 +1,6 @@
-const sinon         = require("sinon");
-const { Transform } = require("stream");
-const { expect }    = require("@circle/core-assert");
-
+import sinon from "sinon";
+import { Transform } from "stream";
+import { expect } from "@circle/core-assert";
 import Gluon from "../Gluon";
 
 describe("GluonTest", function() {

@@ -1,8 +1,16 @@
 "use strict";
 
-const Intent = require("../Intent");
-const sinon = require("sinon");
-const { expect } = require("chai");
+var _Intent = require("../Intent");
+
+var _Intent2 = _interopRequireDefault(_Intent);
+
+var _sinon = require("sinon");
+
+var _sinon2 = _interopRequireDefault(_sinon);
+
+var _chai = require("chai");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const undef = undefined; // eslint-disable-line
 
@@ -10,13 +18,13 @@ describe("IntentTest", function () {
     it("uses the methods on an intent", function (done) {
         const results = [];
         const payload = {};
-        const action = sinon.spy();
-        const intent = Intent.of(action, payload, {
+        const action = _sinon2.default.spy();
+        const intent = _Intent2.default.of(action, payload, {
             write(result) {
                 try {
                     if (result.type !== "test4") return results.push(result);
 
-                    expect(results.concat(result)).to.eql([{
+                    (0, _chai.expect)(results.concat(result)).to.eql([{
                         type: "test",
                         payload: undef
                     }, {

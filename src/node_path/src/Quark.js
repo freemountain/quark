@@ -1,10 +1,9 @@
-const stream = require("stream");
-const Duplex = stream.Duplex;
-const GCD    = require("./GCD");
-const Store  = require("./Store");
-const Gluon  = require("./Gluon");
+import { Duplex } from "stream";
+import GCD from "./GCD";
+import Store from "./Store";
+import Gluon from "./Gluon";
 
-module.exports = class Quark extends Duplex {
+export default class Quark extends Duplex {
     static of(...args) {
         return new Quark(...args);
     }
@@ -62,4 +61,4 @@ module.exports = class Quark extends Duplex {
         this.buffer.forEach(this.push.bind(this));
         this.buffer.length = 0;
     }
-};
+}

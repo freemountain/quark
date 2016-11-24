@@ -1,14 +1,26 @@
 "use strict";
 
-const Gluon = require("../Gluon");
-const Quark = require("../quark");
-const sinon = require("sinon");
-const { expect } = require("@circle/core-assert");
-const { Duplex } = require("stream");
+var _Gluon = require("../Gluon");
+
+var _Gluon2 = _interopRequireDefault(_Gluon);
+
+var _Quark = require("../Quark");
+
+var _Quark2 = _interopRequireDefault(_Quark);
+
+var _sinon = require("sinon");
+
+var _sinon2 = _interopRequireDefault(_sinon);
+
+var _coreAssert = require("@circle/core-assert");
+
+var _stream = require("stream");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 describe("QuarkTest", function () {
     beforeEach(function () {
-        const stream = new Duplex({
+        const stream = new _stream.Duplex({
             objectMode: true,
 
             read() {
@@ -25,7 +37,7 @@ describe("QuarkTest", function () {
             }
         });
 
-        this.gluon = sinon.stub(Gluon, "of", () => stream); // eslint-disable-line
+        this.gluon = _sinon2.default.stub(_Gluon2.default, "of", () => stream); // eslint-disable-line
     });
 
     afterEach(function () {
@@ -33,7 +45,7 @@ describe("QuarkTest", function () {
     });
 
     it("uses quark", function (done) {
-        const quark = Quark.of({
+        const quark = _Quark2.default.of({
             initialState: {
                 test: "test"
             },
@@ -56,7 +68,7 @@ describe("QuarkTest", function () {
             qml: "test"
         });
 
-        expect(quark).to.exactly.produce([{
+        (0, _coreAssert.expect)(quark).to.exactly.produce([{
             processes: [],
             qml: "test",
             test: "test"

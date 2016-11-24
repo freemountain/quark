@@ -1,6 +1,8 @@
 const Quark = require("quark");
 const path  = require("path");
 
+console.log(Quark);
+
 const app = Quark.of({
     qml:          path.join(__dirname, "index.qml"),
     initialState: { count: 0 },

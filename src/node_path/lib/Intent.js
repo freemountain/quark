@@ -1,6 +1,9 @@
 "use strict";
 
-module.exports = class Intent {
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+class Intent {
     static of(...args) {
         return new Intent(...args);
     }
@@ -23,6 +26,7 @@ module.exports = class Intent {
 
         return this;
     }
-};
+}
+exports.default = Intent;
 
 //# sourceMappingURL=Intent.js.map

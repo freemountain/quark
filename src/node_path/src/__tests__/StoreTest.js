@@ -1,5 +1,5 @@
-const Store      = require("../Store");
-const { expect } = require("@circle/core-assert");
+import Store from "../Store";
+import { expect } from "@circle/core-assert";
 
 describe("StoreTest", function() {
     it("uses the methods on a store", function(done) {

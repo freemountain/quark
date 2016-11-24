@@ -1,8 +1,8 @@
-const Gluon      = require("../Gluon");
-const Quark      = require("../quark");
-const sinon      = require("sinon");
-const { expect } = require("@circle/core-assert");
-const { Duplex } = require("stream");
+import Gluon from "../Gluon";
+import Quark from "../Quark";
+import sinon from "sinon";
+import { expect } from "@circle/core-assert";
+import { Duplex } from "stream";
 
 describe("QuarkTest", function() {
     beforeEach(function() {

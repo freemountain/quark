@@ -1,7 +1,6 @@
-const stream    = require("stream");
-const Transform = stream.Transform;
+import { Transform } from "stream";
 
-module.exports = class Selector extends Transform {
+export default class Selector extends Transform {
     static of(...args) {
         return new Selector(...args);
     }
@@ -24,4 +23,4 @@ module.exports = class Selector extends Transform {
 
         return cb(null, selection);
     }
-};
+}

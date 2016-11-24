@@ -4,19 +4,23 @@ var _stringify = require("babel-runtime/core-js/json/stringify");
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
+var _sinon = require("sinon");
+
+var _sinon2 = _interopRequireDefault(_sinon);
+
+var _stream = require("stream");
+
+var _coreAssert = require("@circle/core-assert");
+
 var _Gluon = require("../Gluon");
 
 var _Gluon2 = _interopRequireDefault(_Gluon);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const sinon = require("sinon");
-const { Transform } = require("stream");
-const { expect } = require("@circle/core-assert");
-
 describe("GluonTest", function () {
     beforeEach(function () {
-        this.stdin = sinon.stub(global.process.stdin, "pipe", stream => {
+        this.stdin = _sinon2.default.stub(global.process.stdin, "pipe", stream => {
             // eslint-disable-line
             this.stream = stream; // eslint-disable-line
 
@@ -25,7 +29,7 @@ describe("GluonTest", function () {
 
         const write = global.process.stdout.write;
 
-        this.out = new Transform({ // eslint-disable-line
+        this.out = new _stream.Transform({ // eslint-disable-line
             transform(data, enc, cb) {
                 try {
                     JSON.parse(data);
@@ -39,7 +43,7 @@ describe("GluonTest", function () {
             }
         });
 
-        this.stdout = sinon.stub(global.process.stdout, "write", this.out.write.bind(this.out)); // eslint-disable-line
+        this.stdout = _sinon2.default.stub(global.process.stdout, "write", this.out.write.bind(this.out)); // eslint-disable-line
     });
 
     afterEach(function () {
@@ -48,7 +52,7 @@ describe("GluonTest", function () {
     });
 
     it("uses gluon to read", function (done) {
-        expect(_Gluon2.default.of("test")).to.produce([undefined, { // eslint-disable-line
+        (0, _coreAssert.expect)(_Gluon2.default.of("test")).to.produce([undefined, { // eslint-disable-line
             test: "test"
         }]).notify(done);
 
@@ -74,7 +78,7 @@ describe("GluonTest", function () {
     });
 
     it("uses gluon to write", function (done) {
-        expect(this.out) // eslint-disable-line
+        (0, _coreAssert.expect)(this.out) // eslint-disable-line
         .to.exactly.produce(["{\"type\":\"value\",\"payload\":{\"test\":\"test\"}}\n", "{\"type\":\"action\",\"payload\":{\"type\":\"loadQml\",\"payload\":{\"url\":\"path\"}}}\n", "{\"type\":\"value\",\"payload\":{\"qml\":\"test2\"}}\n", "{\"type\":\"action\",\"payload\":{\"type\":\"loadQml\",\"payload\":{\"url\":\"test2\"}}}\n", "{\"type\":\"action\",\"payload\":{\"type\":\"startProcess\",\"payload\":\"blub\\\\prog\\\\prog\"}}\n", "{\"type\":\"action\",\"payload\":{\"type\":\"killProcess\",\"payload\":\"blub\\\\prog\\\\prog\"}}\n"]).notify(done);
 
         const gluon = _Gluon2.default.of("path");

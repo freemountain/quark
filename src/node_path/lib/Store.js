@@ -1,19 +1,34 @@
 "use strict";
 
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
 var _stringify = require("babel-runtime/core-js/json/stringify");
 
 var _stringify2 = _interopRequireDefault(_stringify);
 
+var _stream = require("stream");
+
+var _immutable = require("immutable");
+
+var _immutable2 = _interopRequireDefault(_immutable);
+
+var _Selector = require("./Selector");
+
+var _Selector2 = _interopRequireDefault(_Selector);
+
+var _immutablediff = require("immutablediff");
+
+var _immutablediff2 = _interopRequireDefault(_immutablediff);
+
+var _assert = require("assert");
+
+var _assert2 = _interopRequireDefault(_assert);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const stream = require("stream");
-const Transform = stream.Transform;
-const assert = require("assert");
-const Immutable = require("immutable");
-const Selector = require("./Selector");
-const diff = require("immutablediff");
-
-module.exports = class Store extends Transform {
+class Store extends _stream.Transform {
     static of(...args) {
         return new Store(...args);
     }
@@ -30,15 +45,15 @@ module.exports = class Store extends Transform {
         // den immutable context gebracht werden
         // this.state = Immutable.fromJS(state);
 
-        this.state = Immutable.Map(state);
+        this.state = _immutable2.default.Map(state);
 
         this.push(this.state.toJSON());
     }
 
     onResult(cb, state) {
-        assert(state instanceof Immutable.Map, "unexpected state");
+        (0, _assert2.default)(state instanceof _immutable2.default.Map, "unexpected state");
 
-        const difference = diff(this.state, state).toJSON();
+        const difference = (0, _immutablediff2.default)(this.state, state).toJSON();
 
         if (difference.length === 0) return cb();
 
@@ -59,8 +74,9 @@ module.exports = class Store extends Transform {
     }
 
     listen(path) {
-        return this.pipe(Selector.of(path));
+        return this.pipe(_Selector2.default.of(path));
     }
-};
+}
+exports.default = Store;
 
 //# sourceMappingURL=Store.js.map

@@ -1,6 +1,6 @@
-const { expect } = require("@circle/core-assert");
-const GCD        = require("../GCD");
-const sinon      = require("sinon");
+import GCD from "../GCD";
+import { expect } from "@circle/core-assert";
+import sinon from "sinon";
 
 describe("GCDTest", function() {
     it("lets the gcd dispatch some intents", function(done) {
