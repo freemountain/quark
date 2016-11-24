@@ -6,7 +6,7 @@ const { Duplex } = require("stream");
 
 describe("QuarkTest", function() {
     beforeEach(function() {
-        this.stream = new Duplex({
+        const stream = new Duplex({
             objectMode: true,
 
             read() {
@@ -14,7 +14,7 @@ describe("QuarkTest", function() {
                     type:    "add",
                     payload: "guckguck"
                 }, {
-                    type:    "sub",
+                    type: "sub"
                 }].forEach(this.push.bind(this)), 30);
             },
 
@@ -23,11 +23,11 @@ describe("QuarkTest", function() {
             }
         });
 
-        this.gluon = sinon.stub(Gluon, "of", () => this.stream);
+        this.gluon = sinon.stub(Gluon, "of", () => stream); // eslint-disable-line
     });
 
     afterEach(function() {
-        this.gluon.restore();    
+        this.gluon.restore(); // eslint-disable-line
     });
 
     it("uses quark", function(done) {

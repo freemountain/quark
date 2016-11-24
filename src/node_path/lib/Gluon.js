@@ -1,16 +1,24 @@
-const Stream     = require("stream");
-const Transform  = Stream.Transform;
-const Duplex     = Stream.Duplex;
+"use strict";
+
+var _stringify = require("babel-runtime/core-js/json/stringify");
+
+var _stringify2 = _interopRequireDefault(_stringify);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const Stream = require("stream");
+const Transform = Stream.Transform;
+const Duplex = Stream.Duplex;
 const JSONStream = require("jsonstream2");
-const Filter     = require("through2-filter");
-const Mapper     = require("through2-map");
+const Filter = require("through2-filter");
+const Mapper = require("through2-map");
 
 // hier das is wg qt seite komisch
 const JSONStringifier = () => new Transform({
     objectMode: true,
 
     transform(chunk, enc, cb) {
-        cb(null, `${JSON.stringify(chunk)}\n`);
+        cb(null, `${ (0, _stringify2.default)(chunk) }\n`);
     }
 });
 
@@ -22,10 +30,7 @@ class Gluon extends Duplex {
     static Output(type) {
         const out = new Stream(Gluon.opts);
 
-        out
-            .pipe(Mapper(Gluon.opts, payload => ({ type, payload })))
-            .pipe(JSONStringifier())
-            .pipe(global.process.stdout);
+        out.pipe(Mapper(Gluon.opts, payload => ({ type, payload }))).pipe(JSONStringifier()).pipe(global.process.stdout);
 
         return out;
     }
@@ -36,13 +41,10 @@ class Gluon extends Duplex {
         });
 
         this.initialLoad = true;
-        this.qmlPath     = qmlPath;
-        this.valueOut    = Gluon.Output("value");
-        this.actionOut   = Gluon.Output("action");
-        this.actions     = global.process.stdin
-            .pipe(JSONStream.parse())
-            .pipe(Filter(Gluon.opts, msg => msg.type === "action"))
-            .pipe(Mapper(Gluon.opts, msg => msg.payload));
+        this.qmlPath = qmlPath;
+        this.valueOut = Gluon.Output("value");
+        this.actionOut = Gluon.Output("action");
+        this.actions = global.process.stdin.pipe(JSONStream.parse()).pipe(Filter(Gluon.opts, msg => msg.type === "action")).pipe(Mapper(Gluon.opts, msg => msg.payload));
 
         this.actions.on("data", data => this.push(data));
     }
@@ -53,7 +55,7 @@ class Gluon extends Duplex {
         this.initialLoad = false;
 
         this.actionOut.emit("data", {
-            type:    "loadQml",
+            type: "loadQml",
             payload: {
                 url
             }
@@ -63,14 +65,12 @@ class Gluon extends Duplex {
     }
 
     trim(path) {
-        return path
-            .slice(1)
-            .replace(/\//g, "\\");
+        return path.slice(1).replace(/\//g, "\\");
     }
 
     start(process) {
         this.actionOut.emit("data", {
-            type:    "startProcess",
+            type: "startProcess",
             payload: this.trim(process)
         });
 
@@ -79,7 +79,7 @@ class Gluon extends Duplex {
 
     kill(process) {
         this.actionOut.emit("data", {
-            type:    "killProcess",
+            type: "killProcess",
             payload: this.trim(process)
         });
 
@@ -102,3 +102,5 @@ Gluon.opts = {
 };
 
 module.exports = Gluon;
+
+//# sourceMappingURL=Gluon.js.map

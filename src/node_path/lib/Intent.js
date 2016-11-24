@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = class Intent {
     static of(...args) {
         return new Intent(...args);
@@ -5,9 +7,9 @@ module.exports = class Intent {
 
     constructor(intent, payload, stream) {
         this.timeout = 0;
-        this.intent  = intent.bind(this);
+        this.intent = intent.bind(this);
         this.payload = payload;
-        this.stream  = stream;
+        this.stream = stream;
     }
 
     after(timeout) {
@@ -22,3 +24,5 @@ module.exports = class Intent {
         return this;
     }
 };
+
+//# sourceMappingURL=Intent.js.map

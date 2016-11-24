@@ -2,24 +2,24 @@ const Intent     = require("../Intent");
 const sinon      = require("sinon");
 const { expect } = require("chai");
 
+const undef = undefined // eslint-disable-line
+
 describe("IntentTest", function() {
     it("uses the methods on an intent", function(done) {
         const results  = [];
-        const writeSpy = sinon.spy();
         const payload  = {};
         const action   = sinon.spy();
         const intent   = Intent.of(action, payload, {
             write(result) {
-                
                 try {
                     if(result.type !== "test4") return results.push(result);
 
                     expect(results.concat(result)).to.eql([{
                         type:    "test",
-                        payload: undefined
+                        payload: undef
                     }, {
                         type:    "test2",
-                        payload: undefined
+                        payload: undef
                     }, {
                         type:    "test3",
                         payload: {
@@ -27,13 +27,13 @@ describe("IntentTest", function() {
                         }
                     }, {
                         type:    "test4",
-                        payload: undefined
+                        payload: undef
                     }]);
                     return done();
                 } catch(e) {
                     return done(e);
                 }
-            }   
+            }
         });
 
         intent
@@ -42,6 +42,6 @@ describe("IntentTest", function() {
             .trigger("test2")
             .trigger("test3", { id: "test" })
             .after(20)
-            .trigger("test4")
+            .trigger("test4");
     });
 });

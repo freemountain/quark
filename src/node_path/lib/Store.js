@@ -1,9 +1,17 @@
-const stream    = require("stream");
+"use strict";
+
+var _stringify = require("babel-runtime/core-js/json/stringify");
+
+var _stringify2 = _interopRequireDefault(_stringify);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const stream = require("stream");
 const Transform = stream.Transform;
-const assert    = require("assert");
+const assert = require("assert");
 const Immutable = require("immutable");
-const Selector  = require("./Selector");
-const diff      = require("immutablediff");
+const Selector = require("./Selector");
+const diff = require("immutablediff");
 
 module.exports = class Store extends Transform {
     static of(...args) {
@@ -32,10 +40,10 @@ module.exports = class Store extends Transform {
 
         const difference = diff(this.state, state).toJSON();
 
-        if(difference.length === 0) return cb();
+        if (difference.length === 0) return cb();
 
         // TODO: diff here
-        console.error(`diff: ${JSON.stringify(difference)}`);
+        console.error(`diff: ${ (0, _stringify2.default)(difference) }`);
         this.state = state;
         this.push(this.state.toJSON());
 
@@ -45,7 +53,7 @@ module.exports = class Store extends Transform {
     _transform({ intent, payload }, enc, cb) {
         const result = intent(this.state, payload);
 
-        if(result.then) return result.then(this.onResult.bind(this, cb)).catch(cb);
+        if (result.then) return result.then(this.onResult.bind(this, cb)).catch(cb);
 
         return this.onResult(cb, result);
     }
@@ -54,3 +62,5 @@ module.exports = class Store extends Transform {
         return this.pipe(Selector.of(path));
     }
 };
+
+//# sourceMappingURL=Store.js.map

@@ -1,11 +1,10 @@
 const Selector   = require("../Selector");
-const sinon      = require("sinon");
 const { expect } = require("@circle/core-assert");
 
 describe("SelectorTest", function() {
     it("uses a selector stream", function(done) {
         expect(Selector.of("test/test/test"))
-            .to.exactly.produce("test", { test: "test" }, undefined)
+            .to.exactly.produce("test", { test: "test" }, undefined) // eslint-disable-line
             .on({
                 test: {
                     test: {

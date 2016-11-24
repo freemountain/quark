@@ -1,5 +1,4 @@
 const Store      = require("../Store");
-const sinon      = require("sinon");
 const { expect } = require("@circle/core-assert");
 
 describe("StoreTest", function() {
@@ -30,7 +29,7 @@ describe("StoreTest", function() {
                 intent:  (state, x) => state.mergeDeep(x),
                 payload: state1
             }, {
-                intent:  x => new Promise(resolve => resolve(x))
+                intent: x => new Promise(resolve => resolve(x))
             }, {
                 intent:  (state, x) => state.mergeDeep(x),
                 payload: state2
@@ -42,14 +41,14 @@ describe("StoreTest", function() {
         const loggedIn = {
             state: {
                 loggedIn: true
-            }        
+            }
         };
 
         const loggedOut = {
             state: {
                 loggedIn: false
             }
-        }
+        };
         const store = Store.of(loggedIn);
 
         expect(store.listen("state/loggedIn"))
@@ -59,5 +58,5 @@ describe("StoreTest", function() {
         store.write({ intent: state => state.mergeDeep(loggedOut) });
         store.write({ intent: state => state.mergeDeep(loggedOut) });
         store.write({ intent: state => state.mergeDeep(loggedIn) });
-    })
+    });
 });

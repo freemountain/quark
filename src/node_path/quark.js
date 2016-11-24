@@ -1,1 +1,1 @@
-module.exports = require("./src/Quark");
+module.exports = require("./lib/Quark");

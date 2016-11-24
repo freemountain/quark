@@ -30,56 +30,56 @@ describe("GCDTest", function() {
                     intents.onData.callCount === 1 &&
                     intents.blub.callCount === 1
                 ) return 1;
-                
+
                 return -1;
             })
             .on({
-                type: "data",
+                type:    "data",
                 payload: {
                     key: "test"
                 }
             }, {
-                type: "test",
+                type:    "test",
                 payload: {
                     key: "test2"
                 }
             })
-            .notify(done);    
-        });
+            .notify(done);
+    });
 
     it("produces an error when feeding malformed data", function() {
         const gcd = GCD.of();
 
-        try { 
-            gcd.write({})
+        try {
+            gcd.write({});
         } catch(e) {
             expect(e.message).to.equal("Your action is in the wrong format. Expected an object with key type, but got \'{}\' of type object.");
-        } 
+        }
     });
 
     it("produces an error for a non existing mapping", function() {
         const gcd = GCD.of();
 
-        try { 
+        try {
             gcd.write({
-                type: "test"    
-            })
+                type: "test"
+            });
         } catch(e) {
             expect(e.message).to.equal("There is exists no mapping for \'test\' in {}.");
-        } 
+        }
     });
 
     it("produces an error for an unknown action", function() {
         const gcd = GCD.of({}, {
-            test: "blub"    
+            test: "blub"
         });
 
-        try { 
+        try {
             gcd.write({
-                type: "test"    
-            })
+                type: "test"
+            });
         } catch(e) {
             expect(e.message).to.equal("No intent found for \'test\' -> \'blub\' in intents [].");
-        } 
+        }
     });
 });

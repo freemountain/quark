@@ -6,12 +6,12 @@ const Intent    = require("./Intent");
 
 module.exports = class GCD extends Transform {
     static of(...args) {
-        return new GCD(...args);    
+        return new GCD(...args);
     }
 
     constructor(intents = {}, mappings = {}) {
         super({
-            objectMode: true    
+            objectMode: true
         });
 
         this.intents  = intents;
@@ -40,6 +40,6 @@ module.exports = class GCD extends Transform {
         assert(typeof intent === "function", `No intent found for '${data.type}' -> '${key}' in intents [${Object.keys(this.intents)}].`);
 
         this.push(Intent.of(intent, data.payload, this));
-		cb();
+        cb();
     }
-}
+};
