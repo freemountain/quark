@@ -11,7 +11,6 @@ artifacts:
   - path: build/quark-windows-x86.zip
     name: quark-windows-x86
 deploy:
-  release: $(appveyor_repo_branch)-$(appveyor_repo_commit)
   provider: GitHub
   auth_token:
     secure: u5Kpbjsb3snNA8/9K8ETWWSl8lYVPZTvXX+FlGAKTXFazOqsNAxPgk1pceOyev+S
@@ -20,4 +19,4 @@ deploy:
   prerelease: false
   on:
     branch: master
-    tags: false
+    appveyor_repo_tag: true
