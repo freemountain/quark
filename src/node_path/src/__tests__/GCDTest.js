@@ -1,5 +1,5 @@
 import GCD from "../GCD";
-import { expect } from "@circle/core-assert";
+import { expect } from "expect-stream";
 import sinon from "sinon";
 
 describe("GCDTest", function() {

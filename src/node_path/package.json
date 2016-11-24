@@ -11,7 +11,7 @@
     "through2-map": "^3.0.0"
   },
   "devDependencies": {
-    "@circle/core-assert": "^0.3.2",
+    "expect-stream": "^0.1.0",
     "babel-cli": "^6.18.0",
     "babel-eslint": "^7.1.1",
     "babel-plugin-transform-class-properties": "^6.19.0",

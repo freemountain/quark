@@ -12,7 +12,7 @@ var _sinon = require("sinon");
 
 var _sinon2 = _interopRequireDefault(_sinon);
 
-var _coreAssert = require("@circle/core-assert");
+var _expectStream = require("expect-stream");
 
 var _stream = require("stream");
 
@@ -68,7 +68,7 @@ describe("QuarkTest", function () {
             qml: "test"
         });
 
-        (0, _coreAssert.expect)(quark).to.exactly.produce([{
+        (0, _expectStream.expect)(quark).to.exactly.produce([{
             processes: [],
             qml: "test",
             test: "test"

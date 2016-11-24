@@ -10,7 +10,7 @@ var _sinon2 = _interopRequireDefault(_sinon);
 
 var _stream = require("stream");
 
-var _coreAssert = require("@circle/core-assert");
+var _expectStream = require("expect-stream");
 
 var _Gluon = require("../Gluon");
 
@@ -52,7 +52,7 @@ describe("GluonTest", function () {
     });
 
     it("uses gluon to read", function (done) {
-        (0, _coreAssert.expect)(_Gluon2.default.of("test")).to.produce([undefined, { // eslint-disable-line
+        (0, _expectStream.expect)(_Gluon2.default.of("test")).to.produce([undefined, { // eslint-disable-line
             test: "test"
         }]).notify(done);
 
@@ -78,7 +78,7 @@ describe("GluonTest", function () {
     });
 
     it("uses gluon to write", function (done) {
-        (0, _coreAssert.expect)(this.out) // eslint-disable-line
+        (0, _expectStream.expect)(this.out) // eslint-disable-line
         .to.exactly.produce(["{\"type\":\"value\",\"payload\":{\"test\":\"test\"}}\n", "{\"type\":\"action\",\"payload\":{\"type\":\"loadQml\",\"payload\":{\"url\":\"path\"}}}\n", "{\"type\":\"value\",\"payload\":{\"qml\":\"test2\"}}\n", "{\"type\":\"action\",\"payload\":{\"type\":\"loadQml\",\"payload\":{\"url\":\"test2\"}}}\n", "{\"type\":\"action\",\"payload\":{\"type\":\"startProcess\",\"payload\":\"blub\\\\prog\\\\prog\"}}\n", "{\"type\":\"action\",\"payload\":{\"type\":\"killProcess\",\"payload\":\"blub\\\\prog\\\\prog\"}}\n"]).notify(done);
 
         const gluon = _Gluon2.default.of("path");

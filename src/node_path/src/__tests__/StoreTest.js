@@ -1,5 +1,5 @@
 import Store from "../Store";
-import { expect } from "@circle/core-assert";
+import { expect } from "expect-stream";
 
 describe("StoreTest", function() {
     it("uses the methods on a store", function(done) {

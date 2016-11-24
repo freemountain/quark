@@ -1,6 +1,6 @@
 import sinon from "sinon";
 import { Transform } from "stream";
-import { expect } from "@circle/core-assert";
+import { expect } from "expect-stream";
 import Gluon from "../Gluon";
 
 describe("GluonTest", function() {

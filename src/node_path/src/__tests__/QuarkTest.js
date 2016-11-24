@@ -1,7 +1,7 @@
 import Gluon from "../Gluon";
 import Quark from "../Quark";
 import sinon from "sinon";
-import { expect } from "@circle/core-assert";
+import { expect } from "expect-stream";
 import { Duplex } from "stream";
 
 describe("QuarkTest", function() {

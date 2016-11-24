@@ -1,5 +1,5 @@
 import Selector from "../Selector";
-import { expect } from "@circle/core-assert";
+import { expect } from "expect-stream";
 
 describe("SelectorTest", function() {
     it("uses a selector stream", function(done) {

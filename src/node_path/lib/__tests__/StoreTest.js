@@ -8,7 +8,7 @@ var _Store = require("../Store");
 
 var _Store2 = _interopRequireDefault(_Store);
 
-var _coreAssert = require("@circle/core-assert");
+var _expectStream = require("expect-stream");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -34,7 +34,7 @@ describe("StoreTest", function () {
             test: "test"
         };
 
-        (0, _coreAssert.expect)(_Store2.default.of(state1)).to.exactly.produce(state1, state2).on({
+        (0, _expectStream.expect)(_Store2.default.of(state1)).to.exactly.produce(state1, state2).on({
             intent: (state, x) => state.mergeDeep(x),
             payload: state1
         }, {
@@ -59,7 +59,7 @@ describe("StoreTest", function () {
         };
         const store = _Store2.default.of(loggedIn);
 
-        (0, _coreAssert.expect)(store.listen("state/loggedIn")).to.exactly.produce(true, false, true).notify(done);
+        (0, _expectStream.expect)(store.listen("state/loggedIn")).to.exactly.produce(true, false, true).notify(done);
 
         store.write({ intent: state => state.mergeDeep(loggedOut) });
         store.write({ intent: state => state.mergeDeep(loggedOut) });

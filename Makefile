@@ -51,13 +51,6 @@ INSTALLED_OBJECTS:= \
 
 export PATH:=$(QT):$(PATH)
 
-blub:
-	@echo $(INSTALLED_OBJECTS)
-
-#@echo $(SOURCES)
-#@echo $(OBJECTS)
-#@echo $(INSTALLED_OBJECTS)
-
 all: build
 
 build: $(BUILD_DIR)/quark.app
@@ -72,6 +65,9 @@ clean:
 	rm -rf $(WORKING_DIR)/setupfile
 	rm -rf $(WORKING_DIR)/src/node_path/node_modules
 	cd $(BUILD_DIR) && make clean
+	rm -rf $(BUILD_DIR)
+	rm -rf $(JS_DIR)/lib
+	rm -rf $(JS_DIR)/node_modules
 
 test: $(OBJECTS) $(BUILD_DIR)/node_modules
 	$(WORKING_DIR)/src/node_path/node_modules/.bin/istanbul cover --root $(BUILD_DIR)/src -x "**/__tests__/**" $(WORKING_DIR)/src/node_path/node_modules/.bin/_mocha $(shell find $(BUILD_DIR)/src -name "*Test.js" -not -path "*node_modules*") -- -R spec --require source-map-support/register
@@ -82,7 +78,7 @@ setup: $(WORKING_DIR)/setupfile
 ##
 #  builds the qt renderer app
 #
-$(BUILD_DIR)/quark.app: $(INSTALLED_OBJECTS)
+$(BUILD_DIR)/quark.app: $(INSTALLED_OBJECTS) test
 	cd $(BUILD_DIR) && qmake ..
 	cd $(BUILD_DIR) && make
 
