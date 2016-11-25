@@ -1,4 +1,4 @@
-# Quark
+# Quark [![Build Status](https://travis-ci.org/freemountain/quark.svg?branch=master)](https://travis-ci.org/freemountain/quark)[![Build status](https://ci.appveyor.com/api/projects/status/0o42xa30rxmhvdl6/branch/master?svg=true)](https://ci.appveyor.com/project/freemountain/quark/branch/master)
 ## :arrow_right: electron :heavy_minus_sign: chromium :heavy_plus_sign: Qt quick
 
 Quark is the easiest way to write and ship cross-platform desktop applications using JavaScript and QML. It uses Node.js 7.0 and Qt 5.7 under the hood.
@@ -98,7 +98,7 @@ This example can either be run by using the GUI app or by invoking the terminal.
 ```
 
 ## Downloads
-Prebuilt binaries for OSX can be found on the releases page.
+Prebuilt binaries can be found on the [releases page](https://github.com/freemountain/quark/releases)
 
 ## Development
 ## Building
@@ -108,7 +108,7 @@ Prebuilt binaries for OSX can be found on the releases page.
 ### OSX
 ```bash
 export PATH=$PATH:/path/to/Qt/5.7/clang_64/bin
-./tools/bootstrap.sh
+make bootstrap
 mkdir build
 cd build
 qmake ..
@@ -118,16 +118,14 @@ make
 ```
 
 ### WIN (using mingw)
-The created executable will only run on systems with Qt installed. The windeployqt script (called from tools/deploy_win.sh) dosent works.
-
 ```bash
 export PATH=$PATH:/c/Qt/5.7/mingw53_32/bin
 export PATH=$PATH:/c/Qt/Tools/mingw530_32/bin
-./tools/bootstrap.sh
+mingw32-make bootstrap
 mkdir build
 cd build
 qmake ..
-make
+mingw32-make
 #if you want to deploy:
 ./../tools/deploy_win.sh quark.exe /path/to/node.exe
 ```
@@ -136,7 +134,7 @@ make
 ```bash
 export PATH=/path/to/Qt/5.7/clang_64/bin:/path/to/linuxdeployqt:$PATH
 sudo apt-get install mesa-common-dev libglu1-mesa-dev patchelf
-./tools/bootstrap.sh
+make bootstrap
 mkdir build
 cd build
 qmake ..
