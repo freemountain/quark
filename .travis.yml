@@ -11,12 +11,12 @@ script:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get update; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get -y install qt57declarative qt57quickcontrols qt57quickcontrols2 qt57graphicaleffects qt57tools qt57svg mesa-common-dev libglu1-mesa-dev; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export PATH=/opt/qt57/bin:$PATH; fi
-  - cd tools && make bootstrap && cd ..
+  - make bootstrap
+  - make test
   - mkdir build && cd build && qmake .. && make && make clean
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ../tools/deploy_linux.sh quark && mv Quark-x86_64.AppImage quark-linux-x64.AppImage; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ../tools/deploy_mac.sh quark.app && ../tools/fixTravis.sh quark.app /usr/local/Cellar/qt5/5.7.0/lib && 7z a quark-osx-x64.7z quark.app; fi
   - ls .
-  - pwd
 deploy:
   - provider: releases
     api_key:

@@ -2,8 +2,8 @@
 ##
 #  root directory (Makefile location)
 #
-TOOLS_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-PROJECT_PATH:=$(realpath $(TOOLS_PATH)/..)
+PROJECT_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+TOOLS_PATH:=$(PROJECT_PATH)/tools
 TMP_PATH:=$(PROJECT_PATH)/tmp
 
 OS:=$(shell $(TOOLS_PATH)/uname.sh -o)
@@ -20,8 +20,6 @@ ifeq ($(OS), windows)
 endif
 
 BIN_PATH:=$(TMP_PATH)/bin-$(OS)-$(ARCH)
-
-
 
 NODE_VERSION:=v7.1.0
 QPM_VERSION:=v0.10.0
@@ -74,7 +72,7 @@ $(BIN_PATH)/npm: $(BIN_PATH)/npm-$(NPM_VERSION)
 	echo "require('./npm-$(NPM_VERSION)/bin/npm-cli.js')" > $(BIN_PATH)/npm
 	chmod +x $(BIN_PATH)/npm
 
-	
+
 #
 # appimagetool
 #
@@ -111,6 +109,48 @@ $(TMP_PATH)/patchelf-build-$(OS)-$(ARCH): $(TMP_PATH)/patchelf-src
 $(BIN_PATH)/patchelf: $(TMP_PATH)/patchelf-build-$(OS)-$(ARCH)
 	cp $(TMP_PATH)/patchelf-build-$(OS)-$(ARCH)/bin/patchelf $@
 
+#
+# js stuff
+#
+JS_SRC:=$(PROJECT_PATH)/src/node_path
+JS_OBJECTS:= \
+	$(foreach x, $(shell cd $(JS_SRC)/src && find . -type f -iname '*.js'), $(TMP_PATH)/node_path/lib/$(x)) \
+
+$(TMP_PATH)/node_path/lib/%.js: $(JS_SRC)/src/%.js
+	mkdir -p $(dir $@)
+	$(NODE_CMD) $(JS_SRC)/node_modules/eslint/bin/eslint.js $<
+	$(NODE_CMD) $(JS_SRC)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2017,es2016,node6 --plugins transform-runtime,transform-class-properties
+
+$(TMP_PATH)/node_path/quark.js:
+	mkdir -p $(dir $@)
+	cp  $(JS_SRC)/quark.js $@
+
+$(TMP_PATH)/node_path/package.json:
+	mkdir -p $(dir $@)
+	cp  $(JS_SRC)/package.json $@
+
+$(TMP_PATH)/node_path/node_modules: $(TMP_PATH)/node_path/package.json
+	cd $(TMP_PATH)/node_path; $(NPM_CMD) install
+
+js-transpile: $(JS_OBJECTS) $(TMP_PATH)/node_path/node_modules $(TMP_PATH)/node_path/quark.js
+
+js-test: $(JS_OBJECTS)
+	PATH=$(BIN_PATH):$$PATH  $(JS_SRC)/node_modules/.bin/istanbul cover --root $(TMP_PATH)/node_path -x "**/__tests__/**" $(PROJECT_PATH)/src/node_path/node_modules/.bin/_mocha $(shell find $(TMP_PATH)/node_path -name "*Test.js" -not -path "*node_modules*") -- -R spec --require source-map-support/register
+
+#
+# default build (only osx)
+#
+BUILD_DIR:=$(PROJECT_PATH)/build
+
+$(BUILD_DIR)/quark.app: js-transpile js-test
+	mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && qmake ..
+	cd $(BUILD_DIR) && make
+
+run: APP=$(PROJECT_PATH)/example/default
+run: $(BUILD_DIR)/quark.app
+	$(BUILD_DIR)/quark.app/Contents/MacOS/quark $(APP)/package.json
+
 
 $(BIN_PATH):
 	mkdir -p $(BIN_PATH)
@@ -120,7 +160,8 @@ clean:
 	rm -rf $(PROJECT_PATH)/src/node_path/node_modules
 	rm -rf $(PROJECT_PATH)/vendor
 	rm -rf $(PROJECT_PATH)/tmp
-	
+	rm -rf $(PROJECT_PATH)/build
+
 qpm-install:
 	cd $(PROJECT_PATH) && $(QPM_CMD) install
 
@@ -139,7 +180,7 @@ TOOLS+=$(LINUX_TOOLS)
 endif
 
 tools: $(TOOLS)
-bootstrap: tools qpm-install npm-install
+bootstrap: tools qpm-install npm-install js-transpile
+test: js-test
 
-test: $(TMP_PATH)/linuxdeployqt-build-$(OS)-$(ARCH)
-.PHONY: tools npm-install qpm-install bootstrap clean
+.PHONY: tools npm-install qpm-install bootstrap clean js-transpile js-test test
