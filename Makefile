@@ -118,8 +118,8 @@ JS_OBJECTS:= \
 
 $(TMP_PATH)/node_path/lib/%.js: $(JS_SRC)/src/%.js
 	mkdir -p $(dir $@)
-	$(JS_SRC)/node_modules/.bin/eslint $<
-	$(JS_SRC)/node_modules/.bin/babel $< --out-file $@ --source-maps --presets es2017,es2016,node6 --plugins transform-runtime,transform-class-properties
+	$(NODE_CMD) $(JS_SRC)/node_modules/.bin/eslint $<
+	$(NODE_CMD) $(JS_SRC)/node_modules/.bin/babel $< --out-file $@ --source-maps --presets es2017,es2016,node6 --plugins transform-runtime,transform-class-properties
 
 $(TMP_PATH)/node_path/quark.js:
 	mkdir -p $(dir $@)
