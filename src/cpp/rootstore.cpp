@@ -1,6 +1,6 @@
 #include "rootstore.h"
 
-#include <QDebug>
+#include <QTextStream>
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -14,6 +14,7 @@ QJsonValue RootStore::value() {
 }
 
 void RootStore::writeData(QString data) {
+    QTextStream out(stderr);
     QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
     QJsonObject msg = doc.object();
     QString type = msg.value("type").toString();
@@ -31,7 +32,8 @@ void RootStore::writeData(QString data) {
         return;
     }
 
-    qDebug() << "root store invalid line: " << data;
+    out << "root store invalid line: " << data;
+    out.flush();
 }
 
 void RootStore::trigger(QString type, QJsonValue payload) {

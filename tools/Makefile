@@ -9,10 +9,19 @@ TMP_PATH:=$(PROJECT_PATH)/tmp
 OS:=$(shell $(TOOLS_PATH)/uname.sh -o)
 ARCH:=$(shell $(TOOLS_PATH)/uname.sh -a)
 
-BIN_PATH:=$(TMP_PATH)/bin-$(OS)-$(ARCH)
-
 NODE_OS:=$(shell $(TOOLS_PATH)/uname.sh -o -f node)
 NODE_ARCH:=$(shell $(TOOLS_PATH)/uname.sh -a -f node)
+
+ifeq ($(OS), windows)
+	OS:=windows
+	ARCH:=x86
+	NODE_OS:=win
+	NODE_ARCH:=x86
+endif
+
+BIN_PATH:=$(TMP_PATH)/bin-$(OS)-$(ARCH)
+
+
 
 NODE_VERSION:=v7.1.0
 QPM_VERSION:=v0.10.0
@@ -26,7 +35,7 @@ NPM_PKGS+=$(PROJECT_PATH)/src/node_path
 #
 NODE_CMD:=$(BIN_PATH)/node
 ifeq ($(OS), windows)
-NODE_CMD=$(NODE_CMD).exe
+NODE_CMD=$(BIN_PATH)/node.exe
 endif
 
 $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH):
@@ -36,19 +45,23 @@ $(BIN_PATH)/node: $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)
 	cp $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)/bin/node $(BIN_PATH)/node
 	chmod +x $(BIN_PATH)/node
 
+$(BIN_PATH)/node.exe:
+	curl -o $@ https://nodejs.org/dist/$(NODE_VERSION)/win-$(NODE_ARCH)/node.exe
 
 #
 # qpm
 #
 QPM_CMD:=$(BIN_PATH)/qpm
 ifeq ($(OS), windows)
-QPM_CMD=$(QPM_CMD).exe
+QPM_CMD=$(BIN_PATH)/qpm.exe
 endif
 
 $(BIN_PATH)/qpm:
-	curl -o $(BIN_PATH)/qpm https://www.qpm.io/download/$(QPM_VERSION)/$(OS)_386/qpm
-	cp $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)/bin/node $(BIN_PATH)/node
-	chmod +x $(BIN_PATH)/qpm
+	curl -o $@ https://www.qpm.io/download/$(QPM_VERSION)/$(OS)_386/qpm
+	chmod +x $@
+
+$(BIN_PATH)/qpm.exe:
+	curl -o $@ https://www.qpm.io/download/$(QPM_VERSION)/windows_386/qpm.exe
 #
 # NPM
 #
@@ -112,7 +125,10 @@ qpm-install:
 	cd $(PROJECT_PATH) && $(QPM_CMD) install
 
 npm-install:
-	$(foreach pkg,$(NPM_PKGS),cd $(pkg);$(NPM_CMD) install)
+	for pkg in $(NPM_PKGS) ; do \
+		cd $$pkg; \
+		$(NPM_CMD) install; \
+	done
 
 BASE_TOOLS:=$(BIN_PATH) $(NODE_CMD) $(QPM_CMD) $(BIN_PATH)/npm
 LINUX_TOOLS:=$(BIN_PATH)/appimagetool $(BIN_PATH)/linuxdeployqt $(BIN_PATH)/patchelf

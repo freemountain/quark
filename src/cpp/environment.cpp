@@ -8,12 +8,12 @@
 #include <QStringList>
 #include <QJsonObject>
 #include <QJsonDocument>
-#include <QDebug>
 #include <QStandardPaths>
 #include <QFileInfo>
 
 Environment::Environment(QStringList args, QObject *parent) : QObject(parent)
 {
+    this->out = new QTextStream(stdout);
     this->parser = new QCommandLineParser();
     this->env = QProcessEnvironment::systemEnvironment();
 
@@ -42,17 +42,15 @@ QString Environment::getBundledCommand(QString name) {
 QString Environment::getSystemCommand(QString name) {
     #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
         QString files[] = {"/bin/", "/usr/bin/", "/usr/local/bin/"};
-        qDebug() << "files" << sizeof(files) << files;
         for( unsigned int i = 0; i < 3; i = i + 1 )
         {
-            qDebug() << "get " << name ;
+            this->printLine("get " + name);
             QString current = files[i] + name;
             QFileInfo info = QFileInfo(current);
             bool isFile = info.exists() && info.isFile();
             if(isFile) return current;
         }
     #endif
-
     return NULL;
 }
 
@@ -77,7 +75,7 @@ QString Environment::getCommand(QString name) {
     return info.isFile() && info.isExecutable() ? cmd : NULL;
 }
 
-QString Environment::getShellCommand(QString name) {
+QString Environment::getShellCommand(QString name) {    
     #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
         QProcess proc;
         QString cmd = "which " + name;
@@ -85,17 +83,18 @@ QString Environment::getShellCommand(QString name) {
         proc.start(shell, QStringList() << "-c" << cmd);
 
         if (!proc.waitForStarted()) {
-            qDebug() << "not started";
+            this->printLine("not started");
             return nullptr;
         }
 
         if (!proc.waitForFinished()) {
-            qDebug() << "not finished";
+            this->printLine("not finished");
                 return nullptr;
         }
 
         QString result =  proc.readAll(); // contains \n
         int n = result.size() - 1;
+
         return result.left(n);
     #else
         return NULL;
@@ -116,7 +115,9 @@ QDir Environment::getDataPath() {
 QString Environment::getBundledAppPath() {
     QString result = NULL;
     #ifdef _WIN32
+    QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
 
+    result =  binPath + "/default/package.json";
     #elif __linux__
         QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
 
@@ -155,7 +156,7 @@ QProcessEnvironment Environment::getProcEnv() {
     if(nodePath != NULL)
         procEnv.insert("NODE_PATH", QDir::toNativeSeparators(nodePath));
     else
-        qDebug() << "could not set NODE_PATH";
+        this->printLine("could not set NODE_PATH\n");
 
     return procEnv;
 }
@@ -168,9 +169,8 @@ QuarkProcess* Environment::startProcess(QString path) {
     Either<QMap<QString, QString>, QJsonParseError> mayJson = this->loadJson(path);
 
     if(mayJson.is2nd()) {
-        qDebug() << "Could not parse: " << path <<
-                    "error: " << mayJson.as2nd().errorString();
-
+        this->printLine("Could not parse: " + path +
+                    "error: " + mayJson.as2nd().errorString());
         return nullptr;
     }
 
@@ -184,7 +184,7 @@ QuarkProcess* Environment::startProcess(QString path) {
                << "--configPath" << this->getConfigPath()
                << "--shellPath" << QCoreApplication::applicationFilePath();
 
-    QuarkProcess* proc = new QuarkProcess(this->getProcEnv(), this);
+    QuarkProcess* proc = new QuarkProcess(this->getProcEnv(), this, this);
 
     if(json.contains("initialQml")) proc->handleLoadQml(json.value("initialQml"));
 
@@ -211,8 +211,6 @@ Either<QMap<QString, QString>, QJsonParseError> Environment::loadJson(QString pa
     json = QJsonDocument::fromJson(data.toUtf8(), &err).object();
 
     if(err.error != QJsonParseError::NoError) {
-        qDebug() << "Could not parse: " << path <<
-                    "error: " << err.errorString();
         return some(err);
     }
 
@@ -245,4 +243,10 @@ QString Environment::hashPath(QString path) {
     hash += (hash << 15);
 
     return QString::number(hash);
+}
+
+void Environment::printLine(QString msg) {
+    this->out->operator <<(msg);
+    this->out->operator <<("\n");
+    this->out->flush();
 }

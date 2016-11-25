@@ -4,5 +4,6 @@
         <file>src/qml/Quark/qmldir</file>
         <file>src/qml/Quark/jsonpath.js</file>
         <file>src/qml/Quark/ListModel.qml</file>
+        <file>src/qml/Debugger.qml</file>
     </qresource>
 </RCC>

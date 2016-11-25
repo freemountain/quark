@@ -9,13 +9,14 @@
 
 #include <QJsonValue>
 
+#include "logger.h"
 #include "rootstore.h"
 
 class QuarkProcess : public QObject
 {
     Q_OBJECT
 public:
-    explicit QuarkProcess(QProcessEnvironment, QObject *parent = 0);
+    explicit QuarkProcess(QProcessEnvironment, Logger *, QObject*);
 
 public slots:
     void start(QString path, QStringList arguments);
@@ -23,6 +24,7 @@ public slots:
     void handleLoadQml(QString path);
 
 private:
+    Logger* log;
     QProcess proc;
     QQmlApplicationEngine* qmlEngine;
     RootStore* rootStore;

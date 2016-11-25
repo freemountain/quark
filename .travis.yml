@@ -3,7 +3,7 @@ dist: trusty
 language: generic
 os:
   - osx
-
+  - linux
 script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install qt5 p7zip; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew link --force qt5; fi
@@ -17,7 +17,6 @@ script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ../tools/deploy_mac.sh quark.app && ../tools/fixTravis.sh quark.app /usr/local/Cellar/qt5/5.7.0/lib && 7z a quark-osx-x64.7z quark.app; fi
   - ls .
   - pwd
-
 deploy:
   - provider: releases
     api_key:
@@ -25,6 +24,7 @@ deploy:
     file: /home/travis/build/freemountain/quark/build/quark-linux-x64.AppImage
     skip_cleanup: true
     on:
+      tags: true
       repo: freemountain/quark
       condition: $TRAVIS_OS_NAME = linux
   - provider: releases
@@ -33,5 +33,6 @@ deploy:
     file: $TRAVIS_BUILD_DIR/build/quark-osx-x64.7z
     skip_cleanup: true
     on:
+      tags: true
       repo: freemountain/quark
       condition: $TRAVIS_OS_NAME = osx
