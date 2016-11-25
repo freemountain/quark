@@ -113,6 +113,8 @@ mkdir build
 cd build
 qmake ..
 make
+# on osx you can call the run target which will build, test and run quark
+make run APP=example/default
 #if you want to deploy:
 ./../tools/deploy_mac.sh quark.app
 ```
