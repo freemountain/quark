@@ -118,8 +118,8 @@ JS_OBJECTS:= \
 
 $(TMP_PATH)/node_path/lib/%.js: $(JS_SRC)/src/%.js
 	mkdir -p $(dir $@)
-	$(NODE_CMD) $(JS_SRC)/node_modules/.bin/eslint $<
-	$(NODE_CMD) $(JS_SRC)/node_modules/.bin/babel $< --out-file $@ --source-maps --presets es2017,es2016,node6 --plugins transform-runtime,transform-class-properties
+	$(NODE_CMD) $(JS_SRC)/node_modules/eslint/bin/eslint.js $<
+	$(NODE_CMD) $(JS_SRC)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2017,es2016,node6 --plugins transform-runtime,transform-class-properties
 
 $(TMP_PATH)/node_path/quark.js:
 	mkdir -p $(dir $@)
@@ -135,8 +135,7 @@ $(TMP_PATH)/node_path/node_modules: $(TMP_PATH)/node_path/package.json
 js-transpile: $(JS_OBJECTS) $(TMP_PATH)/node_path/node_modules $(TMP_PATH)/node_path/quark.js
 
 js-test: $(JS_OBJECTS)
-	$(JS_SRC)/node_modules/.bin/istanbul cover --root $(TMP_PATH)/node_path -x "**/__tests__/**" $(PROJECT_PATH)/src/node_path/node_modules/.bin/_mocha $(shell find $(TMP_PATH)/node_path -name "*Test.js" -not -path "*node_modules*") -- -R spec --require source-map-support/register
-
+	PATH=$(BIN_PATH):$$PATH  $(JS_SRC)/node_modules/.bin/istanbul cover --root $(TMP_PATH)/node_path -x "**/__tests__/**" $(PROJECT_PATH)/src/node_path/node_modules/.bin/_mocha $(shell find $(TMP_PATH)/node_path -name "*Test.js" -not -path "*node_modules*") -- -R spec --require source-map-support/register
 
 #
 # default build (only osx)
@@ -182,5 +181,6 @@ endif
 
 tools: $(TOOLS)
 bootstrap: tools qpm-install npm-install js-transpile
+test: js-test
 
-.PHONY: tools npm-install qpm-install bootstrap clean js-transpile
+.PHONY: tools npm-install qpm-install bootstrap clean js-transpile js-test test
