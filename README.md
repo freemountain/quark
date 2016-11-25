@@ -19,7 +19,7 @@ To wrap it all up, a basic Quark application just needs three files in order to 
 ## Example
 So let's implement a very primitive counter as a basic example of how to use this thing:
 
-### [package.json](https://github.com/freemountain/quark/blob/master/apps/counter/package.json)
+### [package.json](https://github.com/freemountain/quark/blob/master/example/counter/package.json)
 ```json
 {
   "name"    : "counter",
@@ -28,7 +28,7 @@ So let's implement a very primitive counter as a basic example of how to use thi
 }
 ```
 
-### [main.js](https://github.com/freemountain/quark/blob/master/apps/counter/main.js)
+### [main.js](https://github.com/freemountain/quark/blob/master/example/counter/main.js)
 ```js
 const Quark = require("quark");
 const path  = require("path");
@@ -43,7 +43,7 @@ Quark.of({
 });
 ```
 
-### [index.qml](https://github.com/freemountain/quark/blob/master/apps/counter/index.qml)
+### [index.qml](https://github.com/freemountain/quark/blob/master/example/counter/index.qml)
 ```qml
 import QtQuick 2.2
 import QtQuick.Controls 2.0
