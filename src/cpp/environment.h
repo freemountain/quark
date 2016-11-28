@@ -14,14 +14,16 @@
 
 #include "quarkprocess.h"
 #include "either.h"
-#include "logger.h"
+#include "logsource.h"
 
 Q_DECLARE_METATYPE(QJsonParseError)
 
 
-class Environment : public QObject, Logger
+class Environment : public QObject, public LogSource
 {
     Q_OBJECT
+    //Q_INTERFACES(LogSource)
+
 public:
     explicit Environment(QStringList = QStringList(), QObject *parent = 0);
 
@@ -41,6 +43,8 @@ public:
 
     void printLine(QString msg);
 
+signals:
+    void log(QString msg, QString topic = "log");
 
 private:
     QTextStream* out;

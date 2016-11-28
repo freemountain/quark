@@ -5,6 +5,8 @@
 #include <QString>
 #include <QByteArray>
 #include <QJsonValue>
+#include <QVariant>
+#include <QJSValue>
 
 class RootStore : public QObject
 {
@@ -20,11 +22,13 @@ private:
 
 signals:
     void valueChanged(QJsonValue val);
-    void action(QString type, QJsonValue payload);
-    void data(QString data);
+    void renderAction(QString type, QJsonValue payload);
+    void mainAction(QString type, QJsonValue payload);
+    void line(QByteArray line);
+    void log(QJSValue msg);
 
 public slots:
-    void writeData(QString data);
+    void writeLine(QString line);
     void trigger(QString type, QJsonValue payload);
 };
 

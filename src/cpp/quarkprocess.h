@@ -9,33 +9,42 @@
 
 #include <QJsonValue>
 
-#include "logger.h"
 #include "rootstore.h"
+#include "logsource.h"
 
-class QuarkProcess : public QObject
+
+class QuarkProcess : public QObject, public LogSource
 {
     Q_OBJECT
+    //Q_INTERFACES(LogSource)
+
 public:
-    explicit QuarkProcess(QProcessEnvironment, Logger *, QObject*);
+    explicit QuarkProcess(QProcessEnvironment, QObject*);
+    enum Source {
+            Renderer,
+            Main
+    };
 
 public slots:
     void start(QString path, QStringList arguments);
     void terminate();
-    void handleLoadQml(QString path);
+    void loadQml(QString path);
 
 private:
-    Logger* log;
     QProcess proc;
     QQmlApplicationEngine* qmlEngine;
     RootStore* rootStore;
 
 signals:
     void startProcess(QString path);
-    void loadQml(QString url);
+    void log(QString msg, QString topic = "log");
+    void action(QString type, QJsonValue payload, Source source);
+    void value(QJsonValue value);
 
 private slots:
-    void onData();
-    void onAction(QString type, QJsonValue payload);
+    void onStdOut();
+    void onStdErr();
+    void onMainAction(QString type, QJsonValue payload);
 };
 
 #endif // QUARKPROCESS_H

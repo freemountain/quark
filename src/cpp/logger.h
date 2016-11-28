@@ -4,11 +4,13 @@
 #include <QObject>
 #include <QString>
 
-class Logger
+class
 {
 public:
    virtual ~Logger() {}
-   virtual void printLine(QString msg) =0;
+
+public slots:
+    virtual void log(QString msg) = 0;
 };
 
 #endif // LOGGER_H

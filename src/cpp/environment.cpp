@@ -44,7 +44,6 @@ QString Environment::getSystemCommand(QString name) {
         QString files[] = {"/bin/", "/usr/bin/", "/usr/local/bin/"};
         for( unsigned int i = 0; i < 3; i = i + 1 )
         {
-            this->printLine("get " + name);
             QString current = files[i] + name;
             QFileInfo info = QFileInfo(current);
             bool isFile = info.exists() && info.isFile();
@@ -83,12 +82,12 @@ QString Environment::getShellCommand(QString name) {
         proc.start(shell, QStringList() << "-c" << cmd);
 
         if (!proc.waitForStarted()) {
-            this->printLine("not started");
+            emit log("not started");
             return nullptr;
         }
 
         if (!proc.waitForFinished()) {
-            this->printLine("not finished");
+            emit log("not finished");
                 return nullptr;
         }
 
@@ -156,7 +155,7 @@ QProcessEnvironment Environment::getProcEnv() {
     if(nodePath != NULL)
         procEnv.insert("NODE_PATH", QDir::toNativeSeparators(nodePath));
     else
-        this->printLine("could not set NODE_PATH\n");
+        emit log("could not set NODE_PATH\n");
 
     return procEnv;
 }
@@ -169,7 +168,7 @@ QuarkProcess* Environment::startProcess(QString path) {
     Either<QMap<QString, QString>, QJsonParseError> mayJson = this->loadJson(path);
 
     if(mayJson.is2nd()) {
-        this->printLine("Could not parse: " + path +
+        emit log("Could not parse: " + path +
                     "error: " + mayJson.as2nd().errorString());
         return nullptr;
     }
@@ -184,9 +183,9 @@ QuarkProcess* Environment::startProcess(QString path) {
                << "--configPath" << this->getConfigPath()
                << "--shellPath" << QCoreApplication::applicationFilePath();
 
-    QuarkProcess* proc = new QuarkProcess(this->getProcEnv(), this, this);
+    QuarkProcess* proc = new QuarkProcess(this->getProcEnv(), this);
 
-    if(json.contains("initialQml")) proc->handleLoadQml(json.value("initialQml"));
+    if(json.contains("initialQml")) proc->loadQml(json.value("initialQml"));
 
     connect(proc, &QuarkProcess::startProcess, [this](const QString &path)  {
         this->startProcess(path);

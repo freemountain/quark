@@ -9,7 +9,19 @@ ARCH="$($PROJECT_PATH/tools/uname.sh -a)"
 BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
 
 DEPLOY_CMD="$BIN_PATH/linuxdeployqt"
+NODE_CMD="$BIN_PATH/node"
+NPM_CMD="$BIN_PATH/npm"
+PRUNE_CMD="$NODE_CMD $NPM_CMD prune --production"
 
+pushd . > /dev/null
+
+cd "$TARGET_APP/node_path"
+$PRUNE_CMD
+
+cd "$TARGET_APP/default"
+$PRUNE_CMD
+
+popd > /dev/null
 
 cat << EOF > "$TARGET_PATH/quark.desktop"
 [Desktop Entry]

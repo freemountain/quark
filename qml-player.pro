@@ -10,7 +10,7 @@ SOURCES += src/cpp/main.cpp \
     src/cpp/rootstore.cpp \
     src/cpp/environment.cpp \
     src/cpp/quarkprocess.cpp \
-    src/cpp/debugger.cpp
+    src/cpp/quarkdebugger.cpp
 
 HEADERS += \
     src/cpp/rootstore.h \
@@ -18,7 +18,8 @@ HEADERS += \
     src/cpp/quarkprocess.h \
     src/cpp/either.h \
     src/cpp/logger.h \
-    src/cpp/debugger.h
+    src/cpp/logsource.h \
+    src/cpp/quarkdebugger.h
 
 RESOURCES += qml.qrc
 
@@ -29,9 +30,9 @@ OUT_PWD_WIN ~= s,/,\\,g
 !win32: NODE_CMD = $$PWD/tmp/bin-$$system(bash tools/uname.sh -o)-$$system(bash tools/uname.sh -a)/node
 
 macx {
-	copy_node.commands = $(COPY_DIR) $$NODE_CMD $$OUT_PWD/$$TARGET".app"/Contents/MacOS/
-	copy_node_path.commands = $(COPY_DIR) $$PWD/tmp/node_path $$OUT_PWD/$$TARGET".app"/Contents/Resources/
-	copy_app.commands = $(COPY_DIR) $$PWD/example/default $$OUT_PWD/$$TARGET".app"/Contents/Resources/
+        copy_node.commands = rsync -a $$NODE_CMD $$OUT_PWD/$$TARGET".app"/Contents/MacOS/
+        copy_node_path.commands = rsync -a $$PWD/tmp/node_path $$OUT_PWD/$$TARGET".app"/Contents/Resources/
+        copy_app.commands = rsync -a $$PWD/example/default $$OUT_PWD/$$TARGET".app"/Contents/Resources/
 }
 
 linux {

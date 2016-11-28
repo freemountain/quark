@@ -13,7 +13,7 @@ QJsonValue RootStore::value() {
     return this->currentValue;
 }
 
-void RootStore::writeData(QString data) {
+void RootStore::writeLine(QString data) {
     QTextStream out(stderr);
     QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
     QJsonObject msg = doc.object();
@@ -28,7 +28,7 @@ void RootStore::writeData(QString data) {
 
     if(type == "action") {
         QJsonObject p = payload.toObject();
-        emit action(p.value("type").toString(), p.value("payload"));
+        emit mainAction(p.value("type").toString(), p.value("payload"));
         return;
     }
 
@@ -46,5 +46,8 @@ void RootStore::trigger(QString type, QJsonValue payload) {
 
     msg.insert("payload", msgPayload);
 
-    emit data(QJsonDocument(msg).toJson(QJsonDocument::Compact) + "\n");
+    QString l = QString(QJsonDocument(msg).toJson(QJsonDocument::Compact) + "\n");
+
+    emit line(l.toUtf8());
+    emit renderAction(type, payload);
 }

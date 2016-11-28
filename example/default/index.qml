@@ -23,6 +23,7 @@ ApplicationWindow {
         text:        "Run"
 
         onAction: {
+            store.log({ h: "jjj", b: 90, v: false}, 5, Date);
             store.trigger("startProcess", url);
         }
     }

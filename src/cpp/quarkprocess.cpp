@@ -11,9 +11,8 @@
 
 #include "com/cutehacks/gel/gel.h"
 
-QuarkProcess::QuarkProcess(QProcessEnvironment env, Logger *log, QObject* parent) : QObject(parent)
+QuarkProcess::QuarkProcess(QProcessEnvironment env, QObject* parent) : QObject(parent)
 {
-    this->log = log;
     this->qmlEngine = new QQmlApplicationEngine(this);
     this->rootStore = new RootStore(this);
 
@@ -21,34 +20,49 @@ QuarkProcess::QuarkProcess(QProcessEnvironment env, Logger *log, QObject* parent
     com::cutehacks::gel::registerEngine(this->qmlEngine);
 
     this->proc.setReadChannel(QProcess::StandardOutput);
-    this->proc.setProcessChannelMode(QProcess::ForwardedErrorChannel);
+    this->proc.setProcessChannelMode(QProcess::SeparateChannels);
     this->proc.setProcessEnvironment(env);
+
+    connect(&this->proc, &QProcess::readyReadStandardError, this, &QuarkProcess::onStdErr);
+    connect(&this->proc, &QProcess::readyReadStandardOutput, this, &QuarkProcess::onStdOut);
+
 
     QQmlContext *rootCtx = this->qmlEngine->rootContext();
     rootCtx->setContextProperty("backend", rootStore);
 
-    connect(&this->proc, &QProcess::readyReadStandardOutput, this, &QuarkProcess::onData);
-    connect(this->rootStore, &RootStore::action, this, &QuarkProcess::onAction);
-    connect(this, &QuarkProcess::loadQml, this, &QuarkProcess::handleLoadQml);
-    /*connect(&this->proc, &QProcess::errorOccurred, [ out ](const QProcess::ProcessError &error)  {
-        //out << QString("process error \n");
-        out.flush();
-    });*/
-    connect(this->rootStore, &RootStore::data, [this](const QString &line)  {
-        this->proc.write(line.toUtf8());
+    connect(this->rootStore, &RootStore::mainAction, this, &QuarkProcess::onMainAction);
+    connect(this->rootStore, &RootStore::renderAction,[this](const QString &type, const QJsonValue &payload) {
+        emit action(type, payload, QuarkProcess::Source::Main);
+    });
+
+    connect(this->rootStore, &RootStore::line, [this](const QByteArray &line)  {
+        this->proc.write(line);
+    });
+
+    connect(this->rootStore, &RootStore::valueChanged, [this](const QJsonValue &val)  {
+        emit value(val);
+    });
+
+    connect(this->rootStore, &RootStore::log, [this](const QJSValue &msg)  {
+        emit log(msg.toVariant().toString() , "renderer");
     });
 }
 
-void QuarkProcess::onAction(QString type, QJsonValue payload) {
+void QuarkProcess::onMainAction(QString type, QJsonValue payload) {
     if(type == "loadQml") {
         QString url = payload.toObject().value("url").toString();
-        emit loadQml(url);
+        this->loadQml(url);
+        emit log("loadQml: " + url);
+        return;
     }
 
     if(type == "startProcess") {
         QString path = payload.toString();
         emit startProcess(path);
+        return;
     }
+
+    emit action(type, payload, QuarkProcess::Source::Main);
 }
 
 void QuarkProcess::start(QString cmd, QStringList arguments) {
@@ -56,13 +70,24 @@ void QuarkProcess::start(QString cmd, QStringList arguments) {
     if(info.isFile())
         this->proc.start(cmd, arguments);
     else
-        this->log->printLine("could not find cmd: " + QDir::fromNativeSeparators(cmd));
+        emit log("could not find cmd: " + QDir::fromNativeSeparators(cmd));
 }
 
-void QuarkProcess::onData() {
+void QuarkProcess::onStdOut() {
+    this->proc.setReadChannel(QProcess::StandardOutput);
+
     while(this->proc.canReadLine()) {
         QString data = QString(this->proc.readLine());
-        this->rootStore->writeData(data);
+        this->rootStore->writeLine(data);
+    };
+}
+
+void QuarkProcess::onStdErr() {
+    this->proc.setReadChannel(QProcess::StandardError);
+
+    while(this->proc.canReadLine()) {
+        QString data = QString(this->proc.readLine());
+        emit log(data, "main");
     };
 }
 
@@ -70,8 +95,8 @@ void QuarkProcess::terminate() {
     this->proc.terminate();
 }
 
-void QuarkProcess::handleLoadQml(QString path) {
-    this->log->printLine("loadQml: " + path);
+void QuarkProcess::loadQml(QString path) {
+    emit log("loadQml: " + path);
     this->qmlEngine->load(QDir::toNativeSeparators(path));
 }
 
