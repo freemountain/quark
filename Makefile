@@ -19,14 +19,19 @@ ifeq ($(OS), windows)
 	NODE_ARCH:=x86
 endif
 
+ifeq ($(OS), darwin)
+QT:=$(HOME)/Qt/5.7/clang_64/bin
+export PATH:=$(QT):$(PATH)
+endif
+
 BIN_PATH:=$(TMP_PATH)/bin-$(OS)-$(ARCH)
 
 NODE_VERSION:=v7.1.0
 QPM_VERSION:=v0.10.0
 NPM_VERSION:=3.10.9
 
-NPM_PKGS:=$(sort $(dir $(wildcard $(PROJECT_PATH)/example/*/)))
-NPM_PKGS+=$(PROJECT_PATH)/src/node_path
+NPM_PKGS:=$(addsuffix node_modules, $(wildcard $(PROJECT_PATH)/example/*/))
+NPM_PKGS+=$(PROJECT_PATH)/src/node_path/node_modules
 
 #
 # Node
@@ -72,6 +77,13 @@ $(BIN_PATH)/npm: $(BIN_PATH)/npm-$(NPM_VERSION)
 	echo "require('./npm-$(NPM_VERSION)/bin/npm-cli.js')" > $(BIN_PATH)/npm
 	chmod +x $(BIN_PATH)/npm
 
+BASE_TOOLS:=$(BIN_PATH) $(NODE_CMD) $(QPM_CMD) $(BIN_PATH)/npm
+LINUX_TOOLS:=$(BIN_PATH)/appimagetool $(BIN_PATH)/linuxdeployqt $(BIN_PATH)/patchelf
+
+TOOLS:=$(BASE_TOOLS)
+ifeq ($(OS), linux)
+TOOLS+=$(LINUX_TOOLS)
+endif
 
 #
 # appimagetool
@@ -116,7 +128,7 @@ JS_SRC:=$(PROJECT_PATH)/src/node_path
 JS_OBJECTS:= \
 	$(foreach x, $(shell cd $(JS_SRC)/src && find . -type f -iname '*.js'), $(TMP_PATH)/node_path/lib/$(x)) \
 
-$(TMP_PATH)/node_path/lib/%.js: $(JS_SRC)/src/%.js
+$(TMP_PATH)/node_path/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(NPM_PKGS)
 	mkdir -p $(dir $@)
 	$(NODE_CMD) $(JS_SRC)/node_modules/eslint/bin/eslint.js $<
 	$(NODE_CMD) $(JS_SRC)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2017,es2016,node6 --plugins transform-runtime,transform-class-properties
@@ -142,7 +154,7 @@ js-test: $(JS_OBJECTS)
 #
 BUILD_DIR:=$(PROJECT_PATH)/build
 
-$(BUILD_DIR)/quark.app: js-transpile js-test
+$(BUILD_DIR)/quark.app: js-transpile js-test qpm-install
 	mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && qmake ..
 	cd $(BUILD_DIR) && make
@@ -150,6 +162,11 @@ $(BUILD_DIR)/quark.app: js-transpile js-test
 run: APP=$(PROJECT_PATH)/example/default
 run: $(BUILD_DIR)/quark.app
 	$(BUILD_DIR)/quark.app/Contents/MacOS/quark $(APP)/package.json
+
+force:
+
+example/%: force
+	make run APP=$(PROJECT_PATH)/$@
 
 
 $(BIN_PATH):
@@ -162,25 +179,17 @@ clean:
 	rm -rf $(PROJECT_PATH)/tmp
 	rm -rf $(PROJECT_PATH)/build
 
-qpm-install:
+$(PROJECT_PATH)/vendor:
 	cd $(PROJECT_PATH) && $(QPM_CMD) install
 
-npm-install:
-	for pkg in $(NPM_PKGS) ; do \
-		cd $$pkg; \
-		$(NPM_CMD) install; \
-	done
+qpm-install: $(PROJECT_PATH)/vendor
 
-BASE_TOOLS:=$(BIN_PATH) $(NODE_CMD) $(QPM_CMD) $(BIN_PATH)/npm
-LINUX_TOOLS:=$(BIN_PATH)/appimagetool $(BIN_PATH)/linuxdeployqt $(BIN_PATH)/patchelf
+$(NPM_PKGS):
+	cd $(dir $@) && npm install
 
-TOOLS:=$(BASE_TOOLS)
-ifeq ($(OS), linux)
-TOOLS+=$(LINUX_TOOLS)
-endif
-
+npm-install: $(NPM_PKGS)
 tools: $(TOOLS)
 bootstrap: tools qpm-install npm-install js-transpile
 test: js-test
 
-.PHONY: tools npm-install qpm-install bootstrap clean js-transpile js-test test
+.PHONY: tools bootstrap clean test
