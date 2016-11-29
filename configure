@@ -1,14 +1,13 @@
 #!/bin/bash
 
+echo "Creating Makefile"
+
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    echo "implement"
-    exit 1
+    cat Makefile.default >> Makefile
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "Creating Makefile"
     echo "QT:=$HOME/Qt/5.7/clang_64/bin" > Makefile
     cat Makefile.default >> Makefile
     #make bootstrap -j4
-    echo "Configure Done"
 elif [[ "$OSTYPE" == "cygwin" ]]; then
     echo "implement"
     exit 1
@@ -25,3 +24,5 @@ else
     echo "implement"
     exit 1
 fi
+
+echo "Configure Done"
