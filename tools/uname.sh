@@ -17,7 +17,6 @@ case "$OSTYPE" in
   *)        echo "unknown: $OSTYPE" ; exit 1;
 esac
 
-
 format_node() {
   case "$arch" in
     x86_64) arch="x64";;
@@ -26,6 +25,7 @@ format_node() {
   esac
   if [[ "$os" = windows ]]; then
     os=win
+	arch=x86
   fi
 }
 while getopts "aof:" opt; do
@@ -48,6 +48,10 @@ case "$format" in
   node) format_node;;
   *)  echo "illegal format vale: $format. (valid: ${valid_formats[@]}))" ; exit 1;
 esac
+
+if [[ "$os" = windows ]]; then
+	arch=x86
+fi
 
 if [[ "$show_arch" = true ]]; then
 echo "$arch"
