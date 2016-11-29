@@ -12,6 +12,7 @@ QT_LIBS=$(dirname $(which qmake))
 DEPLOY_QT_DLLS=( "Widgets" "Svg" "QuickTemplates2" "QuickControls2" "Quick" "Qml" "Network" "Gui" "Core" )
 DEPLOY_QT_PLUGINS=( "bearer" "iconengines" "imageformats" "qmltooling"  )
 DEPLOY_QML_MODULES=( "Qt" "QtQml" "QtQuick" "QtQuick.2" "QtGraphicalEffects" )
+DEPLOY_COMPILER_RUNTIME=( "libgcc_s_dw2-1.dll" "libstdc++-6.dll" "libwinpthread-1.dll" )
 
 DEPLOY_CMD="$BIN_PATH/linuxdeployqt"
 NODE_CMD="$BIN_PATH/node.exe"
@@ -37,6 +38,16 @@ do
     cp -n "$QT_LIBS/Qt5$name.dll" "$TARGET_PATH/Qt5$name.dll"
 done
 
+#deploy platform plugins
+mkdir -p "$TARGET_PATH/platforms"
+cp -n "$QT_LIBS/../plugins/platforms/qwindows.dll" "$TARGET_PATH/platforms/qwindows.dll"
+
+#deploy compiler runtim
+for name in "${DEPLOY_COMPILER_RUNTIME[@]}"
+do
+    cp -n "$QT_LIBS/../../../Tools/mingw530_32/bin/$name" "$TARGET_PATH/$name"
+done
+exit
 #deploy plguins
 pushd . > /dev/null
 shopt -s globstar nullglob
