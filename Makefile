@@ -293,6 +293,10 @@ $(TMP_PATH)/node_path/node_modules: $(TMP_PATH)/node_path/package.json $(TOOLS)
 #
 $(BUILD_DIR)/quark.app: $(TMP_PATH)/node_path/node_modules $(TMP_PATH)/node_path/quark.js js-build qpm-install
 	mkdir -p $(BUILD_DIR)
+	mkdir -p $@
+	mkdir -p $@/Contents
+	mkdir -p $@/Contents/Resources
+	mkdir -p $@/Contents/MacOS
 	cd $(BUILD_DIR) && qmake ..
 	cd $(BUILD_DIR) && make
 
