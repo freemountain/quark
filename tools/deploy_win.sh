@@ -47,7 +47,7 @@ for name in "${DEPLOY_COMPILER_RUNTIME[@]}"
 do
     cp -n "$QT_LIBS/../../../Tools/mingw530_32/bin/$name" "$TARGET_PATH/$name"
 done
-exit
+
 #deploy plguins
 pushd . > /dev/null
 shopt -s globstar nullglob
