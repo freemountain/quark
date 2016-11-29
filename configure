@@ -1,0 +1,27 @@
+#!/bin/bash
+
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    echo "implement"
+    exit 1
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Creating Makefile"
+    echo "QT:=$HOME/Qt/5.7/clang_64/bin" > Makefile
+    cat Makefile.default >> Makefile
+    #make bootstrap -j4
+    echo "Configure Done"
+elif [[ "$OSTYPE" == "cygwin" ]]; then
+    echo "implement"
+    exit 1
+elif [[ "$OSTYPE" == "msys" ]]; then
+    echo "implement"
+    exit 1
+elif [[ "$OSTYPE" == "win32" ]]; then
+    echo "implement"
+    exit 1
+elif [[ "$OSTYPE" == "freebsd"* ]]; then
+    echo "implement"
+    exit 1
+else
+    echo "implement"
+    exit 1
+fi

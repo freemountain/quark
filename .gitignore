@@ -9,3 +9,4 @@ coverage
 src/node_path/node_modules
 *.swp
 tmp
+Makefile
