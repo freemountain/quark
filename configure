@@ -1,8 +1,6 @@
 #!/bin/sh
 set -e
 
-echo "Creating Makefile"
-
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 OS="$($PROJECT_PATH/tools/uname.sh -o)"
@@ -10,26 +8,6 @@ ARCH="$($PROJECT_PATH/tools/uname.sh -a)"
 
 BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
 BUILD_PATH="$PWD"
-
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    echo "" > /dev/null
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-    if [ -z "$QT_PATH" ]; then
-        QT_PATH="$HOME/Qt/5.7/clang_64/bin"
-    fi
-elif [[ "$OSTYPE" == "msys" ]]; then
-    echo "implement"
-    exit 1
-elif [[ "$OSTYPE" == "win32" ]]; then
-    echo "implement"
-    exit 1
-elif [[ "$OSTYPE" == "freebsd"* ]]; then
-    echo "implement"
-    exit 1
-else
-    echo "implement"
-    exit 1
-fi
 
 
 print_vars() {
@@ -55,14 +33,23 @@ esac
 done
 
 if [ -z "$QT_PATH" ]; then
-  echo "qt path is missing"
-  exit 1
+  if [[ "$OS" == "darwin" ]]; then
+    QT_PATH="$HOME/Qt/5.7/clang_64/bin"
+  fi
+
+  if [ ! -f "$QT_PATH/qmake" ]; then
+    echo "qt path is missing"
+    exit 1
+  fi
 fi
 
+echo "Creating Makefile"
 echo "PROJECT_PATH:=$PROJECT_PATH" > Makefile
 echo "QT:=$QT_PATH" >> Makefile
 
 cat "$PROJECT_PATH/Makefile.default" >> Makefile
+
+echo "Bootstrap environment"
 make bootstrap -j4
 
 $QT_PATH/qmake -o qmake.mk $PROJECT_PATH

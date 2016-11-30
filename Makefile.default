@@ -2,6 +2,7 @@
 ##
 #  root directory (Makefile location)
 #
+BUILD_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 TOOLS_PATH:=$(PROJECT_PATH)/tools
 TMP_PATH:=$(PROJECT_PATH)/tmp
 
@@ -36,22 +37,17 @@ include $(PROJECT_PATH)/tools/Build.mk
 include $(PROJECT_PATH)/tools/Development.mk
 include $(PROJECT_PATH)/tools/Package.mk
 
-##
-#
-# call qmake makefile
-#
-qmake:
-	$(MAKE) --makefile qmake.mk
+
 clean:
 	rm -rf $(PROJECT_PATH)/example/*/node_modules
 	rm -rf $(PROJECT_PATH)/src/node_path/node_modules
 	rm -rf $(PROJECT_PATH)/vendor
 	rm -rf $(PROJECT_PATH)/tmp
-	rm -rf $(PROJECT_PATH)/build
 	rm -f $(PROJECT_PATH)/Makefile
+	rm -rf $(BUILD_PATH)/*
 
-build: $(BUILD_DIR)/quark.app js-build
-bootstrap: $(TOOLS)
+build: cpp-build
+bootstrap: $(TOOLS) npm-install qpm-install
 test: js-test
 
 .PHONY: bootstrap clean build test run
