@@ -25,7 +25,7 @@ case $i in
     shift # past argument=value
     ;;
     *)
-    echo "Unkonw option: $i";
+    echo "Unknown option: $i";
     print_vars
     exit 1
     ;;
