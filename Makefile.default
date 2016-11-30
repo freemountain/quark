@@ -37,7 +37,6 @@ include $(PROJECT_PATH)/tools/Build.mk
 include $(PROJECT_PATH)/tools/Development.mk
 include $(PROJECT_PATH)/tools/Package.mk
 
-
 clean:
 	rm -rf $(PROJECT_PATH)/example/*/node_modules
 	rm -rf $(PROJECT_PATH)/src/node_path/node_modules

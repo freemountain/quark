@@ -4,7 +4,7 @@
 #
 force:
 
-$(BUILD_DIR)/quark.app/Contents/MacOS/quark:
+$(BUILD_PATH)/quark.app/Contents/MacOS/quark:
 	@if [ ! -f $@ ]; then \
     	echo "\\n\\n\\tPlease run 'make' before running the examples\\n\\n" && exit 1; \
 	fi
@@ -13,7 +13,7 @@ $(BUILD_DIR)/quark.app/Contents/MacOS/quark:
 #  runs the quark app at $(APP)
 #
 run: APP=$(PROJECT_PATH)/example/default
-run: $(BUILD_DIR)/quark.app/Contents/MacOS/quark
+run: $(BUILD_PATH)/quark.app/Contents/MacOS/quark
 	$< $(APP)/package.json
 
 ##

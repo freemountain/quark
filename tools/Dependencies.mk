@@ -1,5 +1,6 @@
 NPM_PKGS:=$(addsuffix node_modules, $(wildcard $(PROJECT_PATH)/example/*/))
 NPM_PKGS+=$(PROJECT_PATH)/tmp/node_path/node_modules
+NPM_PKGS+=$(PROJECT_PATH)/src/node_path/node_modules
 
 ##
 #  install qpm deps

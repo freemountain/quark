@@ -38,6 +38,9 @@ $(JS_BUILD)/node_modules: $(JS_BUILD)/package.json $(TOOLS)
 ################################
 
 cpp-build: js-build
+	mkdir -p $(BUILD_PATH)/quark.app
+	mkdir -p $(BUILD_PATH)/quark.app/Contents/Resources
+	mkdir -p $(BUILD_PATH)/quark.app/Contents/MacOS
 	$(MAKE) --makefile qmake.mk
 
 ################################
@@ -50,13 +53,13 @@ cpp-build: js-build
 $(JS_BUILD)/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(NPM_PKGS)
 	mkdir -p $(dir $@)
 	$(NODE_CMD) $(JS_BUILD)/node_modules/eslint/bin/eslint.js $<
-	$(NODE_CMD) $(JS_BUILD)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2017,es2016,node6 --plugins transform-runtime,transform-class-properties
+	$(JS_BUILD)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2017,es2016,node6 --plugins transform-runtime,transform-class-properties
 
 ##
 #  unit test js
 #
 js-test: $(JS_OBJECTS)
-	PATH=$(BIN_PATH):$$PATH $(JS_BUILD)/node_modules/.bin/istanbul cover --root $(JS_BUILD) -x "**/__tests__/**" $(JS_BUILD)/node_path/node_modules/.bin/_mocha $(shell find $(JS_BUILD) -name "*Test.js" -not -path "*node_modules*") -- -R spec --require source-map-support/register
+	PATH=$(BIN_PATH):$$PATH $(JS_BUILD)/node_modules/.bin/istanbul cover --root $(JS_BUILD) -x "**/__tests__/**" $(JS_BUILD)/node_modules/.bin/_mocha $(shell find $(JS_BUILD) -name "*Test.js" -not -path "*node_modules*") -- -R spec --require source-map-support/register
 
 js-build: js-test
 
