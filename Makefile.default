@@ -34,6 +34,7 @@ include $(PROJECT_PATH)/tools/Tools.mk
 include $(PROJECT_PATH)/tools/Dependencies.mk
 include $(PROJECT_PATH)/tools/Build.mk
 include $(PROJECT_PATH)/tools/Development.mk
+include $(PROJECT_PATH)/tools/Package.mk
 
 ##
 #

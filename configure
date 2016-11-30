@@ -1,16 +1,22 @@
-#!/bin/bash
+#!/bin/sh
+set -e
 
 echo "Creating Makefile"
 
+PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+OS="$($PROJECT_PATH/tools/uname.sh -o)"
+ARCH="$($PROJECT_PATH/tools/uname.sh -a)"
+
+BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
+BUILD_PATH="$PWD"
+
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    cat Makefile.default >> Makefile
+    echo "" > /dev/null
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "QT:=$HOME/Qt/5.7/clang_64/bin" > Makefile
-    cat Makefile.default >> Makefile
-    #make bootstrap -j4
-elif [[ "$OSTYPE" == "cygwin" ]]; then
-    echo "implement"
-    exit 1
+    if [ -z "$QT_PATH" ]; then
+        QT_PATH="$HOME/Qt/5.7/clang_64/bin"
+    fi
 elif [[ "$OSTYPE" == "msys" ]]; then
     echo "implement"
     exit 1
@@ -24,5 +30,42 @@ else
     echo "implement"
     exit 1
 fi
+
+
+print_vars() {
+  echo "QT_PATH = ${QT_PATH}"
+  echo "OS = ${OS}"
+  echo "ARCH = ${ARCH}"
+  echo "BUILD_PATH = ${BUILD_PATH}"
+}
+
+for i in "$@"
+do
+case $i in
+    -q=*|--qt=*)
+    QT_PATH="${i#*=}"
+    shift # past argument=value
+    ;;
+    *)
+    echo "Unkonw option: $i";
+    print_vars
+    exit 1
+    ;;
+esac
+done
+
+if [ -z "$QT_PATH" ]; then
+  echo "qt path is missing"
+  exit 1
+fi
+
+echo "PROJECT_PATH:=$PROJECT_PATH" > Makefile
+echo "QT:=$QT_PATH" >> Makefile
+
+cat "$PROJECT_PATH/Makefile.default" >> Makefile
+make bootstrap -j4
+
+$QT_PATH/qmake -o qmake.mk $PROJECT_PATH
+
 
 echo "Configure Done"
