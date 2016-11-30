@@ -50,7 +50,7 @@ cpp-build: js-build
 ##
 #  js: lint, transpile and move to destination
 #
-$(JS_BUILD)/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(NPM_PKGS)
+$(JS_BUILD)/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(NPM_PKGS) $(JS_BUILD)/quark.js
 	mkdir -p $(dir $@)
 	$(NODE_CMD) $(JS_BUILD)/node_modules/eslint/bin/eslint.js $<
 	$(JS_BUILD)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2017,es2016,node6 --plugins transform-runtime,transform-class-properties
