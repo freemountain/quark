@@ -9,6 +9,10 @@ ARCH="$($PROJECT_PATH/tools/uname.sh -a)"
 BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
 BUILD_PATH="$PWD"
 
+MAKE_CMD="make"
+if [[ "$OS" == "windows" ]]; then
+    MAKE_CMD="mingw32-make"
+fi
 
 print_vars() {
   echo "QT_PATH = ${QT_PATH}"
@@ -50,7 +54,7 @@ echo "QT:=$QT_PATH" >> Makefile
 cat "$PROJECT_PATH/Makefile.default" >> Makefile
 
 echo "Bootstrap environment"
-make bootstrap -j4
+"$MAKE_CMD" bootstrap -j4
 
 $QT_PATH/qmake -o qmake.mk $PROJECT_PATH
 
