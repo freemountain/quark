@@ -13,8 +13,7 @@ script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./configure --qt=/usr/local/Cellar/qt5/5.7.0/bin; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./configure --qt=/opt/qt57/bin; fi
   - make -j4
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ../tools/deploy_linux.sh quark && mv Quark-x86_64.AppImage quark-linux-x64.AppImage; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then make package; fi
+  - make package
   - ls .
 deploy:
   - provider: releases
