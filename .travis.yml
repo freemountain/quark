@@ -10,8 +10,8 @@ script:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo add-apt-repository -y ppa:beineri/opt-qt57-trusty; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get update; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get -y install qt57declarative qt57quickcontrols qt57quickcontrols2 qt57graphicaleffects qt57tools qt57svg mesa-common-dev libglu1-mesa-dev; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; ./configure --qt=/usr/local/Cellar/qt5/5.7.0/bin; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; ./configure --qt=/opt/qt57/bin; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./configure --qt=/usr/local/Cellar/qt5/5.7.0/bin; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./configure --qt=/opt/qt57/bin; fi
   - make -j4
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ../tools/deploy_linux.sh quark && mv Quark-x86_64.AppImage quark-linux-x64.AppImage; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then make package; fi
