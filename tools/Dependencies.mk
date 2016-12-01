@@ -16,8 +16,8 @@ qpm-install: $(PROJECT_PATH)/vendor
 ##
 #  install all npm deps
 #
-$(NPM_PKGS):
-	cd $(dir $@) && npm install
+$(NPM_PKGS): $(TOOLS)
+	cd $(dir $@) && $(NPM_CMD) install
 
 ##
 #  shortcut

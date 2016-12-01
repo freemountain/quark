@@ -7,7 +7,7 @@ OS="$($PROJECT_PATH/tools/uname.sh -o)"
 ARCH="$($PROJECT_PATH/tools/uname.sh -a)"
 
 BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
-BUILD_PATH="$PWD"
+BUILD_PATH="$PWD/build"
 
 
 print_vars() {
@@ -35,6 +35,7 @@ done
 if [ -z "$QT_PATH" ]; then
   if [[ "$OS" == "darwin" ]]; then
     QT_PATH="$HOME/Qt/5.7/clang_64/bin"
+    CORES="4"
   fi
 
   if [ ! -f "$QT_PATH/qmake" ]; then
@@ -43,6 +44,13 @@ if [ -z "$QT_PATH" ]; then
   fi
 fi
 
+if [[ "$OS" == "linux" ]]; then
+  echo "linux"
+  CORES="$(grep -c ^processor /proc/cpuinfo)"
+fi
+
+echo "Creating Directory at $BUILD_PATH"
+mkdir -p $BUILD_PATH
 echo "Creating Makefile"
 echo "PROJECT_PATH:=$PROJECT_PATH" > Makefile
 echo "QT:=$QT_PATH" >> Makefile
@@ -50,7 +58,7 @@ echo "QT:=$QT_PATH" >> Makefile
 cat "$PROJECT_PATH/Makefile.default" >> Makefile
 
 echo "Bootstrap environment"
-make bootstrap -j4
+make bootstrap -j$CORES
 
 $QT_PATH/qmake -o qmake.mk $PROJECT_PATH
 

@@ -43,9 +43,11 @@ clean:
 	rm -rf $(PROJECT_PATH)/vendor
 	rm -rf $(PROJECT_PATH)/tmp
 	rm -f $(PROJECT_PATH)/Makefile
-	rm -rf $(BUILD_PATH)/*
+	rm -r $(BUILD_PATH)/build
 
 build: cpp-build
+	@echo "build done."
+
 bootstrap: $(TOOLS) npm-install qpm-install
 test: js-test
 
