@@ -25,7 +25,7 @@ export PATH:=$(QT):$(PATH)
 endif
 
 BIN_PATH:=$(TMP_PATH)/bin-$(OS)-$(ARCH)
-
+PHONY_TARGETS:=bootstrap test build clean all tools
 ##
 #  needs to be the first target defined
 #
@@ -45,8 +45,10 @@ clean:
 	rm -f $(PROJECT_PATH)/Makefile
 	rm -rf $(BUILD_PATH)/*
 
-build: cpp-build
-bootstrap: $(TOOLS) npm-install qpm-install
-test: js-test
 
-.PHONY: bootstrap clean build test run
+build: cpp-build
+bootstrap: tools npm-install qpm-install
+test: js-test
+tools: $(TOOLS)
+
+.PHONY: $(PHONY_TARGETS)

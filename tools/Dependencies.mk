@@ -5,21 +5,23 @@ NPM_PKGS+=$(PROJECT_PATH)/src/node_path/node_modules
 ##
 #  install qpm deps
 #
-$(PROJECT_PATH)/vendor: $(TOOLS)
+$(PROJECT_PATH)/vendor: tools
 	cd $(PROJECT_PATH) && $(QPM_CMD) install
 
 ##
 #  shortcut
 #
-qpm-install: $(PROJECT_PATH)/vendor
+qpm-install: $(PROJECT_PATH)/vendor tools
 
 ##
 #  install all npm deps
 #
-$(NPM_PKGS):
-	cd $(dir $@) && npm install
+$(NPM_PKGS): tools
+	cd $(dir $@) && $(NPM_CMD) install
 
 ##
 #  shortcut
 #
-npm-install: $(NPM_PKGS)
+npm-install: $(NPM_PKGS) tools
+
+PHONY_TARGET+=npm-install qpm-install

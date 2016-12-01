@@ -25,7 +25,7 @@ $(TMP_PATH)/linuxdeployqt-src:
 #
 $(TMP_PATH)/linuxdeployqt-build-$(OS)-$(ARCH): $(TMP_PATH)/linuxdeployqt-src
 	mkdir -p $@
-	cd $@ && qmake $(TMP_PATH)/linuxdeployqt-src && make
+	cd $@ && $(QT)/qmake $(TMP_PATH)/linuxdeployqt-src && $(MAKE)
 
 ##
 #  move to destination
@@ -55,7 +55,7 @@ $(TMP_PATH)/patchelf-src:
 $(TMP_PATH)/patchelf-build-$(OS)-$(ARCH): $(TMP_PATH)/patchelf-src
 	mkdir -p $@
 	cd $@ && $(TMP_PATH)/patchelf-src/configure --prefix=$@
-	cd $@ && make && make install
+	cd $@ && make && $(MAKE) install
 
 ##
 #  move to destination

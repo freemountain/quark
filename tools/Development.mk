@@ -21,3 +21,5 @@ run: $(BUILD_PATH)/quark.app/Contents/MacOS/quark
 #
 example/%: force
 	make run APP=$(PROJECT_PATH)/$@
+
+PHONY_TARGET+=run

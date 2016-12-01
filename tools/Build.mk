@@ -36,11 +36,17 @@ $(JS_BUILD)/node_modules: $(JS_BUILD)/package.json $(TOOLS)
 ################################
 ########### Build CPP ##########
 ################################
+CPP_BUILD_PATHS:=$(BUILD_PATH)
 
-cpp-build: js-build
-	mkdir -p $(BUILD_PATH)/quark.app
-	mkdir -p $(BUILD_PATH)/quark.app/Contents/Resources
-	mkdir -p $(BUILD_PATH)/quark.app/Contents/MacOS
+ifeq ($(OS), darwin)
+CPP_BUILD_PATHS+=$(BUILD_PATH)/quark.app
+CPP_BUILD_PATHS+=$(BUILD_PATH)/quark.app/Contents/Resources
+CPP_BUILD_PATHS+=$(BUILD_PATH)/quark.app/Contents/MacOS
+endif
+cpp-build-paths:
+	$(foreach path,$(CPP_BUILD_PATHS),mkdir -p $(path))
+
+cpp-build: js-build cpp-build-paths tools
 	$(MAKE) --makefile qmake.mk
 
 ################################
@@ -58,10 +64,11 @@ $(JS_BUILD)/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(NPM_PKGS) $(JS_BUILD)/quark.
 ##
 #  unit test js
 #
-js-test: $(JS_OBJECTS)
+js-test: $(JS_OBJECTS) tools
 	PATH=$(BIN_PATH):$$PATH $(JS_BUILD)/node_modules/.bin/istanbul cover --root $(JS_BUILD) -x "**/__tests__/**" $(JS_BUILD)/node_modules/.bin/_mocha $(shell find $(JS_BUILD) -name "*Test.js" -not -path "*node_modules*") -- -R spec --require source-map-support/register
 
-js-build: js-test
+js-build: js-test tools
 
+PHONY_TARGET+=js-build js-test cpp-build cpp-build-paths
 ################################
 ################################

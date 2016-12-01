@@ -15,13 +15,19 @@ endif
 #  add paths
 #
 $(TMP_PATH) $(BIN_PATH):
-	mkdir -p $@
+	if [ ! -d $@ ];then mkdir -p $@; fi
+	#mkdir -p $@
+
+##
+#download node
+#
+$(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)/bin/node: $(TMP_PATH)
+	curl https://nodejs.org/dist/$(NODE_VERSION)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH).tar.xz|tar -xJ -C $(TMP_PATH)
 
 ##
 #  add to destination on Unix
 #
-$(BIN_PATH)/node: $(TMP_PATH)
-	curl https://nodejs.org/dist/$(NODE_VERSION)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH).tar.xz|tar -xJ -C $(TMP_PATH)
+$(BIN_PATH)/node: $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)
 	cp $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)/bin/node $(BIN_PATH)/node
 	chmod +x $(BIN_PATH)/node
 
@@ -68,10 +74,15 @@ $(BIN_PATH)/qpm.exe:
 NPM_CMD:= $(NODE_CMD) $(BIN_PATH)/npm
 	
 ##
-#  install npm on windows
+#  download npm
+#
+$(TMP_PATH)/npm-$(NPM_VERSION)/bin/npm-cli.js: $(TMP_PATH)
+	curl -L -0 "https://github.com/npm/npm/archive/v$(NPM_VERSION).tar.gz"|tar xz -C $(BIN_PATH)
+
+##
+#  install npm
 #
 $(BIN_PATH)/npm: $(BIN_PATH)
-	curl -L -0 "https://github.com/npm/npm/archive/v$(NPM_VERSION).tar.gz"|tar xz -C $(BIN_PATH)
 	echo "require('./npm-$(NPM_VERSION)/bin/npm-cli.js')" > $(BIN_PATH)/npm
 	chmod +x $(BIN_PATH)/npm
 

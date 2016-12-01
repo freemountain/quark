@@ -7,7 +7,9 @@ package:
 	cd $(APP) && macdeployqt $(APP_NAME) -qmldir=$(PROJECT_PATH)/src/qml -no-strip
 	$(PROJECT_PATH)/tools/fixTravis.sh $(APP)/$(APP_NAME) $(dir $(QT))lib
 	hdiutil create -volname QuarkInstaller -srcfolder $(APP)/$(APP_NAME) -ov -format UDZO $(PROJECT_PATH)/build/quark-osx-x64.dmg
-	
+
+PHONY_TARGET+=package
+
 endif
 
 ##
