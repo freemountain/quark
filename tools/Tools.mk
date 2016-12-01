@@ -27,7 +27,7 @@ $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)/bin/node: $(TMP_PATH)
 ##
 #  add to destination on Unix
 #
-$(BIN_PATH)/node: $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)
+$(BIN_PATH)/node: $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)/bin/node
 	cp $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)/bin/node $(BIN_PATH)/node
 	chmod +x $(BIN_PATH)/node
 
@@ -82,7 +82,7 @@ $(TMP_PATH)/npm-$(NPM_VERSION)/bin/npm-cli.js: $(TMP_PATH)
 ##
 #  install npm
 #
-$(BIN_PATH)/npm: $(BIN_PATH)
+$(BIN_PATH)/npm: $(BIN_PATH) $(TMP_PATH)/npm-$(NPM_VERSION)/bin/npm-cli.js
 	echo "require('./npm-$(NPM_VERSION)/bin/npm-cli.js')" > $(BIN_PATH)/npm
 	chmod +x $(BIN_PATH)/npm
 
