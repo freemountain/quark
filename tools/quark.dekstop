@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Quark
+Exec=AppRun %F
+Icon=default
+Comment=Edit this default file
+Terminal=true
