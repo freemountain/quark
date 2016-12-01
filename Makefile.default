@@ -5,6 +5,7 @@
 BUILD_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 TOOLS_PATH:=$(PROJECT_PATH)/tools
 TMP_PATH:=$(PROJECT_PATH)/tmp
+JS_SRC:=$(PROJECT_PATH)/src/node_path
 
 OS:=$(shell $(TOOLS_PATH)/uname.sh -o)
 ARCH:=$(shell $(TOOLS_PATH)/uname.sh -a)

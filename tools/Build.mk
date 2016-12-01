@@ -1,7 +1,6 @@
 ##
 #  default build (only osx)
 #
-JS_SRC:=$(PROJECT_PATH)/src/node_path
 JS_BUILD:=$(TMP_PATH)/node_path
 JS_OBJECTS:= \
 	$(foreach x, $(shell cd $(JS_SRC)/src && find . -type f -iname '*.js'), $(JS_BUILD)/lib/$(x)) \
