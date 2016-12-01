@@ -1,16 +1,41 @@
-package: APP=$(PROJECT_PATH)/build
-package: APP_NAME=quark.app
+##
+# osx
+#
 
 ifeq ($(OS), darwin)
-
-package:
-	cd $(APP) && macdeployqt $(APP_NAME) -qmldir=$(PROJECT_PATH)/src/qml -no-strip
-	$(PROJECT_PATH)/tools/fixTravis.sh $(APP)/$(APP_NAME) $(dir $(QT))lib
-	hdiutil create -volname QuarkInstaller -srcfolder $(APP)/$(APP_NAME) -ov -format UDZO $(PROJECT_PATH)/build/quark-osx-x64.dmg
-
-PHONY_TARGET+=package
-
+PACKAGE_TASK:= package-osx
 endif
+
+package-osx:
+	$(QT)/macdeployqt quark.app -qmldir=$(PROJECT_PATH)/src/qml -no-strip
+	$(PROJECT_PATH)/tools/fixTravis.sh $(BUILD_PATH)/quark.app $(dir $(QT))lib
+	hdiutil create -volname QuarkInstaller -srcfolder $(BUILD_PATH)/quark.app -ov -format UDZO $(BUILD_PATH)/quark-osx-x64.dmg
+
+	
+##
+# osx
+#
+
+ifeq ($(OS), linux)
+PACKAGE_TASK:= package-linux
+endif
+
+$(BUILD_PATH)/quark.desktop:
+	cp $(PROJECT_PATH)/tools/quark.desktop $@
+
+$(BUILD_PATH)/default.svg:
+	cp $(PROJECT_PATH)/quark.svg $@
+
+LINUXDEPLOY_CMD:="PATH=\"$(BIN_PATH):$(PATH)\" $(BIN_PATH)/linuxdeployqt"
+
+package-linux: $(BUILD_PATH)/default.svg $(BUILD_PATH)/quark.desktop
+	$(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip
+	$(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip -appimage
+
+
+package: $(PACKAGE_TASK)
+PHONY_TARGET+=package package-osx package-linux
+
 
 ##
 #  for building random apps
