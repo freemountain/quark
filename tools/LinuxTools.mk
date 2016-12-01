@@ -57,6 +57,8 @@ $(TMP_PATH)/patchelf-build-$(OS)-$(ARCH): $(TMP_PATH)/patchelf-src
 	cd $@ && $(TMP_PATH)/patchelf-src/configure --prefix=$@
 	cd $@ && make && make install
 
+$(BIN_PATH)/patchelf: $(TMP_PATH)/patchelf-build-$(OS)-$(ARCH)
+	cp $</bin/patchelf $@
 ##
 #  move to destination
 #
