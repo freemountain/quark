@@ -15,10 +15,10 @@ $(BUILD_PATH)/quark.desktop:
 $(BUILD_PATH)/default.svg:
 	cp $(PROJECT_PATH)/quark.svg $@
 
-LINUXDEPLOY_CMD:="PATH=\"$(BIN_PATH):$(PATH)\" $(BIN_PATH)/linuxdeployqt"
+LINUXDEPLOY_CMD:=$(BIN_PATH)/linuxdeployqt
 
 package: $(BUILD_PATH)/default.svg $(BUILD_PATH)/quark.desktop
-	$(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip
-	$(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip -appimage
+	PATH=$(BIN_PATH):$(QT):$(PATH) $(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip
+	PATH=$(BIN_PATH):$(QT):$(PATH) $(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip -appimage
 
 endif
