@@ -9,6 +9,7 @@ endif
 
 ifeq ($(OS), linux)
 $(BUILD_PATH)/quark.desktop:
+	ls $(PROJECT_PATH)/tools
 	cp $(PROJECT_PATH)/tools/quark.desktop $@
 
 $(BUILD_PATH)/default.svg:
