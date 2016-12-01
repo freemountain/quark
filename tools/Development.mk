@@ -1,19 +1,28 @@
+ERROR_MSG:="\\n\\n\\tPlease run 'make' before running the examples\\n\\n"
+
 ##
 #  used to always force a trigger of
 #  an existing target
 #
 force:
 
+
+ifeq ($(OS), darwin)
+
 $(BUILD_PATH)/quark.app/Contents/MacOS/quark:
 	@if [ ! -f $@ ]; then \
-    	echo "\\n\\n\\tPlease run 'make' before running the examples\\n\\n" && exit 1; \
+    	echo $(ERROR_MSG) && exit 1; \
 	fi
+
+RUN_DEPS:=$(BUILD_PATH)/quark.app/Contents/MacOS/quark
+
+endif
 
 ##
 #  runs the quark app at $(APP)
 #
 run: APP=$(PROJECT_PATH)/example/default
-run: $(BUILD_PATH)/quark.app/Contents/MacOS/quark
+run: $(RUN_DEPS)
 	$< $(APP)/package.json
 
 ##

@@ -10,26 +10,6 @@ JS_OBJECTS:= \
 ########## Build C++ ###########
 ################################
 
-##
-#  copy entrypoint to TMP_PATH
-#
-$(JS_BUILD)/quark.js:
-	mkdir -p $(dir $@)
-	cp  $(JS_SRC)/quark.js $@
-
-##
-#  copy package.json to TMP_PATH
-#
-$(JS_BUILD)/package.json:
-	mkdir -p $(dir $@)
-	cp  $(JS_SRC)/package.json $@
-
-##
-#  install node modules in tmp
-#
-$(JS_BUILD)/node_modules: $(JS_BUILD)/package.json $(TOOLS)
-	cd $(JS_BUILD); $(NPM_CMD) install
-
 #########################
 ################################
 
