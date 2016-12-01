@@ -22,3 +22,11 @@ package: $(BUILD_PATH)/default.svg $(BUILD_PATH)/quark.desktop
 	PATH=$(BIN_PATH):$(QT):$(PATH) $(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip -appimage
 
 endif
+
+ifeq ($(OS), windows)
+
+package:
+	$(PROJECT_PATH)/tools/deploy_windows.sh $(BUILD_PATH)/release/quark.exe
+
+endif
+
