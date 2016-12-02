@@ -1,4 +1,5 @@
-NODE_MODULES:=$(addsuffix node_modules, $(wildcard $(PROJECT_PATH)/example/*/))
+#The old wildcard approach, didnt work on windows
+NODE_MODULES:=$(addprefix $(PROJECT_PATH)/example/, $(addsuffix /node_modules,  $(shell ls $(PROJECT_PATH)/example)))
 NODE_MODULES+=$(PROJECT_PATH)/src/node_path/node_modules
 NODE_MODULES+=$(TMP_PATH)/node_path/node_modules
 
@@ -43,3 +44,22 @@ $(TMP_PATH)/node_path/package.json: $(JS_SRC)/package.json
 #  shortcut
 #
 npm-install: $(NODE_MODULES)
+
+DEPENDENCIES:=npm-install qpm-install
+
+ifeq ($(OS), windows)
+
+$(JS_SRC)/%:
+	@echo "windows fix file: $@"
+
+dep-install-windows: $(TOOLS) $(TMP_PATH)/node_path/package.json
+	cd $(PROJECT_PATH) && $(QPM_CMD) install
+	for pkg in $(NODE_MODULES) ; do \
+		path=`dirname $$pkg`; \
+		cd $$path; \
+		$(NPM_CMD) install; \
+	done
+
+DEPENDENCIES:=dep-install-windows
+
+endif

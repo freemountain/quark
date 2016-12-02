@@ -5,8 +5,8 @@ install:
   - set PATH=%PATH%;%QTDIR%\bin;C:\Qt\Tools\mingw530_32\bin
 build_script:
   - dir
-  - bash -lc "./configure"
-  - bash -lc "mingw32-make -j4 && ../tools/deploy_win.sh release/quark.exe"
+  - bash -lc "mkdir build && cd build && ./../configure --qt=/c/Qt5.7/mingw53_32/bin"
+  - bash -lc "cd buid && mingw32-make -j4 && mingw32-make clean-build && mingw32-make package"
   - bash -lc "cd build && mv release quark && rm -rf quark/*.o quark/*.cpp && 7z a quark-windows-x86.zip quark && ls && echo $APPVEYOR_BUILD_FOLDER"
   - dir
 artifacts:

@@ -8,7 +8,7 @@ OS="$($PROJECT_PATH/tools/uname.sh -o)"
 ARCH="$($PROJECT_PATH/tools/uname.sh -a)"
 BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
 
-QT_LIBS=$(dirname $(which qmake))
+QT_LIBS=$(realpath $2)
 DEPLOY_QT_DLLS=( "Widgets" "Svg" "QuickTemplates2" "QuickControls2" "Quick" "Qml" "Network" "Gui" "Core" )
 DEPLOY_QT_PLUGINS=( "bearer" "iconengines" "imageformats" "qmltooling"  )
 DEPLOY_QML_MODULES=( "Qt" "QtQml" "QtQuick" "QtQuick.2" "QtGraphicalEffects" )

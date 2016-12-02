@@ -26,7 +26,7 @@ endif
 ifeq ($(OS), windows)
 
 package:
-	$(PROJECT_PATH)/tools/deploy_windows.sh $(BUILD_PATH)/release/quark.exe
+	$(PROJECT_PATH)/tools/deploy_win.sh $(BUILD_PATH)/release/quark.exe $(QT)
 
 endif
 

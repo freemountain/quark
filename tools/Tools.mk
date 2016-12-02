@@ -28,8 +28,10 @@ $(BIN_PATH)/node: $(TMP_PATH)
 ##
 #  add to destination on Windows
 #
-$(BIN_PATH)/node.exe:
-	curl -o $@ https://nodejs.org/dist/$(NODE_VERSION)/win-$(NODE_ARCH)/node.exe
+$(BIN_PATH)/node.exe: $(TMP_PATH) $(BIN_PATH)
+	if [ ! -f "$@" ]; then \
+		curl -o "$@" "https://nodejs.org/dist/$(NODE_VERSION)/win-$(NODE_ARCH)/node.exe"; \
+	fi
 
 ################################
 ################################
@@ -54,9 +56,10 @@ $(BIN_PATH)/qpm: $(BIN_PATH)
 ##
 #  install qpm on windows
 #
-$(BIN_PATH)/qpm.exe:
-	curl -o $@ https://www.qpm.io/download/$(QPM_VERSION)/windows_386/qpm.exe
-
+$(BIN_PATH)/qpm.exe: $(BIN_PATH)
+	if [ ! -f "$@" ]; then \
+		curl -o "$@" "https://www.qpm.io/download/$(QPM_VERSION)/windows_386/qpm.exe"; \
+	fi
 ################################
 ################################
 

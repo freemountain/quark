@@ -32,11 +32,11 @@ BIN_PATH:=$(TMP_PATH)/bin-$(OS)-$(ARCH)
 #
 all: build
 
-include $(PROJECT_PATH)/tools/Tools.mk
-include $(PROJECT_PATH)/tools/Dependencies.mk
-include $(PROJECT_PATH)/tools/Build.mk
-include $(PROJECT_PATH)/tools/Development.mk
-include $(PROJECT_PATH)/tools/Package.mk
+include $(MK_INCLUDE_PATH)$(SEPERATOR)Tools.mk
+include $(MK_INCLUDE_PATH)$(SEPERATOR)Dependencies.mk
+include $(MK_INCLUDE_PATH)$(SEPERATOR)Build.mk
+include $(MK_INCLUDE_PATH)$(SEPERATOR)Development.mk
+include $(MK_INCLUDE_PATH)$(SEPERATOR)Package.mk
 
 clean:
 	rm -rf $(PROJECT_PATH)/example/*/node_modules
@@ -46,10 +46,13 @@ clean:
 	rm -f $(PROJECT_PATH)/Makefile
 	rm -r $(BUILD_PATH)/build
 
+clean-build:
+	$(MAKE) --makefile qmake.mk clean
+
 build: cpp-build
 	@echo "build done."
 
-bootstrap: $(TOOLS) npm-install qpm-install
+bootstrap: $(TOOLS) $(DEPENDENCIES)
 test: js-test
 
 .PHONY: bootstrap clean build test run

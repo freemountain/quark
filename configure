@@ -9,6 +9,26 @@ ARCH="$($PROJECT_PATH/tools/uname.sh -a)"
 BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
 BUILD_PATH="$PWD/build"
 
+MAKE_CMD="make"
+MK_INCLUDE_PATH=$PROJECT_PATH/tools
+SEPERATOR="/"
+if [[ "$OS" == "windows" ]]; then
+  MAKE_CMD="mingw32-make.exe"
+  SEPERATOR="\\\\"
+
+  # posix to windows path conversion
+  # http://stackoverflow.com/questions/13701218/windows-path-to-posix-path-conversion-in-bash
+  tmp=$(echo $MK_INCLUDE_PATH | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')
+  
+  # backslash to double backslash
+  # http://stackoverflow.com/questions/2854655/command-to-escape-a-string-in-bash
+  tmp=$(printf \"%q\" $tmp)
+
+  # remove quotes
+  # http://stackoverflow.com/questions/9733338/shell-script-remove-first-and-last-quote-from-a-variable
+  tmp=${tmp%\"}
+  MK_INCLUDE_PATH=${tmp#\"}
+fi
 
 print_vars() {
   echo "QT_PATH = ${QT_PATH}"
@@ -54,11 +74,13 @@ mkdir -p $BUILD_PATH
 echo "Creating Makefile"
 echo "PROJECT_PATH:=$PROJECT_PATH" > Makefile
 echo "QT:=$QT_PATH" >> Makefile
+echo "MK_INCLUDE_PATH:=$MK_INCLUDE_PATH" >> Makefile
+echo "SEPERATOR:=$SEPERATOR" >> Makefile
 
 cat "$PROJECT_PATH/Makefile.default" >> Makefile
 
 echo "Bootstrap environment"
-make bootstrap -j$CORES
+$MAKE_CMD bootstrap -j$CORES
 
 $QT_PATH/qmake -o qmake.mk $PROJECT_PATH
 
