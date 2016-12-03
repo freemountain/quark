@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./configure --qt=/c/Qt/5.7/mingw53_32/bin
+./configure --qt=/c/Qt/5.7/mingw53_32
 mingw32-make -j4
 mingw32-make clean-build
 mingw32-make package
