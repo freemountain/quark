@@ -20,7 +20,7 @@ cpp-build: js-build
 	mkdir -p $(BUILD_PATH)/quark.app
 	mkdir -p $(BUILD_PATH)/quark.app/Contents/Resources
 	mkdir -p $(BUILD_PATH)/quark.app/Contents/MacOS
-	$(MAKE) --makefile qmake.mk
+	cd $(BUILD_PATH) && $(MAKE) --makefile qmake.mk
 
 ################################
 ########### Build JS ###########

@@ -65,7 +65,8 @@ if [ -z "$QT_PATH" ]; then
 fi
 
 if [[ "$OS" == "linux" ]]; then
-  echo "linux"
+  command -v autoreconf >/dev/null 2>&1 || { echo >&2 "autoreconf not found. Aborting."; exit 1; }
+  command -v aclocal >/dev/null 2>&1 || { echo >&2 "aclocal not found. Aborting."; exit 1; }
   CORES="$(grep -c ^processor /proc/cpuinfo)"
 fi
 
@@ -74,6 +75,10 @@ mkdir -p $BUILD_PATH
 echo "Creating Makefile"
 echo "PROJECT_PATH:=$PROJECT_PATH" > Makefile
 echo "QT:=$QT_PATH" >> Makefile
+echo "ARCH:=$ARCH" >> Makefile
+echo "OS:=$OS" >> Makefile
+echo "BUILD_PATH:=$BUILD_PATH" >> Makefile
+echo "CORES:=$CORES" >> Makefile
 echo "MK_INCLUDE_PATH:=$MK_INCLUDE_PATH" >> Makefile
 echo "SEPERATOR:=$SEPERATOR" >> Makefile
 
@@ -82,7 +87,7 @@ cat "$PROJECT_PATH/Makefile.default" >> Makefile
 echo "Bootstrap environment"
 $MAKE_CMD bootstrap -j$CORES
 
-$QT_PATH/bin/qmake -o qmake.mk $PROJECT_PATH
+$QT_PATH/bin/qmake -o $BUILD_PATH/qmake.mk $PROJECT_PATH
 
 
 echo "Configure Done"

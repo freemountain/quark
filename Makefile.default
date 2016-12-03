@@ -1,14 +1,7 @@
 
-##
-#  root directory (Makefile location)
-#
-BUILD_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 TOOLS_PATH:=$(PROJECT_PATH)/tools
 TMP_PATH:=$(PROJECT_PATH)/tmp
 JS_SRC:=$(PROJECT_PATH)/src/node_path
-
-OS:=$(shell $(TOOLS_PATH)/uname.sh -o)
-ARCH:=$(shell $(TOOLS_PATH)/uname.sh -a)
 
 NODE_OS:=$(shell $(TOOLS_PATH)/uname.sh -o -f node)
 NODE_ARCH:=$(shell $(TOOLS_PATH)/uname.sh -a -f node)
@@ -30,7 +23,8 @@ BIN_PATH:=$(TMP_PATH)/bin-$(OS)-$(ARCH)
 ##
 #  needs to be the first target defined
 #
-all: build
+all:
+	$(MAKE) build -j$(CORES)
 
 include $(MK_INCLUDE_PATH)$(SEPERATOR)Tools.mk
 include $(MK_INCLUDE_PATH)$(SEPERATOR)Dependencies.mk
@@ -44,10 +38,10 @@ clean:
 	rm -rf $(PROJECT_PATH)/vendor
 	rm -rf $(PROJECT_PATH)/tmp
 	rm -f $(PROJECT_PATH)/Makefile
-	rm -r $(BUILD_PATH)/build
+	rm -r $(BUILD_PATH)
 
 clean-build:
-	$(MAKE) --makefile qmake.mk clean
+	cd $(BUILD_PATH) && $(MAKE) --makefile qmake.mk clean
 
 build: cpp-build
 	@echo "build done."
