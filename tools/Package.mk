@@ -2,7 +2,7 @@ ifeq ($(OS), darwin)
 
 package:
 	cd $(BUILD_PATH) && macdeployqt quark.app -qmldir=$(PROJECT_PATH)/src/qml -no-strip
-	$(PROJECT_PATH)/tools/fixTravis.sh $(BUILD_PATH)/quark.app $(dir $(QT))lib
+	$(PROJECT_PATH)/tools/fixTravis.sh $(BUILD_PATH)/quark.app $(QT)/lib
 	hdiutil create -volname QuarkInstaller -srcfolder $(BUILD_PATH)/quark.app -ov -format UDZO $(PROJECT_PATH)/build/quark-osx-x64.dmg
 
 endif
@@ -18,15 +18,15 @@ $(BUILD_PATH)/default.svg:
 LINUXDEPLOY_CMD:=$(BIN_PATH)/linuxdeployqt
 
 package: $(BUILD_PATH)/default.svg $(BUILD_PATH)/quark.desktop
-	PATH=$(BIN_PATH):$(QT):$(PATH) $(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip
-	PATH=$(BIN_PATH):$(QT):$(PATH) $(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip -appimage
+	PATH=$(BIN_PATH):$(QT)/bin:$(PATH) $(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip
+	PATH=$(BIN_PATH):$(QT)/bin:$(PATH) $(LINUXDEPLOY_CMD) quark -qmldir=$(PROJECT_PATH)/src/qml -bundle-non-qt-libs -no-strip -appimage
 
 endif
 
 ifeq ($(OS), windows)
 
 package:
-	$(PROJECT_PATH)/tools/deploy_win.sh $(BUILD_PATH)/release/quark.exe $(QT)
+	$(PROJECT_PATH)/tools/deploy_win.sh $(BUILD_PATH)/release/quark.exe $(QT)/bin
 
 endif
 

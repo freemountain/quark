@@ -54,11 +54,11 @@ done
 
 if [ -z "$QT_PATH" ]; then
   if [[ "$OS" == "darwin" ]]; then
-    QT_PATH="$HOME/Qt/5.7/clang_64/bin"
+    QT_PATH="$HOME/Qt/5.7/clang_64"
     CORES="4"
   fi
 
-  if [ ! -f "$QT_PATH/qmake" ]; then
+  if [ ! -f "$QT_PATH/bin/qmake" ]; then
     echo "qt path is missing"
     exit 1
   fi
@@ -82,7 +82,7 @@ cat "$PROJECT_PATH/Makefile.default" >> Makefile
 echo "Bootstrap environment"
 $MAKE_CMD bootstrap -j$CORES
 
-$QT_PATH/qmake -o qmake.mk $PROJECT_PATH
+$QT_PATH/bin/qmake -o qmake.mk $PROJECT_PATH
 
 
 echo "Configure Done"

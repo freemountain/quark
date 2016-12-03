@@ -25,7 +25,7 @@ $(TMP_PATH)/linuxdeployqt-src:
 #
 $(TMP_PATH)/linuxdeployqt-build-$(OS)-$(ARCH): $(TMP_PATH)/linuxdeployqt-src
 	mkdir -p $@
-	cd $@ && $(QT)/qmake $(TMP_PATH)/linuxdeployqt-src && make
+	cd $@ && $(QT)/bin/qmake $(TMP_PATH)/linuxdeployqt-src && make
 
 ##
 #  move to destination

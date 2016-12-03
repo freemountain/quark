@@ -22,7 +22,7 @@ endif
 
 ## TODO: add export for linux and win too, if necessary
 ifeq ($(OS), darwin)
-export PATH:=$(QT):$(PATH)
+export PATH:=$(QT)/bin:$(PATH)
 endif
 
 BIN_PATH:=$(TMP_PATH)/bin-$(OS)-$(ARCH)
