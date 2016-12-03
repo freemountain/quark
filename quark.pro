@@ -25,7 +25,9 @@ RESOURCES += qml.qrc
 OUT_PWD_WIN = $${OUT_PWD}
 OUT_PWD_WIN ~= s,/,\\,g
 
+ICON = quark.icns
 
+win32:RC_ICONS += quark.ico
 !win32: NODE_CMD = $$PWD/tmp/bin-$$system(bash tools/uname.sh -o)-$$system(bash tools/uname.sh -a)/node
 
 macx {
