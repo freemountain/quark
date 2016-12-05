@@ -21,9 +21,6 @@ PRUNE_CMD="$NODE_CMD $NPM_CMD prune --production"
 
 pushd . > /dev/null
 
-cd "$TARGET_PATH/node_path"
-$PRUNE_CMD
-
 cd "$TARGET_PATH/default"
 $PRUNE_CMD
 

@@ -48,7 +48,7 @@ win32 {
 	      CONFIG(debug, debug|release): OUT_PWD_WIN = $$OUT_PWD/debug
 
         copy_node.commands = $(COPY_FILE) $$shell_path($$NODE_CMD) $$OUT_PWD_WIN
-        copy_node_path.commands = $(COPY_DIR) $$shell_path($$PWD/tmp/node_path) $$shell_path($$OUT_PWD_WIN/node_path)
+        copy_node_path.commands = $(MKDIR) $$shell_path($$OUT_PWD_WIN/node_path) && $(COPY_FILE) $$shell_path($$PWD/tmp/bundles/quark.js) $$shell_path($$OUT_PWD_WIN/node_path/quark.js)
         copy_app.commands = $(COPY_DIR) $$shell_path($$PWD/example/default) $$shell_path($$OUT_PWD_WIN/default)
 }
 
