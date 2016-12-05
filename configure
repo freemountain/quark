@@ -65,6 +65,7 @@ if [ -z "$QT_PATH" ]; then
 fi
 
 if [[ "$OS" == "linux" ]]; then
+  # patchelf needs autoreconf and aclocal
   command -v autoreconf >/dev/null 2>&1 || { echo >&2 "autoreconf not found. Aborting."; exit 1; }
   command -v aclocal >/dev/null 2>&1 || { echo >&2 "aclocal not found. Aborting."; exit 1; }
   CORES="$(grep -c ^processor /proc/cpuinfo)"
