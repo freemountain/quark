@@ -44,12 +44,12 @@ linux {
 
 win32 {
         NODE_CMD = $$PWD/tmp/bin-windows-x86/node.exe
-        OUT_PWD_WIN = $$shell_path($$OUT_PWD/release/)
-	      CONFIG(debug, debug|release): OUT_PWD_WIN = $$shell_path($$OUT_PWD/debug)
+        OUT_PWD_WIN = $$OUT_PWD/release
+	      CONFIG(debug, debug|release): OUT_PWD_WIN = $$OUT_PWD/debug
 
         copy_node.commands = $(COPY_FILE) $$shell_path($$NODE_CMD) $$OUT_PWD_WIN
-        copy_node_path.commands = $(COPY_DIR) $$shell_path($$PWD/tmp/node_path) $$OUT_PWD_WIN\node_path
-        copy_app.commands = $(COPY_DIR) $$shell_path($$PWD/example/default) $$OUT_PWD_WIN\default
+        copy_node_path.commands = $(COPY_DIR) $$shell_path($$PWD/tmp/node_path) $$shell_path($$OUT_PWD_WIN/node_path)
+        copy_app.commands = $(COPY_DIR) $$shell_path($$PWD/example/default) $$shell_path($$OUT_PWD_WIN/default)
 }
 
 first.depends = $(first) copy_node_path copy_app copy_node
