@@ -21,7 +21,7 @@ deploy:
   - provider: releases
     api_key:
       secure: IckXTW+tOTID4xV9tc1arkNlJPNA7gUfziDbWyjuqxgmIdrMJthpT6BSzhaCb3+yFqXDDuNn73li4SJz0Xy6jvQXLK+Jgsl3iyOButiyq7X61bxeA0fd9Kc5Y3P7lVQbYPvaczIRT0NOBPwmRjPZr1bvIESS/jnVvBF0uM+jIilJAMDYVBcSr0jZz0JJLs9eBTBZiH6lH1FD1NWhBpYpYA0P39O39nofZOGvZRdRgZ97pxBRGhVhjy5LwysDnza78ik92lQSBb1PcItM4wm9gt6eEBjgvP/rfl5JHn0ST5226Me98Ppq88hJ5sCZRXdmWg30CJ4WrTg/NCEp/bZXx8m2iKSA0QCei9Et8nnlSSYzrMGfTCvGbFLKWb027rcNsbohkfUTV8BKooPPSx/24t3lN6J3baYLD4ilDwkBAGouKti4+qLkT5BipxTOeBIW6Ot/SW7kv7ivnqrLsCzNHrtlqawURmaOSot4Noz0j4ZyuH1jbML3NsqNBCWZDsTsnLCkXYz05zPF+xtXxIUR8X6SKILWMp531aIhU/hhOcl8ajBp4ri+JQwTIqqXfkBidzfTI+d94EWukDclEa4YDqAO8FLLVv1cIwZH3PrqWH8dRrOxdUZTB+dTohJkkwufoMAvy83AoE1T3gpdd8JNdRJP+h6jC3HTCQLFw3gmkpA=
-    file: /home/travis/build/freemountain/quark/build/quark-linux-x64.AppImage
+    file: $TRAVIS_BUILD_DIR/build/Quark-x86_64.AppImage
     skip_cleanup: true
     on:
       tags: true
