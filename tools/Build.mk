@@ -16,7 +16,7 @@ JS_OBJECTS:= \
 ########### Build CPP ##########
 ################################
 
-cpp-build: js-build
+cpp-build: $(TMP_PATH)/bundles/quark.js
 	mkdir -p $(BUILD_PATH)/quark.app
 	mkdir -p $(BUILD_PATH)/quark.app/Contents/Resources
 	mkdir -p $(BUILD_PATH)/quark.app/Contents/MacOS
@@ -41,6 +41,15 @@ js-test: $(JS_OBJECTS)
 	PATH=$(BIN_PATH):$$PATH $(JS_BUILD)/node_modules/.bin/istanbul cover --root $(JS_BUILD) -x "**/__tests__/**" $(JS_BUILD)/node_modules/.bin/_mocha $(shell find $(JS_BUILD) -name "*Test.js" -not -path "*node_modules*") -- -R spec --require source-map-support/register
 
 js-build: $(JS_OBJECTS)
+
+##
+# bundel quark js
+#
+$(TMP_PATH)/bundles/quark.js: $(JS_OBJECTS) $(JS_BUILD)/quark.js $(JS_BUILD)/package.json $(JS_BUILD)/node_modules
+	mkdir -p $(dir $@)
+	$(NODE_CMD) $(JS_BUILD)/node_modules/browserify/bin/cmd.js $(JS_BUILD)/quark.js --node -s quark > $@ 
+
+bundle-js: $(TMP_PATH)/bundles/quark.js
 
 ################################
 ################################
