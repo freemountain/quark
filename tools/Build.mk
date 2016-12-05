@@ -45,7 +45,7 @@ js-build: $(JS_OBJECTS)
 ##
 # bundel quark js
 #
-$(TMP_PATH)/bundles/quark.js: $(JS_OBJECTS) $(JS_BUILD)/quark.js $(JS_BUILD)/package.json $(JS_BUILD)/node_modules
+$(TMP_PATH)/bundles/quark.js: $(DEPENDENCIES) $(JS_OBJECTS) $(JS_BUILD)/quark.js $(JS_BUILD)/package.json
 	mkdir -p $(dir $@)
 	$(NODE_CMD) $(JS_BUILD)/node_modules/browserify/bin/cmd.js $(JS_BUILD)/quark.js --node -s quark > $@ 
 
