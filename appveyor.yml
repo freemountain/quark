@@ -2,7 +2,7 @@ init:
   - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 install:
   - set QTDIR=C:\Qt\5.7\mingw53_32
-  - set PATH=%PATH%;%QTDIR%\bin;C:\Qt\Tools\mingw530_32\bin
+  - set PATH=%QTDIR%\bin;C:\Qt\Tools\mingw530_32\bin;%PATH%
 build_script:
   - bash tools/appveyor.sh
 artifacts:
