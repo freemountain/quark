@@ -13,6 +13,13 @@ MAKE_CMD="make"
 MK_INCLUDE_PATH=$PROJECT_PATH/tools
 SEPERATOR="/"
 if [[ "$OS" == "windows" ]]; then
+  #Check if find is from findutils. windows find will fail here
+  find --help >/dev/null 2>&1
+  if (( $? )); then
+    echo "Could not find 'find'. Maybe your PATH is not correct?" >&2
+    exit 1
+  fi
+
   MAKE_CMD="mingw32-make.exe"
   SEPERATOR="\\\\"
 
