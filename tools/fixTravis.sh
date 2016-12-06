@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../"
-TARGET_APP=$(realpath $1)
+TARGET_APP=$1
 QT_LIB_PATH=$2
 
 cd "$TARGET_APP/Contents"

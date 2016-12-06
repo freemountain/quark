@@ -101,7 +101,21 @@ This example can either be run by using the GUI app or by invoking the terminal.
 Prebuilt binaries can be found on the [releases page](https://github.com/freemountain/quark/releases)
 
 ## Development
+
+```bash
+./configure [QT=/path/to/qt/binaries]
+make
+make example/counter
+```
+
 ## Building
+
+```bash
+./configure [QT=/path/to/qt/binaries]
+make
+make run APP=/path/to/app
+```
+
 ### Requirements
 - Qt 5.7
 

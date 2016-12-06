@@ -2,13 +2,9 @@ init:
   - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 install:
   - set QTDIR=C:\Qt\5.7\mingw53_32
-  - set PATH=%PATH%;%QTDIR%\bin;C:\Qt\Tools\mingw530_32\bin
+  - set PATH=C:\msys64\usr\bin;C:\Qt\Tools\mingw530_32\bin
 build_script:
-  - dir
-  - bash -lc "mingw32-make bootstrap && cd .."
-  - bash -lc "mkdir build && cd build && qmake .. && mingw32-make && ../tools/deploy_win.sh release/quark.exe"
-  - bash -lc "cd build && mv release quark && rm -rf quark/*.o quark/*.cpp && 7z a quark-windows-x86.zip quark && ls && echo $APPVEYOR_BUILD_FOLDER"
-  - dir
+  - C:\msys64\usr\bin\bash.exe -x tools/appveyor.sh
 artifacts:
   - path: build/quark-windows-x86.zip
     name: quark-windows-x86
@@ -22,4 +18,4 @@ deploy:
   on:
     appveyor_repo_tag: true
 on_finish:
-  - ps: $blockRdp = $false; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
