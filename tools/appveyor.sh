@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+export PATH=/c/mysys64/mingw64/bin:/c/mysys64/usr/bin:$PATH
 export PATH=/c/Qt/Tools/mingw53_32/bin:$PATH
 
 find --help
