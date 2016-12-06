@@ -4,7 +4,7 @@ install:
   - set QTDIR=C:\Qt\5.7\mingw53_32
   - set PATH=C:\msys64\usr\bin%QTDIR%\bin;C:\Qt\Tools\mingw530_32\bin
 build_script:
-  - bash -x tools/appveyor.sh
+  - C:\msys64\usr\bin\bash.exe -x tools/appveyor.sh
 artifacts:
   - path: build/quark-windows-x86.zip
     name: quark-windows-x86
