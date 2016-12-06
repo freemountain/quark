@@ -1,5 +1,8 @@
 #!/bin/bash
+set -e
+export PATH=/c/Qt/Tools/mingw53_32/bin:$PATH
 
+find --help
 ./configure --qt=/c/Qt/5.7/mingw53_32
 mingw32-make -j4
 mingw32-make clean-build
