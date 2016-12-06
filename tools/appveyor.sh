@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-export PATH=/c/cygwin/bin:/c/Qt/Tools/mingw53_32/bin:$PATH
+export PATH=/c/msys64/bin:/c/Qt/Tools/mingw53_32/bin:$PATH
 
 ./configure --qt=/c/Qt/5.7/mingw53_32
 mingw32-make -j4
