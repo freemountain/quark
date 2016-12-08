@@ -49,4 +49,4 @@ build: cpp-build
 bootstrap: $(TOOLS) $(DEPENDENCIES)
 test: js-test
 
-.PHONY: bootstrap clean build test run
+.PHONY: bootstrap clean build test run npm-install qpm-install

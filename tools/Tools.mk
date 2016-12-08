@@ -12,15 +12,11 @@ NODE_CMD=$(BIN_PATH)/node.exe
 endif
 
 ##
-#  add paths
-#
-$(TMP_PATH) $(BIN_PATH):
-	mkdir -p $@
-
-##
 #  add to destination on Unix
 #
-$(BIN_PATH)/node: $(TMP_PATH)
+$(BIN_PATH)/node:
+	mkdir -p $(TMP_PATH)
+	mkdir -p $(BIN_PATH)
 	curl https://nodejs.org/dist/$(NODE_VERSION)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH).tar.xz|tar -xJ -C $(TMP_PATH)
 	cp $(TMP_PATH)/node-$(NODE_VERSION)-$(NODE_OS)-$(NODE_ARCH)/bin/node $(BIN_PATH)/node
 	chmod +x $(BIN_PATH)/node
@@ -49,7 +45,8 @@ endif
 ##
 #  install qpm on unix
 #
-$(BIN_PATH)/qpm: $(BIN_PATH)
+$(BIN_PATH)/qpm: 
+	mkdir -p $(BIN_PATH)
 	curl -o $@ https://www.qpm.io/download/$(QPM_VERSION)/$(OS)_386/qpm
 	chmod +x $@
 
@@ -73,7 +70,8 @@ NPM_CMD:= $(NODE_CMD) $(BIN_PATH)/npm
 ##
 #  install npm on windows
 #
-$(BIN_PATH)/npm: $(BIN_PATH)
+$(BIN_PATH)/npm: 
+	mkdir -p $(BIN_PATH)
 	curl -L -0 "https://github.com/npm/npm/archive/v$(NPM_VERSION).tar.gz"|tar xz -C $(BIN_PATH)
 	echo "require('./npm-$(NPM_VERSION)/bin/npm-cli.js')" > $(BIN_PATH)/npm
 	chmod +x $(BIN_PATH)/npm
@@ -84,7 +82,7 @@ $(BIN_PATH)/npm: $(BIN_PATH)
 ##
 #  Targets for tools on all platforms
 #
-BASE_TOOLS:=$(BIN_PATH) $(NODE_CMD) $(QPM_CMD) $(BIN_PATH)/npm
+BASE_TOOLS:=$(NODE_CMD) $(QPM_CMD) $(BIN_PATH)/npm
 TOOLS:=$(BASE_TOOLS)
 
 ##

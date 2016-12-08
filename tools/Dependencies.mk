@@ -45,7 +45,7 @@ $(TMP_PATH)/node_path/package.json: $(JS_SRC)/package.json
 #
 npm-install: $(NODE_MODULES)
 
-DEPENDENCIES:=npm-install qpm-install
+DEPENDENCIES:=$(NODE_MODULES) $(PROJECT_PATH)/vendor
 
 ifeq ($(OS), windows)
 

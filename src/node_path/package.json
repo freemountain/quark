@@ -7,7 +7,9 @@
     "immutable": "^3.8.1",
     "immutablediff": "^0.4.4",
     "jsonstream2": "^1.1.1",
+    "lodash.mapvalues": "^4.6.0",
     "lodash.set": "^4.3.2",
+    "q": "^1.4.1",
     "through2-filter": "^2.0.0",
     "through2-map": "^3.0.0"
   },
