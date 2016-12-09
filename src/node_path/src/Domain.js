@@ -9,31 +9,24 @@ import map from "lodash.map";
 import diff from "immutablediff";
 import reduce from "lodash.reduce";
 import defaults from "set-default-value";
-import assert from "assert";
+import Cursor from "./domain/Cursor";
 
 export default class Domain {
-    static Proxy = {
-        get(target, name) {
-            if(!Immutable.Map.prototype[name] && !Immutable.List.prototype[name]) return target.cursor.get(name);
-
-            return target.cursor[name];
-        },
-
-        set() {
-            assert(false, "can't set on cursor.");
-        }
-    };
-
-    constructor() {
+    constructor(description = {}) {
         const { props, triggers } = Object.getPrototypeOf(this).constructor;
 
-        this.computed = pickBy(props, x => x instanceof Property);
-        this.domains  = pickBy(props, x => x instanceof Domain);
-        this.triggers = mapValues(pickBy(triggers, x => x instanceof Trigger), (x, key) => x.by(key));
+        this.computed = pickBy(Object.assign(props, description), x => x instanceof Property);
+        this.domains  = pickBy(Object.assign(props, description), x => x instanceof Domain);
+        this.triggers = mapValues(pickBy(Object.assign(triggers, description), x => x instanceof Trigger), (x, key) => x.by(key));
+        // TODO: hier muss gecheckt werden,
+        // dass keine der props im prototype
+        // von immutable vorkommt, weil das komische
+        // nebeneffekte haben kann
         this.cursor   = Immutable
-            .fromJS(pickBy(props, x => (
+            .fromJS(pickBy(Object.assign(props, description), x => (
                 !(x instanceof Property) &&
-                !(x instanceof Domain)
+                !(x instanceof Domain) &&
+                !(x instanceof Trigger)
             )));
 
         this.update();
@@ -71,7 +64,7 @@ export default class Domain {
         if(!this.handles(data.type)) return Q.resolve([]);
 
         const result = defaults(this.dispatch(data.type)).to(() => this.cursor)
-            .call(new Proxy(this, Domain.Proxy), data.payload);
+            .apply(Cursor.of(this.cursor), Array.isArray(data.payload) ? data.payload : [data.payload]);
 
         if(result && result.then) return result
             .then(x => diff(this.cursor, x))

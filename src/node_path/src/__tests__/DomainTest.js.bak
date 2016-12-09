@@ -146,6 +146,8 @@ describe("DomainTest", function() {
     it("creates a domain", function(cb) {
         const domain = new App();
 
+        expect(domain.cursor.toJS()).to.eql({});
+
         domain.receive({
             type:    "login",
             payload: [0, "huhu"]

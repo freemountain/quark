@@ -39,7 +39,7 @@ $(JS_BUILD)/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(DEPENDENCIES) $(JS_BUILD)/qu
 #  unit test js
 #
 js-test: $(JS_OBJECTS)
-	PATH=$(BIN_PATH):$$PATH $(JS_BUILD)/node_modules/.bin/istanbul cover --root $(JS_BUILD) -x "**/__tests__/**" $(JS_BUILD)/node_modules/.bin/_mocha $(shell find $(JS_BUILD) -name "*Test.js" -not -path "*node_modules*") -- -R spec --require source-map-support/register
+	PATH=$(BIN_PATH):$(PATH) $(JS_BUILD)/node_modules/.bin/istanbul cover --root $(JS_BUILD)/lib -x "**/__tests__/**" $(JS_BUILD)/node_modules/.bin/_mocha $(shell find $(JS_BUILD)/lib -name "*Test.js") -- -R spec --require source-map-support/register
 
 js-build: $(JS_OBJECTS)
 
