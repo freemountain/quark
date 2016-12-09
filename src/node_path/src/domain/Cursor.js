@@ -2,8 +2,6 @@ import Immutable from "immutable";
 import assert from "assert";
 
 export default class Cursor {
-    static Immutable = Object.assign({}, Immutable.Map.prototype, Immutable.List.prototype);
-
     static Proxy = {
         get(target, name) {
             if(name === "__proxy")          return true;
