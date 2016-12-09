@@ -3,13 +3,14 @@ import assert from "assert";
 
 export default class Cursor {
     static Proxy = {
-        get(target, name) {
-            if(name === "__proxy")          return true;
-            if(name === "generic")          return mapper => mapper(Cursor.of(target));
-            if(target.get && !target[name]) return target.get(name);
-            if(target[name])                return target[name].bind(target);
+        get(target, name) { // eslint-disable-line
+            if(name === "__target")                              return target;
+            if(name === "__proxy")                               return true;
+            if(name === "generic")                               return mapper => mapper(Cursor.of(target));
+            if(!target[name])                                    return Cursor.of(target.get(name));
+            if(target[name] && target[name] instanceof Function) return target[name].bind(target);
 
-            return target;
+            return target[name];
         },
 
         set() {
@@ -19,8 +20,10 @@ export default class Cursor {
 
     static of(target) {
         return (
-            !(target instanceof Immutable.Map) ||
-            target.__proxy                        // eslint-disable-line
+            (
+                !(target instanceof Immutable.List) &&
+                !(target instanceof Immutable.Map)
+            ) || target.__proxy                        // eslint-disable-line
         ) ? target : new Proxy(target, Cursor.Proxy);
     }
 }

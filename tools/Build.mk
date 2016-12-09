@@ -40,6 +40,8 @@ $(JS_BUILD)/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(DEPENDENCIES) $(JS_BUILD)/qu
 #
 js-test: $(JS_OBJECTS)
 	PATH=$(BIN_PATH):$(PATH) $(JS_BUILD)/node_modules/.bin/istanbul cover --root $(JS_BUILD)/lib -x "**/__tests__/**" $(JS_BUILD)/node_modules/.bin/_mocha $(shell find $(JS_BUILD)/lib -name "*Test.js") -- -R spec --require source-map-support/register
+	PATH=$(BIN_PATH):$(PATH) $(JS_BUILD)/node_modules/.bin/remap-istanbul -i $(PROJECT_PATH)/coverage/coverage.json -o $(PROJECT_PATH)/coverage/lcov-report -t html
+	
 
 js-build: $(JS_OBJECTS)
 

@@ -13,7 +13,7 @@ import Cursor from "./domain/Cursor";
 
 export default class Domain {
     constructor(description = {}) {
-        const { props, triggers } = Object.getPrototypeOf(this).constructor;
+        const { props = {}, triggers = {} } = Object.getPrototypeOf(this).constructor;
 
         this.computed = pickBy(Object.assign(props, description), x => x instanceof Property);
         this.domains  = pickBy(Object.assign(props, description), x => x instanceof Domain);
@@ -29,7 +29,9 @@ export default class Domain {
                 !(x instanceof Trigger)
             )));
 
-        this.update();
+        // TODO: hier is noch die reihenfolge der abhängigkeiten
+        // unbeachtet, daher gibts fehler
+        // this.update();
     }
 
     dispatch(name) {
