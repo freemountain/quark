@@ -1,6 +1,7 @@
 import Cursor from "./Cursor";
 import assert from "assert";
 import printMethods from "../util/printMethods";
+import Immutable from "immutable";
 
 export default class Transformation {
     constructor({ args, op }) {
@@ -8,9 +9,18 @@ export default class Transformation {
         this.args = args.map(arg => arg instanceof Function ? (deps, ...args2) => arg(...args2.map(data => Cursor.of(data)), deps) : arg);
     }
 
+    shouldExtract(data) {
+        return (
+            data instanceof Immutable.List &&
+            data.first() instanceof Immutable.List &&
+            this.op !== "join"
+        );
+    }
+
     compute(data, deps = {}) {
-        const cursor = Cursor.of(data);
-        const action = cursor[this.op];
+        const extracted = this.shouldExtract(data) ? data.first() : data;
+        const cursor    = Cursor.of(extracted);
+        const action    = cursor[this.op];
 
         if(!action || !(action instanceof Function)) return assert(false, `\n\tYou are trying to apply the non-existing method '${this.op}' on \n\t\t${data}.\n\n\tTry one of these instead: ${printMethods(data)}.`);
 

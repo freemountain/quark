@@ -38,7 +38,7 @@ class Security extends Domain {
 class Addresses extends Domain {
     static props = [{
         id:     0,
-        street: []
+        street: ""
     }];
 
     add(address) {
@@ -61,15 +61,10 @@ class Users extends Domain {
             id:     0,
             street: ""
         }]),
-        users: [{
-            id:        0,
-            name:      "no user",
-            addressId: 0,
-            address:   derive.from("addresses")
-                .join("users")
-                .on((address, user) => address.id === user.addressId)
-                .cascade("POST", "PUT", "DELETE")
-        }]
+        users: derive.from("users")
+            .join("addresses")
+            .on("address", (user, address) => user.address === address.id)
+            .cascade("POST", "PUT", "DELETE")
     }
 
     static triggers = {
@@ -122,6 +117,7 @@ class App extends Domain {
 
             test: triggered
                 .by("getUser"),
+
             getUser: triggered
                 .by("test")
                 .by("window.open.done")
@@ -144,6 +140,10 @@ class App extends Domain {
 
 describe("DomainTest", function() {
     it("creates a domain", function() {
+        // im state einen speziellen key actions
+        // reservieren, der speichert die reihenfolge
+        // Dadurch kann der state später auch wieder
+        // entkoppelt werden
         const domain = new App();
 
         console.log(domain);

@@ -5,19 +5,18 @@ import assert from "assert";
 import Cursor from "./Cursor";
 import Relation from "./Relation";
 
-export default class Property {
+class Property {
     static derive = set(mapper => {
-        return new Property(Immutable.OrderedMap(), [new Transformation({
+        return new Property(Immutable.List(), [new Transformation({
             op:   "generic",
             args: [mapper]
         })]);
     }, "from", (...aliases) => {
         const [self] = aliases;
 
-        const relations = aliases
+        const relations = Immutable.List(aliases)
             .filter(alias => alias !== "*")
-            .map(alias => new Relation(alias, alias === self ? Relation.SELF : Relation.INDIE))
-            .reduce((dest, relation) => dest.set(relation.name, relation), Immutable.OrderedMap());
+            .map(alias => new Relation(alias, alias === self ? Relation.SELF : Relation.INDIE));
 
         return new Property(relations, []);
     })
@@ -28,11 +27,23 @@ export default class Property {
         this.current         = current;
     }
 
+    extractRelations(parent) {
+        const mapped = this.relations
+            .filter(x => x.tag === Relation.JOINED || x.tag === Relation.SELF)
+            .map(({ name }) => parent.get(name));
+
+        return mapped
+            .slice(0, 1)
+            .concat(mapped.slice(1).reverse());
+    }
+
     compute(parent) {
-        const values = this.relations.isEmpty() ? parent : this.relations.map(({ name }) => parent.get(name)).toList();
+        const values = this.relations.isEmpty() ? parent : this.extractRelations(parent);
+
         const indies = this.relations
             .filter(({ tag }) => tag === Relation.INDIE)
             .map(({ name }) => parent.get(name))
+            .reduce((dest, x) => dest.set(x.name, x), Immutable.Map())
             .toObject();
 
         const result = this.transformations.reduce((dest, transformation) => transformation.compute(dest, indies), Immutable.fromJS(values));
@@ -96,34 +107,63 @@ export default class Property {
         return this.addTransformation("slice", ...args);
     }
 
-    join(alias) {
-        const current   = new Relation(alias, Relation.JOINED);
-        const relations = this.relations.set(alias, current);
-
-        return {
-            on: (key, predicate) => this
-                .setRelations(relations)
-                .setCurrent(current)
-                .addTransformation("generic", args => {
-                    const dest         = args.first();
-                    const relationData = args.last();
-
-                    return Cursor.of(dest.map(entity => {
-                        const result = relationData.filter(relation => predicate(Cursor.of(entity), Cursor.of(relation)));
-
-                        assert(result.size <= 1, `Ambigous relation, found for ${entity} ${result.size} matches: ${result}.`);
-
-                        return entity.set(key, result.first());
-                    }).filter(x => x.get(key)));
-                })
-        };
-    }
-
     cascade(...cascades) {
         assert(this.current);
 
-        const relations = this.relations.set(this.current.name, this.current.setCascades(cascades));
+        const key   = this.relations.findKey(x => x.name === this.current.name);
+        const value = this.current.setCascades(cascades);
 
-        return new Property(relations, this.transformations);
+        return new Property(this.relations.set(key, value), this.transformations);
     }
 }
+
+Object.defineProperty(Property.prototype, "join", {
+    enumerable:   false,
+    configurable: false,
+    get:          function join() {
+        const on = (alias, key, predicate) => {
+            const current   = new Relation(alias, Relation.JOINED, key);
+            const relations = this.relations.push(current);
+
+            return this
+                .setRelations(relations)
+                .setCurrent(current)
+                .addTransformation("join", args => {
+                    const relationData = args.last();
+                    const dest         = args
+                        .first()
+                        .map(entity => {
+                            const isOneToMany = entity.get(key) instanceof Immutable.List;
+                            const idxs        = isOneToMany ? entity.get(key) : Immutable.List.of(entity.get(key));
+                            const result      = relationData.filter(relation => {
+                                return idxs.reduce((dest2, idx) => dest2 || predicate(Cursor.of(entity.set(key, idx)), Cursor.of(relation)), false); // eslint-disable-line
+                            });
+
+                            assert(!isOneToMany ? result.size <= 1 : true, `Ambigous relation, found for ${entity} ${result.size} matches: ${result}.`);
+
+                            return entity.set(key, isOneToMany ? result : result.first());
+                        })
+                        .filter(x => x.get(current.key));
+
+                    const transformed = args
+                        .pop()
+                        .shift()
+                        .unshift(dest);
+
+                    return Cursor.of(transformed);
+                });
+        };
+
+        const func = name => ({
+            on: on.bind(null, name)
+        });
+
+        func.self = {
+            on: on.bind(null, this.relations.first().name)
+        };
+
+        return func;
+    }
+});
+
+export default Property;

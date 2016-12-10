@@ -6,7 +6,7 @@ export default class Cursor {
         get(target, name) { // eslint-disable-line
             if(name === "__target")                              return target;
             if(name === "__proxy")                               return true;
-            if(name === "generic")                               return mapper => mapper(Cursor.of(target));
+            if(name === "generic" || name === "join")            return mapper => mapper(Cursor.of(target));
             if(!target[name])                                    return Cursor.of(target.get(name));
             if(target[name] && target[name] instanceof Function) return target[name].bind(target);
 
