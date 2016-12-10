@@ -1,125 +1,129 @@
 import Immutable from "immutable";
 import set from "lodash.set";
-import { EventEmitter } from "events";
 import Transformation from "./Transformation";
 import assert from "assert";
 import Cursor from "./Cursor";
+import Relation from "./Relation";
 
-export default class Property extends EventEmitter {
+export default class Property {
     static derive = set(mapper => {
-        return new Property([], [new Transformation({
+        return new Property(Immutable.OrderedMap(), [new Transformation({
             op:   "generic",
             args: [mapper]
         })]);
-    }, "from", (...aliases) => new Property(aliases.filter(alias => alias !== "*")));
+    }, "from", (...aliases) => {
+        const [self] = aliases;
 
-    constructor(aliases, transformations = [], cascades = []) {
-        super();
+        const relations = aliases
+            .filter(alias => alias !== "*")
+            .map(alias => new Relation(alias, alias === self ? Relation.SELF : Relation.INDIE))
+            .reduce((dest, relation) => dest.set(relation.name, relation), Immutable.OrderedMap());
 
-        this.aliases         = aliases;
+        return new Property(relations, []);
+    })
+
+    constructor(relations, transformations = [], current) {
+        this.relations       = relations;
         this.transformations = transformations;
-        this.cascades        = cascades;
+        this.current         = current;
     }
 
     compute(parent) {
-        const values = this.aliases.length === 0 ? parent : this.aliases.map(alias => parent.get(alias));
-        const result = this.transformations.reduce((dest, transformation) => transformation.compute(dest), Immutable.fromJS(values));
+        const values = this.relations.isEmpty() ? parent : this.relations.map(({ name }) => parent.get(name)).toList();
+        const indies = this.relations
+            .filter(({ tag }) => tag === Relation.INDIE)
+            .map(({ name }) => parent.get(name))
+            .toObject();
+
+        const result = this.transformations.reduce((dest, transformation) => transformation.compute(dest, indies), Immutable.fromJS(values));
 
         return result;
     }
 
-    map(...args) {
-        return new Property(this.aliases, this.transformations.concat(new Transformation({
-            op:   "map",
+    addTransformation(op, ...args) {
+        return new Property(this.relations, this.transformations.concat(new Transformation({
+            op:   op,
             args: args
-        })));
+        })), this.current);
+    }
+
+    setCurrent(current) {
+        return new Property(this.relations, this.transformations, current);
+    }
+
+    setRelations(relations) {
+        return new Property(relations, this.transformations, this.current);
+    }
+
+    // TODO automatisiert alle transformationen vom prototyp holen
+    // und dann mit dem prototyp mergen
+    map(...args) {
+        return this.addTransformation("map", ...args);
     }
 
     tap(tapper) {
-        return new Property(this.aliases, this.transformations.concat(new Transformation({
-            op:   "generic",
-            args: [cursor => {
-                tapper(cursor);
-                return cursor;
-            }]
-        })));
+        return this.addTransformation("generic", cursor => {
+            tapper(cursor);
+            return cursor;
+        });
     }
 
     filter(...args) {
-        return new Property(this.aliases, this.transformations.concat(new Transformation({
-            op:   "filter",
-            args: args
-        })));
+        return this.addTransformation("filter", ...args);
     }
 
     pop(...args) {
-        return new Property(this.aliases, this.transformations.concat(new Transformation({
-            op:   "pop",
-            args: args
-        })));
+        return this.addTransformation("pop", ...args);
     }
 
     shift(...args) {
-        return new Property(this.aliases, this.transformations.concat(new Transformation({
-            op:   "shift",
-            args: args
-        })));
+        return this.addTransformation("shift", ...args);
     }
 
     last(...args) {
-        return new Property(this.aliases, this.transformations.concat(new Transformation({
-            op:   "last",
-            args: args
-        })));
+        return this.addTransformation("last", ...args);
     }
 
     sort(...args) {
-        return new Property(this.aliases, this.transformations.concat(new Transformation({
-            op:   "sort",
-            args: args
-        })));
+        return this.addTransformation("sort", ...args);
     }
 
     reduce(...args) {
-        return new Property(this.aliases, this.transformations.concat(new Transformation({
-            op:   "reduce",
-            args: args
-        })));
+        return this.addTransformation("reduce", ...args);
     }
 
     slice(...args) {
-        return new Property(this.aliases, this.transformations.concat(new Transformation({
-            op:   "slice",
-            args: args
-        })));
+        return this.addTransformation("slice", ...args);
     }
 
     join(alias) {
+        const current   = new Relation(alias, Relation.JOINED);
+        const relations = this.relations.set(alias, current);
+
         return {
-            on: (key, predicate) => new Property(this.aliases.concat(alias), this.transformations.concat(new Transformation({
-                op:   "generic",
-                args: [([dest, relations]) => Cursor.of(dest.map(entity => {
-                    const result = relations.filter(relation => predicate(Cursor.of(entity), Cursor.of(relation)));
+            on: (key, predicate) => this
+                .setRelations(relations)
+                .setCurrent(current)
+                .addTransformation("generic", args => {
+                    const dest         = args.first();
+                    const relationData = args.last();
 
-                    assert(result.size <= 1, `Ambigous relation, found for ${entity} ${result.size} matches: ${result}.`);
+                    return Cursor.of(dest.map(entity => {
+                        const result = relationData.filter(relation => predicate(Cursor.of(entity), Cursor.of(relation)));
 
-                    return entity.set(key, result.first());
-                }).filter(x => x.get(key)))]
-            })))
+                        assert(result.size <= 1, `Ambigous relation, found for ${entity} ${result.size} matches: ${result}.`);
+
+                        return entity.set(key, result.first());
+                    }).filter(x => x.get(key)));
+                })
         };
     }
 
     cascade(...cascades) {
-        // FIXME: das muss in die aliases mit rein:
-        // - die müssen zu relations werden, dabei Relation { name: String (<- alias), cascades:[POST, PUT, DELETE]}
-        // - dann kann bei jedem update eines relation-keys das weitergeleitet werden:
-        //
-        // Key: string
-        // Relations: Key -> Relation
-        //
-        // Dann kann domain beim compute die relation keys diffen und diese
-        // diffs rekursiv auf dem parent applyen, bis sich nix mehr ändert (diff.ength === 0)
-        // danach is das update der domain komplett.
-        return new Property(this.aliases, this.transformations, cascades);
+        assert(this.current);
+
+        const relations = this.relations.set(this.current.name, this.current.setCascades(cascades));
+
+        return new Property(relations, this.transformations);
     }
 }

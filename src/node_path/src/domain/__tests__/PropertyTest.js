@@ -65,60 +65,96 @@ describe("PropertyTest", function() {
     });
 
     it("creates a property with declarative constructor (2)", function() {
-        // TODO: wie krieg ich abhängigkeiten von anderen props hin?
-        // zB bei sort nen sorter?
-        //
-        // idee: from("users", "sorter", "x")
-        //          .join("messages")
-        //          .on("message", ...) <- joins gehen immer nur in den ersten des tupels
-        //          .sort((a, b, { sorter }) => sorter(a, b))
-        //
-        // Des weiteren mit mehreren joins testen.
-        //
-        // Wahrscheinlich müssen relations und dependencies unterschieden werden,
-        // siehe dazu todo bei property
+        // auskommentiertes klappt nich, generell joins auf joins
+        // des weiteren muss mit one to many umgegangen werden (siehe bsp)
         const property = Property.derive
-            .from("users")
+            .from("users", "sorter", "x")
             .join("messages")
                 .on("message", ({ message }, { id }) => message === id)
                 .cascade("ALL")
+
+            /* .join("addresses")
+                .on("addresses", (user, address) => {
+                    // das klappt nch, weil das gezippte zurückkommt wahrscheinlich
+                    console.log(user, address);
+
+                    return user.id === address.id;
+                })
+                .cascade("PUT")*/
             .filter(({ message }) => message.text.indexOf("geier") !== -1)
-            .sort((a, b) => a.id - b.id)
+            .sort((a, b, { sorter }) => sorter(a, b))
             .pop()
             .shift()
             .pop()
             .last();
 
+        expect(property.relations.toJS()).to.eql({
+            users: {
+                cascades: [],
+                name:     "users",
+                tag:      "SELF"
+            },
+            sorter: {
+                cascades: [],
+                name:     "sorter",
+                tag:      "INDIE"
+            },
+            x: {
+                cascades: [],
+                name:     "x",
+                tag:      "INDIE"
+            },
+            messages: {
+                cascades: ["POST", "PUT", "DELETE"],
+                name:     "messages",
+                tag:      "JOINED"
+            }
+
+            /* addresses: {
+                cascades: ["PUT"],
+                name:     "addresses",
+                tag:      "JOINED"
+            }*/
+        });
+
         expect(property.compute(Immutable.fromJS({
+            x:      4,
             sorter: (a, b) => a.id - b.id,
             users:  [{
-                id:      0,
-                name:    "geier",
-                message: 0
+                id:        0,
+                name:      "geier",
+                message:   0,
+                addresses: []
             }, {
-                id:      1,
-                name:    "jupp",
-                message: 0
+                id:        1,
+                name:      "jupp",
+                message:   0,
+                addresses: []
             }, {
-                id:      2,
-                name:    "in",
-                message: 0
+                id:        2,
+                name:      "in",
+                message:   0,
+                addresses: [0, 1]
             }, {
-                id:      3,
-                name:    "chantalle",
-                message: 1
+                id:        3,
+                name:      "chantalle",
+                message:   1,
+                addresses: []
             }, {
-                id:      4,
-                name:    "wayne",
-                message: 1
+                id:        4,
+                name:      "wayne",
+                message:   1,
+                addresses: []
             }, {
-                id:      5,
-                name:    "hubertus",
-                message: 2
+                id:        5,
+                name:      "hubertus",
+                message:   2,
+                addresses: []
             }, {
-                id:      6,
-                name:    "hansi",
-                message: null
+                id:        6,
+                name:      "hansi",
+                message:   null,
+                addresses: []
             }],
             messages: [{
                 id:   0,
@@ -129,6 +165,10 @@ describe("PropertyTest", function() {
             }, {
                 id:   2,
                 text: "kein geir"
+            }],
+            addresses: [{
+                id:     0,
+                street: "sesam"
             }]
         })).toJS()).to.eql({
             id:      2,
@@ -136,7 +176,8 @@ describe("PropertyTest", function() {
                 id:   0,
                 text: "ein geier, zwei geier, drei geier"
             },
-            name: "in"
+            addresses: [0, 1],
+            name:      "in"
         });
     });
 });

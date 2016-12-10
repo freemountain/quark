@@ -40,6 +40,9 @@ export default class Domain {
         return mapped ? this[mapped] : mapped;
     }
 
+    // Dann kann domain beim compute die relation keys diffen und diese
+    // diffs rekursiv auf dem parent applyen, bis sich nix mehr ändert (diff.ength === 0)
+    // danach is das update der domain komplett.
     update(results = Immutable.List.of()) {
         const old = this.cursor
             .mergeDeep(...results);
