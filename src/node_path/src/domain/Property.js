@@ -7,15 +7,6 @@ import getAllProperties from "../util/getAllProperties";
 import Join from "./Join";
 
 /**
- * takes the current state and transforms it to the
- * desired property
- *
- * @callback Mapper
- * @param  {Immutable.Map | Immutable.List} state current state
- * @return {*}
- */
-
-/**
  * This class describes a property, derived from some parent
  * state. It's used to offer a declarative and intuitive
  * interface to describe the transformations needed to arrive
@@ -33,40 +24,19 @@ import Join from "./Join";
  *      .first()
  */
 class Property {
-    static methods = Immutable.Set(getAllProperties(Immutable.Map.prototype))
-        .concat(getAllProperties(Immutable.List.prototype))
-        .filter(key => (
-            key !== "constructor" &&
-            key !== "toString" &&
-            key !== "join" &&
-            key.slice(0, 1) !== "_" &&
-            (
-                Immutable.Map.prototype[key] instanceof Function ||
-                Immutable.List.prototype[key] instanceof Function
-            )
-        ))
-        .toJS()
 
     /**
      * overloaded user facing constructor for properties
      *
-     * @param   {Mapper}   mapper used to arrive at desired prop
+     * @param   {function(state: Immutable.Map | Immutable.List): *} mapper used to arrive at desired prop
      * @returns {Property}
      */
-    static derive = set(mapper => {
-        return new Property(Immutable.List(), [new Transformation({
-            op:   "generic",
-            args: [mapper]
-        })]);
-    }, "from", (...aliases) => {
-        const [self] = aliases;
-
-        const relations = Immutable.List(aliases)
-            .filter(alias => alias !== "*")
-            .map(alias => new Relation(alias, alias === self ? Relation.SELF : Relation.INDIE));
-
-        return new Property(relations, []);
-    })
+    static derive = set(mapper => new Property(Immutable.List(), [new Transformation({
+        op:   "generic",
+        args: [mapper]
+    })]), "from", (...aliases) => new Property(Immutable.List(aliases)
+        .filter(alias => alias !== "*")
+        .map((alias, idx) => new Relation(alias, idx === 0 ? Relation.SELF : Relation.INDIE))))
 
     /**
      * constructor, takes a list of relations, transformations
@@ -182,21 +152,12 @@ class Property {
 }
 
 /**
- * a predicate takes some arguments and returns a boolean
- *
- * @callback Predicate
- * @param  {*}       args for predicate
- * @return {boolean}
- */
-
-/**
  * this function is used in conjunction to joins. It creates
  * a new property containing the relation
  *
- * @function
- * @param  {string}    alias     for relation
- * @param  {string}    key       to be set with relation
- * @param  {Predicate} predicate to join on
+ * @param  {string}                   alias     for relation
+ * @param  {string}                   key       to be set with relation
+ * @param  {function(...*) : boolean} predicate to join on
  * @return {Property}
  */
 const on = function on(alias, key, predicate) {
@@ -217,27 +178,36 @@ Object.defineProperty(Property.prototype, "join", {
     enumerable:   false,
     configurable: false,
     get:          function join() {
-        const func = name => ({
+        return set(name => ({
             on: on.bind(this, name)
-        });
-
-        func.self = {
+        }), "self", {
             on: on.bind(this, this.relations.first().name)
-        };
-
-        return func;
+        });
     }
 });
 
 /**
- * we add proxies for all immutable methods
+ * we add proxies for all public immutable methods
  */
-Property.methods.forEach(method => Object.defineProperty(Property.prototype, method, {
-    enumerable: false,
-    writable:   false,
-    value:      function(...args) {
-        return this.addTransformation(method, ...args);
-    }
-}));
+Immutable.Set(getAllProperties(Immutable.Map.prototype))
+    .concat(getAllProperties(Immutable.List.prototype))
+    .filter(key => (
+        key !== "constructor" &&
+        key !== "toString" &&
+        key !== "join" &&
+        key.slice(0, 1) !== "_" &&
+        (
+            Immutable.Map.prototype[key] instanceof Function ||
+            Immutable.List.prototype[key] instanceof Function
+        )
+    ))
+    .forEach(method => Object.defineProperty(Property.prototype, method, {
+        enumerable:   false,
+        writable:     false,
+        configurable: false,
+        value:        function(...args) {
+            return this.addTransformation(method, ...args);
+        }
+    }));
 
 export default Property;
