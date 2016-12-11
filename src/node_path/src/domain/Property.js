@@ -2,10 +2,57 @@ import Immutable from "immutable";
 import set from "lodash.set";
 import Transformation from "./Transformation";
 import assert from "assert";
-import Cursor from "./Cursor";
 import Relation from "./Relation";
+import getAllProperties from "../util/getAllProperties";
+import Join from "./Join";
 
+/**
+ * takes the current state and transforms it to the
+ * desired property
+ *
+ * @callback Mapper
+ * @param  {Immutable.Map | Immutable.List} state current state
+ * @return {*}
+ */
+
+/**
+ * This class describes a property, derived from some parent
+ * state. It's used to offer a declarative and intuitive
+ * interface to describe the transformations needed to arrive
+ * at the desired property.
+ *
+ * @author Marco Sliwa <marco@circle.ai>
+ * @example
+ * Property.derive
+ *      .from("users")
+ *      .join("messages")
+ *          .on((user, message => user.message === message.id)
+ *      .filter(...)
+ *      .map(...)
+ *      .sort(...)
+ *      .first()
+ */
 class Property {
+    static methods = Immutable.Set(getAllProperties(Immutable.Map.prototype))
+        .concat(getAllProperties(Immutable.List.prototype))
+        .filter(key => (
+            key !== "constructor" &&
+            key !== "toString" &&
+            key !== "join" &&
+            key.slice(0, 1) !== "_" &&
+            (
+                Immutable.Map.prototype[key] instanceof Function ||
+                Immutable.List.prototype[key] instanceof Function
+            )
+        ))
+        .toJS()
+
+    /**
+     * overloaded user facing constructor for properties
+     *
+     * @param   {Mapper}   mapper used to arrive at desired prop
+     * @returns {Property}
+     */
     static derive = set(mapper => {
         return new Property(Immutable.List(), [new Transformation({
             op:   "generic",
@@ -21,13 +68,34 @@ class Property {
         return new Property(relations, []);
     })
 
+    /**
+     * constructor, takes a list of relations, transformations
+     * and a current relation, which is used for assigning
+     * successive cascade calls to it.
+     *
+     * @param {Relation[]}       relations         relational data
+     * @param {Transformation[]} [transformations] transformations to apply on data
+     * @param {Relation}         [current]         current relation
+     */
     constructor(relations, transformations = [], current) {
-        this.relations       = relations;
+        /** @access private */ // eslint-disable-line
+        this.relations = relations;
+
+        /** @access private */
         this.transformations = transformations;
-        this.current         = current;
+
+        /** @access private */
+        this.current = current;
     }
 
-    extractRelations(parent) {
+    /**
+     * extract the relational data from the parent state
+     *
+     * @private
+     * @param  {Immutable.Map | Immutable.List} parent state
+     * @return {Property}
+     */
+    dataForRelations(parent) {
         const mapped = this.relations
             .filter(x => x.tag === Relation.JOINED || x.tag === Relation.SELF)
             .map(({ name }) => parent.get(name));
@@ -37,8 +105,14 @@ class Property {
             .concat(mapped.slice(1).reverse());
     }
 
-    compute(parent) {
-        const values = this.relations.isEmpty() ? parent : this.extractRelations(parent);
+    /**
+     * derive the properties value from the state
+     *
+     * @param  {Immutable.Map | Immutable.List} parent state
+     * @return {Property}
+     */
+    derive(parent) {
+        const values = this.relations.isEmpty() ? parent : this.dataForRelations(parent);
 
         const indies = this.relations
             .filter(({ tag }) => tag === Relation.INDIE)
@@ -51,6 +125,14 @@ class Property {
         return result;
     }
 
+    /**
+     * adds a transformation to this Property
+     *
+     * @private
+     * @param  {string}   op   operation to be applied
+     * @param  {...*}     args for operation
+     * @return {Property}
+     */
     addTransformation(op, ...args) {
         return new Property(this.relations, this.transformations.concat(new Transformation({
             op:   op,
@@ -58,20 +140,24 @@ class Property {
         })), this.current);
     }
 
+    /**
+     * sets the current value on the property
+     *
+     * @private
+     * @param  {Relation} current relation
+     * @return {Property}
+     */
     setCurrent(current) {
         return new Property(this.relations, this.transformations, current);
     }
 
-    setRelations(relations) {
-        return new Property(relations, this.transformations, this.current);
-    }
-
-    // TODO automatisiert alle transformationen vom prototyp holen
-    // und dann mit dem prototyp mergen
-    map(...args) {
-        return this.addTransformation("map", ...args);
-    }
-
+    /**
+     * taps into the function chain, eg to log
+     * the current state of the transformation
+     *
+     * @param  {function} tapper callback
+     * @return {Property}
+     */
     tap(tapper) {
         return this.addTransformation("generic", cursor => {
             tapper(cursor);
@@ -79,34 +165,12 @@ class Property {
         });
     }
 
-    filter(...args) {
-        return this.addTransformation("filter", ...args);
-    }
-
-    pop(...args) {
-        return this.addTransformation("pop", ...args);
-    }
-
-    shift(...args) {
-        return this.addTransformation("shift", ...args);
-    }
-
-    last(...args) {
-        return this.addTransformation("last", ...args);
-    }
-
-    sort(...args) {
-        return this.addTransformation("sort", ...args);
-    }
-
-    reduce(...args) {
-        return this.addTransformation("reduce", ...args);
-    }
-
-    slice(...args) {
-        return this.addTransformation("slice", ...args);
-    }
-
+    /**
+     * adds cascades to the current relation
+     *
+     * @param  {...string} cascades for current relation
+     * @return {Property}
+     */
     cascade(...cascades) {
         assert(this.current);
 
@@ -117,43 +181,42 @@ class Property {
     }
 }
 
+/**
+ * a predicate takes some arguments and returns a boolean
+ *
+ * @callback Predicate
+ * @param  {*}       args for predicate
+ * @return {boolean}
+ */
+
+/**
+ * this function is used in conjunction to joins. It creates
+ * a new property containing the relation
+ *
+ * @function
+ * @param  {string}    alias     for relation
+ * @param  {string}    key       to be set with relation
+ * @param  {Predicate} predicate to join on
+ * @return {Property}
+ */
+const on = function on(alias, key, predicate) {
+    const current   = new Relation(alias, Relation.JOINED, key);
+    const relations = this.relations.push(current);
+
+    return new Property(relations, this.transformations, this.current)
+        .setCurrent(current)
+        .addTransformation("join", Join.of(alias, key, predicate, current, relations.first()));
+};
+
+/**
+ * this has to be defined like this, because join
+ * can be used as a selector and as a function, thats
+ * why, we need to implement a getter
+ */
 Object.defineProperty(Property.prototype, "join", {
     enumerable:   false,
     configurable: false,
     get:          function join() {
-        const on = (alias, key, predicate) => {
-            const current   = new Relation(alias, Relation.JOINED, key);
-            const relations = this.relations.push(current);
-
-            return this
-                .setRelations(relations)
-                .setCurrent(current)
-                .addTransformation("join", args => {
-                    const relationData = alias === this.relations.first().name ? args.first() : args.last();
-                    const dest         = args
-                        .first()
-                        .map(entity => {
-                            const isOneToMany = entity.get(key) instanceof Immutable.List;
-                            const idxs        = isOneToMany ? entity.get(key) : Immutable.List.of(entity.get(key));
-                            const result      = relationData.filter(relation => {
-                                return idxs.reduce((dest2, idx) => dest2 || predicate(Cursor.of(entity.set(key, idx)), Cursor.of(relation)), false); // eslint-disable-line
-                            });
-
-                            assert(!isOneToMany ? result.size <= 1 : true, `Ambigous relation, found for ${entity} ${result.size} matches: ${result}.`);
-
-                            return entity.set(key, isOneToMany ? result : result.first());
-                        })
-                        .filter(x => x.get(current.key));
-
-                    const transformed = args
-                        .pop()
-                        .shift()
-                        .unshift(dest);
-
-                    return Cursor.of(transformed);
-                });
-        };
-
         const func = name => ({
             on: on.bind(this, name)
         });
@@ -165,5 +228,16 @@ Object.defineProperty(Property.prototype, "join", {
         return func;
     }
 });
+
+/**
+ * we add proxies for all immutable methods
+ */
+Property.methods.forEach(method => Object.defineProperty(Property.prototype, method, {
+    enumerable: false,
+    writable:   false,
+    value:      function(...args) {
+        return this.addTransformation(method, ...args);
+    }
+}));
 
 export default Property;

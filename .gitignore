@@ -11,3 +11,4 @@ src/node_path/node_modules
 tmp
 Makefile
 qmake.mk
+docs

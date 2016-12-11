@@ -31,6 +31,7 @@ include $(MK_INCLUDE_PATH)$(SEPERATOR)Dependencies.mk
 include $(MK_INCLUDE_PATH)$(SEPERATOR)Build.mk
 include $(MK_INCLUDE_PATH)$(SEPERATOR)Development.mk
 include $(MK_INCLUDE_PATH)$(SEPERATOR)Package.mk
+include $(MK_INCLUDE_PATH)$(SEPERATOR)Docs.mk
 
 clean:
 	rm -rf $(PROJECT_PATH)/example/*/node_modules
@@ -49,4 +50,4 @@ build: cpp-build
 bootstrap: $(TOOLS) $(DEPENDENCIES)
 test: js-test
 
-.PHONY: bootstrap clean build test run npm-install qpm-install
+.PHONY: bootstrap clean build test run npm-install qpm-install docs

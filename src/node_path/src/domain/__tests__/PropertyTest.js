@@ -10,12 +10,12 @@ describe("PropertyTest", function() {
         const property2 = Property.derive(x => x.get("acc") + x.get("counter"));
         const property3 = Property.derive(x => x.reduce(reducer, 0));
 
-        expect(property.compute(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
-        expect(property.compute(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
-        expect(property2.compute(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
-        expect(property2.compute(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
-        expect(property3.compute(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
-        expect(property3.compute(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
+        expect(property.derive(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
+        expect(property.derive(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
+        expect(property2.derive(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
+        expect(property2.derive(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
+        expect(property3.derive(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
+        expect(property3.derive(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
     });
 
     it("creates a property with declarative constructor", function() {
@@ -29,7 +29,7 @@ describe("PropertyTest", function() {
             .reduce((dest, name) => `${dest}, ${name}`, "")
             .slice(2);
 
-        expect(property.compute(Immutable.fromJS({
+        expect(property.derive(Immutable.fromJS({
             0: {
                 id:   0,
                 name: "jupp"
@@ -65,8 +65,6 @@ describe("PropertyTest", function() {
     });
 
     it("creates a property with declarative constructor (2)", function() {
-        // TODO:
-        // - cascaden berechnen
         const property = Property.derive
             .from("users", "sorter", "x")
             .join("messages")
@@ -116,7 +114,7 @@ describe("PropertyTest", function() {
             tag:      "JOINED"
         }]);
 
-        expect(property.compute(Immutable.fromJS({
+        expect(property.derive(Immutable.fromJS({
             x:      4,
             sorter: (a, b) => a.id - b.id,
             users:  [{

@@ -1,6 +1,6 @@
 import Cursor from "./Cursor";
 import assert from "assert";
-import printMethods from "../util/printMethods";
+import printPublicMethods from "../util/printPublicMethods";
 import Immutable from "immutable";
 
 export default class Transformation {
@@ -22,7 +22,7 @@ export default class Transformation {
         const cursor    = Cursor.of(extracted);
         const action    = cursor[this.op];
 
-        if(!action || !(action instanceof Function)) return assert(false, `\n\tYou are trying to apply the non-existing method '${this.op}' on \n\t\t${data}.\n\n\tTry one of these instead: ${printMethods(data)}.`);
+        if(!action || !(action instanceof Function)) return assert(false, `\n\tYou are trying to apply the non-existing method '${this.op}' on \n\t\t${data}.\n\n\tTry one of these instead: ${printPublicMethods(data)}.`);
 
         return action.apply(cursor, this.args.map(arg => arg instanceof Function ? (...args) => arg(deps, ...args) : arg));
     }
