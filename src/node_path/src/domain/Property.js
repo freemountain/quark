@@ -129,7 +129,7 @@ Object.defineProperty(Property.prototype, "join", {
                 .setRelations(relations)
                 .setCurrent(current)
                 .addTransformation("join", args => {
-                    const relationData = args.last();
+                    const relationData = alias === this.relations.first().name ? args.first() : args.last();
                     const dest         = args
                         .first()
                         .map(entity => {
@@ -155,11 +155,11 @@ Object.defineProperty(Property.prototype, "join", {
         };
 
         const func = name => ({
-            on: on.bind(null, name)
+            on: on.bind(this, name)
         });
 
         func.self = {
-            on: on.bind(null, this.relations.first().name)
+            on: on.bind(this, this.relations.first().name)
         };
 
         return func;

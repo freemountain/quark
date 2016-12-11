@@ -66,9 +66,6 @@ describe("PropertyTest", function() {
 
     it("creates a property with declarative constructor (2)", function() {
         // TODO:
-        // - rekursive joins (join.self) werden noch nich aufgelöst:
-        //      hierbei auf zyklen achten!
-        //      ansatz: wenn join === self -> aktuellen stand zum joinen holen
         // - cascaden berechnen
         const property = Property.derive
             .from("users", "sorter", "x")
@@ -132,7 +129,7 @@ describe("PropertyTest", function() {
                 id:        1,
                 name:      "jupp",
                 message:   0,
-                addresses: 0,
+                addresses: [0],
                 parent:    1
             }, {
                 id:        2,
@@ -156,7 +153,7 @@ describe("PropertyTest", function() {
                 id:        5,
                 name:      "hubertus",
                 message:   2,
-                addresses: null,
+                addresses: 0,
                 parent:    1
             }, {
                 id:        6,
@@ -197,11 +194,17 @@ describe("PropertyTest", function() {
             }],
             name:   "in",
             parent: {
-                addresses: 0,
-                id:        1,
-                message:   0,
-                name:      "jupp",
-                parent:    1
+                addresses: [{
+                    id:     0,
+                    street: "sesam"
+                }],
+                message: {
+                    id:   0,
+                    text: "ein geier, zwei geier, drei geier"
+                },
+                id:     1,
+                name:   "jupp",
+                parent: 1
             }
         });
     });
