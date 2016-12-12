@@ -148,7 +148,7 @@ export default class Unit {
             ));
 
         this.domains = this.domains.map(x => x.setParent(this));
-        this.update();
+        // this.update();
 
         return this;
     }

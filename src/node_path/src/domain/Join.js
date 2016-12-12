@@ -10,11 +10,11 @@ import curry from "lodash.curry";
  *
  * @author  Marco Sliwa <marco@circle.ai>
  * @example
- * const dest     = new Relation("base", Relation.SELF);
+ * const dest     = new Relation("dest", Relation.SELF);
  * const relation = new Relation("relations", Relation.JOINED, "relation", ["PUT"]);
- * const join     = Join.of(relation, dest (dest, relation) => dest.relation === relation.id);
+ * const join     = Join.of(relation, dest, (dest, relation) => dest.relation === relation.id);
  *
- * const joined = join(Immutable.Map({
+ * const joined = join(Immutable.fromJS({
  *     dest: [{
  *          id:       0,
  *          name:     "jens",
@@ -42,7 +42,7 @@ import curry from "lodash.curry";
  *          id:       2,
  *          name:     "bad person"
  *     }]
- * }));
+ * }).toList());
  *
  * console.log(joined
  *     .map(({ relation,  name }) => `${name}: ${relation.text},`)
