@@ -3,7 +3,7 @@ import { expect } from "chai";
 import Immutable from "immutable";
 import sinon from "sinon";
 
-describe("CursorTest", function() {
+describe("CursorTest", function() { // eslint-disable-line
     it("creates some cursors", function() {
         const map = Immutable.Map({
             test: "test"

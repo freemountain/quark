@@ -4,6 +4,6 @@
   "plugins": [
     {"name": "esdoc-es7-plugin"}
   ],
-  "excludes": ["node_modules"],
+  "excludes": ["node_modules", "lib", "__tests__", "cpp"],
   "autoPrivate": false
 }

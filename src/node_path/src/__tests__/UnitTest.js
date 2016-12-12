@@ -1,12 +1,12 @@
-import Domain from "../Domain";
+import Unit from "../Unit";
 import Property from "../domain/Property";
 import Trigger from "../domain/Trigger";
-// import { expect } from "chai";
+import { expect } from "chai";
 
 const derive    = Property.derive;
 const triggered = Trigger.triggered;
 
-class Security extends Domain {
+class Security extends Unit {
     static props = {
         currentUser: null,
         users:       [],
@@ -35,7 +35,7 @@ class Security extends Domain {
     }
 }
 
-class Addresses extends Domain {
+class Addresses extends Unit {
     static props = [{
         id:     0,
         street: ""
@@ -48,7 +48,7 @@ class Addresses extends Domain {
     }
 }
 
-class Users extends Domain {
+class Users extends Unit {
     static props = {
         security: new Security({
             currentUser: derive
@@ -88,7 +88,7 @@ class Users extends Domain {
 }
 
 
-class Message extends Domain {
+class Message extends Unit {
     static props = {
         successMessage: null,
         hidden:         derive(x => x.has("successMessage"))
@@ -108,11 +108,12 @@ class Message extends Domain {
     }
 }
 
-class App extends Domain {
+class App extends Unit {
     static props = {
         users: new Users({
             open: derive
-				.from("window.height")
+                .from("windows")
+                .first()
                 .map(x => x.height > 100),
 
             test: triggered
@@ -138,19 +139,31 @@ class App extends Domain {
     }
 }
 
-describe("DomainTest", function() {
+describe("UnitTest", function() {
+    it("checks for idempotent constructor", function() {
+        const domain = new Security();
+
+        expect(domain).to.equal(new Security(domain));
+        expect(domain).to.equal(new Addresses(domain));
+    });
+
     it("creates a domain", function() {
         // im state einen speziellen key actions
         // reservieren, der speichert die reihenfolge
         // Dadurch kann der state später auch wieder
         // entkoppelt werden
+        // TODO:
+        // - initial state checken
+        // - diverse actions checken (dabei trigger testen)
+        // - trigger unit test
+        // - join unit test
         const domain = new App();
 
-        console.log(domain);
+        console.log(domain.cursor.toJS());
+        // expect(domain).to.be.an("object");
+        expect(domain.cursor.toJS()).to.eql({});
 
-        /* expect(domain.cursor.toJS()).to.eql({});
-
-        domain.receive({
+        /* domain.receive({
             type:    "login",
             payload: [0, "huhu"]
         }).then(result => {

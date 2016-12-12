@@ -3,8 +3,8 @@ import set from "lodash.set";
 import Transformation from "./Transformation";
 import assert from "assert";
 import Relation from "./Relation";
-import getAllProperties from "../util/getAllProperties";
 import Join from "./Join";
+import ImmutableMethods from "../util/ImmutableMethods";
 
 /**
  * This class describes a property, derived from some parent
@@ -28,7 +28,7 @@ class Property {
     /**
      * overloaded user facing constructor for properties
      *
-     * @param   {function(state: Immutable.Map | Immutable.List): *} mapper used to arrive at desired prop
+     * @param   {function(state: Immutable.Collection): *} mapper used to arrive at desired prop
      * @returns {Property}
      */
     static derive = set(mapper => new Property(Immutable.List(), [new Transformation({
@@ -43,19 +43,29 @@ class Property {
      * and a current relation, which is used for assigning
      * successive cascade calls to it.
      *
-     * @param {Relation[]}       relations         relational data
-     * @param {Transformation[]} [transformations] transformations to apply on data
-     * @param {Relation}         [current]         current relation
+     * @param {Relation[]}       relations            relational data
+     * @param {Transformation[]} [transformations=[]] transformations to apply on data
+     * @param {?Relation}        [current]            current relation
      */
     constructor(relations, transformations = [], current) {
-        /** @access private */ // eslint-disable-line
+        /** @private */ // eslint-disable-line
         this.relations = relations;
 
-        /** @access private */
+        /** @private */
         this.transformations = transformations;
 
-        /** @access private */
+        /** @private */
         this.current = current;
+    }
+
+    /**
+     * prefixes all relation selectors
+     *
+     * @param  {string}   prefix for relations
+     * @return {Property}
+     */
+    setPrefix(prefix) {
+        return new Property(this.relations.map(relation => relation.setPrefix(prefix)), this.transformations, this.current ? this.current.setPrefix(prefix) : this.current);
     }
 
     /**
@@ -68,7 +78,12 @@ class Property {
     dataForRelations(parent) {
         const mapped = this.relations
             .filter(x => x.tag === Relation.JOINED || x.tag === Relation.SELF)
-            .map(({ name }) => parent.get(name));
+            .map(({ name }) => name
+                .split(".")
+                .reduce((dest, key) => {
+                    assert(dest && dest.get instanceof Function, `trying to access unknown key '${key}' from path '${name}' on ${parent}`);
+                    return dest.get(key);
+                }, parent));
 
         return mapped
             .slice(0, 1)
@@ -76,17 +91,16 @@ class Property {
     }
 
     /**
-     * derive the properties value from the state
+     * receive parent state and recompute
      *
-     * @param  {Immutable.Map | Immutable.List} parent state
+     * @param  {Immutable.Collection} parent state
      * @return {Property}
      */
-    derive(parent) {
+    receive(parent) {
         const values = this.relations.isEmpty() ? parent : this.dataForRelations(parent);
-
         const indies = this.relations
             .filter(({ tag }) => tag === Relation.INDIE)
-            .map(({ name }) => parent.get(name))
+            .map(({ name }) => name.split(".").reduce((dest, key) => dest.get(key), parent))
             .reduce((dest, x) => dest.set(x.name, x), Immutable.Map())
             .toObject();
 
@@ -157,7 +171,7 @@ class Property {
  *
  * @param  {string}                   alias     for relation
  * @param  {string}                   key       to be set with relation
- * @param  {function(...*) : boolean} predicate to join on
+ * @param  {function(args: *) : boolean} predicate to join on
  * @return {Property}
  */
 const on = function on(alias, key, predicate) {
@@ -166,7 +180,7 @@ const on = function on(alias, key, predicate) {
 
     return new Property(relations, this.transformations, this.current)
         .setCurrent(current)
-        .addTransformation("join", Join.of(alias, key, predicate, current, relations.first()));
+        .addTransformation("join", Join.of(current, relations.first(), predicate));
 };
 
 /**
@@ -178,6 +192,8 @@ Object.defineProperty(Property.prototype, "join", {
     enumerable:   false,
     configurable: false,
     get:          function join() {
+        assert(this.relations.size > 0, "You are trying to do an illegal join. If you are just operating on the whole domain, joins have to be done manually");
+
         return set(name => ({
             on: on.bind(this, name)
         }), "self", {
@@ -189,11 +205,8 @@ Object.defineProperty(Property.prototype, "join", {
 /**
  * we add proxies for all public immutable methods
  */
-Immutable.Set(getAllProperties(Immutable.Map.prototype))
-    .concat(getAllProperties(Immutable.List.prototype))
+ImmutableMethods
     .filter(key => (
-        key !== "constructor" &&
-        key !== "toString" &&
         key !== "join" &&
         key.slice(0, 1) !== "_" &&
         (

@@ -121,7 +121,7 @@
         }
       ],
       "valid-jsdoc": [
-        2,
+        0,
         {
           "requireReturn": false,
           "requireReturnDescription": false

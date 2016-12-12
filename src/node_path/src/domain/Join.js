@@ -3,11 +3,67 @@ import assert from "assert";
 import Cursor from "./Cursor";
 import curry from "lodash.curry";
 
+/**
+ * This class is used to create joins. the of function is
+ * curried, so that the first 3 arguments describe a join,
+ * while the last one applies it
+ *
+ * @author  Marco Sliwa <marco@circle.ai>
+ * @example
+ * const dest     = new Relation("base", Relation.SELF);
+ * const relation = new Relation("relations", Relation.JOINED, "relation", ["PUT"]);
+ * const join     = Join.of(relation, dest (dest, relation) => dest.relation === relation.id);
+ *
+ * const joined = join(Immutable.Map({
+ *     dest: [{
+ *          id:       0,
+ *          name:     "jens",
+ *          relation: 0
+ *     }, {
+ *          id:       1,
+ *          name:     "peter",
+ *          relation: 0
+ *     }, {
+ *          id:       2,
+ *          name:     "hugo",
+ *          relation: 1
+ *     }, {
+ *          id:       3,
+ *          name:     "heinz",
+ *     }],
+ *     relations: [{
+ *          id:       0,
+ *          text:     "good person",
+ *          relation: null
+ *     }, {
+ *          id:       1,
+ *          text:     "average person",
+ *     }, {
+ *          id:       2,
+ *          name:     "bad person"
+ *     }]
+ * }));
+ *
+ * console.log(joined
+ *     .map(({ relation,  name }) => `${name}: ${relation.text},`)
+ *     .toJS()); // prints "jens: good person, peter: good person, hugo: average person"
+ */
 class Join {
-    static mapper(key, relationData, predicate, entity) {
+
+    /**
+     * this mapper is used when joining relational data
+     *
+     * @private
+     * @param  {Relation}                   current   relation
+     * @param  {Immutable.Collection}       data      of relation
+     * @param  {function(args: *): boolean} predicate to join on
+     * @param  {Immutable.Map}              entity    current entity to join into
+     * @return {Immutable.Map}
+     */
+    static mapper({ key }, data, predicate, entity) {
         const isOneToMany = entity.get(key) instanceof Immutable.List;
         const idxs        = isOneToMany ? entity.get(key) : Immutable.List.of(entity.get(key));
-        const result      = relationData.filter(relation => {
+        const result      = data.filter(relation => {
             return idxs.reduce((dest2, idx) => dest2 || predicate(Cursor.of(entity.set(key, idx)), Cursor.of(relation)), false); // eslint-disable-line
         });
 
@@ -16,11 +72,21 @@ class Join {
         return entity.set(key, isOneToMany ? result : result.first());
     }
 
-    static of(alias, key, predicate, current, first, args) {
-        const relationData = alias === first.name ? args.first() : args.last();
-        const dest         = args
+    /**
+     * curried function, that joins two relations
+     * with incoming data
+     *
+     * @param  {Relation}                   current   relation
+     * @param  {key}                        first     relation => self
+     * @param  {function(args: *): boolean} predicate to join on
+     * @param  {Immutable.Collection}       args      to extract data from
+     * @return {Cursor}
+     */
+    static of(current, first, predicate, args) {
+        const data = current.name === first.name ? args.first() : args.last();
+        const dest = args
             .first()
-            .map(Join.mapper(key, relationData, predicate))
+            .map(Join.mapper(current, data, predicate))
             .filter(x => x.get(current.key));
 
         const transformed = args
@@ -33,6 +99,6 @@ class Join {
 }
 
 Join.mapper = curry(Join.mapper, 4);
-Join.of     = curry(Join.of, 6);
+Join.of     = curry(Join.of, 4);
 
 export default Join;
