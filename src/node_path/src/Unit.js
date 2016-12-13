@@ -198,16 +198,6 @@ export default class Unit {
         return this;
     }
 
-    childHandles(action) {
-        return this._dependencies
-            .filter(Unit.UnitFilter)
-            .reduce((dest, unit) => unit.handles(action) || dest, false);
-    }
-
-    handles(action) {
-        return !isUndefined(this.dispatch(action)) || this.childHandles(action);
-    }
-
     handleError(data, e) {
         // hier werden alle <action>.error handler ausgeführt
         console.log(e);
@@ -260,9 +250,20 @@ export default class Unit {
             .then(this.update.bind(this));*/
     }
 
+    childHandles(action) {
+        return this._dependencies
+            .filter(Unit.UnitFilter)
+            .some(unit => unit.handles(action));
+    }
+
+    handles(action) {
+        return !isUndefined(this.dispatch(action)) || this.childHandles(action);
+    }
 
     receiveAction(data, diffs = Immutable.List()) {
-        assert(typeof data.type === "string", `${this.constructor.name}: Received invalied action ${data}.`);
+        // const { action } = data;
+
+        assert(typeof data.type === "string", `${this.constructor.name}: Received invalied action '${data.type}'.`);
 
         if(this.childHandles(data.type)) return this.applyOnChild(data, diffs).then(x => x.toJS());
         if(!this.handles(data.type))     return Q.resolve(diffs.toJS());
