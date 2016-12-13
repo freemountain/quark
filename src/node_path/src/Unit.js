@@ -5,11 +5,13 @@ import isUndefined from "lodash.isUndefined";
 import assert from "assert";
 import Cursor from "./domain/Cursor";
 import defaults from "set-default-value";
-// import patch from "immutablepatch";
+import patch from "immutablepatch";
 import diff from "immutablediff";
 import Q from "q";
 import { schedule } from "./Runloop";
 import set from "lodash.set";
+import uuid from "uuid";
+import curry from "lodash.curry";
 
 /**
  * a Unit represents coherent set of logically
@@ -32,7 +34,7 @@ import set from "lodash.set";
  *     static props = {
  *         loggedIn: false,
  *         current:  null
- *         items:    derive(x => x.loggedIn ? ["Menu", "Logout"] : ["Login"]
+ *         items:    derive(x => x.loggedIn ? ["Menu", "Logout"] : ["Login"])
  *     }
  *
  *     menuChanged(item) {
@@ -50,7 +52,7 @@ import set from "lodash.set";
  *     add(user) {
  *         const id = this.id;
  *
- *         return this.users.set(id, user).update(id, x => x.set("id", id))
+ *         return this.users.set(id, user).update(id, x => x.set("id", id));
  *     }
  *
  *     login(id, password) {
@@ -119,10 +121,14 @@ import set from "lodash.set";
  * //     }
  * // }
  */
-export default class Unit {
+class Unit {
     static PropertyFilter   = x => x instanceof Property;                        // eslint-disable-line
     static UnitFilter       = x => x instanceof Unit;                            // eslint-disable-line
     static DependencyFilter = x => Unit.PropertyFilter(x) || Unit.UnitFilter(x);
+
+    static PropertyAction(key, prop) {
+        return this.set(key, prop.receive(this));
+    }
 
     constructor(descr = {}) {
         if(descr instanceof Unit) return descr;
@@ -130,6 +136,7 @@ export default class Unit {
         const { props = {}, triggers = {} } = Object.getPrototypeOf(this).constructor;
         const properties                    = Immutable.Map(props);
         const description                   = Immutable.fromJS(descr);
+        const dependencies                  = properties.filter(Unit.DependencyFilter);
         const initialProps                  = properties
             .mergeDeep(description)
             .filter(x => (
@@ -138,23 +145,27 @@ export default class Unit {
                 !(x instanceof Trigger)
             ));
 
-        this._dependencies       = properties.filter(Unit.DependencyFilter);
-        this._parentDependencies = description.filter(Unit.DependencyFilter);
-        this._cursor             = Cursor.of(Immutable.Map());
+        this.parentDependencies = description.filter(Unit.DependencyFilter);
+        this.cursor             = Cursor.of(Immutable.Map({
+            _unit: {
+                id:           uuid(),
+                dependencies: dependencies,
+                progress:     this.onProgress.bind(this),
+                trigger:      this.trigger.bind(this),
+                triggers:     Immutable.Map(triggers)
+                    .map((x, key) => x.addAction(key))
+                    .merge(dependencies
+                        .filter(Unit.PropertyFilter)
+                        .map((x, key) => new Trigger(x.getDependencies().concat(key), [], [], [], key)))
+                    .set("props", (new Trigger(initialProps.keySeq().toJS())).addAction("props"))
+            }
+        }));
 
-        this._triggers = Immutable
-            .Map(triggers)
-            .map((x, key) => x.addAction(key))
-            .merge(this._dependencies.filter(Unit.PropertyFilter).map((x, key) => new Trigger(x.getDependencies(), [], [], [], key)))
-            .set("props", (new Trigger(initialProps.keySeq().toJS())).addAction("props"));
-
-        this._dependencies
+        this.cursor._unit.dependencies
             .filter(Unit.PropertyFilter)
-            .forEach((prop, key) => set(this, key, function(parent) {
-                return this.set(key, prop.compute(parent));
-            }.bind(null, this)));
+            .forEach((prop, key) => set(this, key, Unit.PropertyAction(key, prop)));
 
-        this.trigger("props", initialProps);
+        this.trigger("props", initialProps.filter(x => x !== null));
 
         return this;
     }
@@ -164,23 +175,33 @@ export default class Unit {
     }
 
     toImmutable() {
-        return this._cursor.merge(this._dependencies
+        const deps = this.cursor._unit.dependencies
             .filter(Unit.UnitFilter)
-            .map(dep => dep.toImmutable()));
+            .map(dep => dep.toImmutable());
+
+        return this.cursor
+            .filter((_, key) => key.indexOf("_") === -1)
+            .merge(deps);
+    }
+
+    triggers() {
+        return this.cursor._unit.triggers
+            .map(x => x.triggers)
+            .toJS();
     }
 
     dispatch(name) {
-        const mapped = this._triggers.has(name) ? this._triggers.get(name).map(this.cursor, name) : name;
+        const mapped = this.cursor._unit.triggers.has(name) ? this.cursor._unit.triggers.get(name).map(this.cursor, name) : name;
 
         return mapped ? this[mapped] : mapped;
     }
 
 
     trigger(action, payload) {
-        return this.receiveAction({
+        return this.receive({
             type:    action,
             payload: payload
-        });
+        }).then(() => this.cursor);
     }
 
     props(properties) {
@@ -188,54 +209,55 @@ export default class Unit {
     }
 
     done({ type: action, diffs }) {
-        // todo this binding auf alle funktionen
-        // bis auf internals erweiter, dafür den cursor
-        // auch von domain abhängig machen
-        console.log(this._triggers);
-        console.log(this._triggers.filter(x => x.shouldTrigger(this._cursor, action)));
+        const payload  = patch(Immutable.Map(), diffs);
+        const promises = this._unit.triggers
+            .filter(x => x.shouldTrigger(this, action))
+            .keySeq()
+            .map(name => this._unit.trigger(name, payload))
+            .toJS();
 
-        console.error(`apply done stuff here (computed props etc) with action '${action}', produced [\n    ${diffs.join(",\n    ")}\n]`);
-        return this;
+        return Q.all(promises).then(() => this);
     }
 
-    handleError(data, e) {
-        // hier werden alle <action>.error handler ausgeführt
+    onError(data, e) {
+        // hier wird <action>.error getriggert
         console.log(e);
         throw e;
     }
 
-    handleResult(data, previous, result) {
+    onProgress() {
+        // hier wird <action>.progess getriggert
+        assert(false, "implement");
+    }
+
+    onResult(data, previous, result) {
         if(!result || typeof result.toJS !== "function") return assert(false, `\n\t### ${this.constructor.name}.${data.type}\n\tYour action '${data.type}' returned an unexpected result '${result}'${data.payload ? ` for '${data.payload}'` : ""}.\n\tPlease make sure to only return updated cursors of this unit.`);
 
-        const old   = this._cursor;
+        const old   = this.cursor;
         const diffs = previous.concat(diff(old, result));
 
-        this._cursor = Cursor.of(result);
+        this.cursor = Cursor.of(result);
 
-        return data.type === "done" ? Q.resolve(diffs) : schedule(() => this.receiveAction({
-            type:    "done",
-            payload: {
-                type:  data.type,
-                diffs: diffs
-            }
+        return data.type === "done" ? Q.resolve(diffs) : schedule(() => this.trigger("done", {
+            type:  `${data.type}.${Trigger.DONE}`,
+            diffs: diffs
         }, diffs));
     }
 
-    applyAction(data, previous) {
+    apply(data, previous) {
         try {
             // hier werden alle <action> handler ausgeführt
             const { payload } = data;
             const args        = Array.isArray(payload) ? payload : [payload];
-            const action      = defaults(this.dispatch(data.type)).to(() => this._cursor);
-            // ?hier muss auf dem cursor eine progess methode sein, die quasi zwischendurch sachen triggert
-            const result      = action.apply(this._cursor, args);
-            const handler     = this.handleResult.bind(this, data, previous);
+            const action      = defaults(this.dispatch(data.type)).to(() => this.cursor);
+            const result      = action.apply(this.cursor, args);
+            const handler     = this.onResult.bind(this, data, previous);
 
             return !(result && typeof result.then === "function") ? handler(result) : result
                 .then(handler)
-                .catch(this.handleError.bind(this));
+                .catch(this.onError.bind(this));
         } catch(e) {
-            return this.handleError(data, e);
+            return this.onError(data, e);
         }
     }
 
@@ -251,7 +273,7 @@ export default class Unit {
     }
 
     childHandles(action) {
-        return this._dependencies
+        return this.cursor._unit.dependencies
             .filter(Unit.UnitFilter)
             .some(unit => unit.handles(action));
     }
@@ -260,14 +282,17 @@ export default class Unit {
         return !isUndefined(this.dispatch(action)) || this.childHandles(action);
     }
 
-    receiveAction(data, diffs = Immutable.List()) {
-        // const { action } = data;
-
+    receive(data, diffs = Immutable.List()) {
         assert(typeof data.type === "string", `${this.constructor.name}: Received invalied action '${data.type}'.`);
 
+        // hier wird <action>.cancel verarbeitet
         if(this.childHandles(data.type)) return this.applyOnChild(data, diffs).then(x => x.toJS());
         if(!this.handles(data.type))     return Q.resolve(diffs.toJS());
 
-        return this.applyAction(data, diffs).then(x => x.toJS());
+        return this.apply(data, diffs).then(x => x.toJS());
     }
 }
+
+Unit.PropertyAction = curry(Unit.PropertyAction, 3);
+
+export default Unit;

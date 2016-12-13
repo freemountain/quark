@@ -35,7 +35,14 @@ class Security extends Unit {
     }
 }
 
-/* class Addresses extends Unit {
+// TODO: needs to work with lists, too:
+// dafür cursor un target anpassen, sodass
+// cursor.props die props sind und target
+// nen call auf _unit durchlässt, ohne
+// an die props zu gehen
+throw new Error("hier weiter");
+
+class Addresses extends Unit { // eslint-disable-line
     static props = [{
         id:     0,
         street: ""
@@ -48,7 +55,7 @@ class Security extends Unit {
     }
 }
 
-class Users extends Unit {
+/* class Users extends Unit {
     static props = {
         security: new Security({
             currentUser: derive
@@ -85,7 +92,7 @@ class Users extends Unit {
 
         return this.update("height", x => x + 1);
     }
-}*/
+}*
 
 
 /* class Message extends Unit {
@@ -139,30 +146,32 @@ class App extends Unit {
     }
 }*/
 
-describe("UnitTest", function() {
+describe("UnitTest", function() { // eslint-disable-line
     it("checks for idempotent constructor", function() {
-        expect();
+        const domain = new Addresses();
 
-        /* const domain = new Users();
         expect(domain).to.equal(new Security(domain));
-        expect(domain).to.equal(new Addresses(domain));*/
+        expect(domain).to.equal(new Addresses(domain));
     });
 
-    it("creates a domain", function() {
+    it("creates a domain", function(done) {
         const security = new Security();
 
-        expect(security._triggers.map(x => x.triggers).toJS()).to.eql({
+        expect(security.triggers()).to.eql({
             login:    ["login", "blub"],
             logout:   ["logout"],
             props:    ["props", "currentUser", "users"],
-            loggedIn: ["props.done"]
+            loggedIn: ["props.done", "loggedIn"]
         });
 
-        expect(security.toJS()).to.eql({
-            currentUser: null,
-            users:       [],
-            loggedIn:    false
-        });
+        setTimeout(() => {
+            expect(security.toJS()).to.eql({
+                users:    [],
+                loggedIn: false
+            });
+
+            done();
+        }, 1);
     });
 
 /* it("creates a domain", function() {
