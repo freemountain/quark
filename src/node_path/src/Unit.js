@@ -9,7 +9,6 @@ import patch from "immutablepatch";
 import diff from "immutablediff";
 import Q from "q";
 import { schedule } from "./Runloop";
-import set from "lodash.set";
 import uuid from "uuid";
 import curry from "lodash.curry";
 
@@ -125,49 +124,77 @@ class Unit {
     static PropertyFilter   = x => x instanceof Property;                        // eslint-disable-line
     static UnitFilter       = x => x instanceof Unit;                            // eslint-disable-line
     static DependencyFilter = x => Unit.PropertyFilter(x) || Unit.UnitFilter(x);
+    static OnlyValueFilter  = x => (                                             // eslint-disable-line
+        !(x instanceof Property) &&
+        !(x instanceof Unit) &&
+        !(x instanceof Trigger)
+    );
 
     static PropertyAction(key, prop) {
         return this.set(key, prop.receive(this));
     }
 
+    static PropertyMapper(x, key) {
+        const deps   = x.getDependencies();
+        const mapped = deps.map(y => y.replace(Trigger.DONE, "").replace(".", ""));
+        const guard  = (state, prev) => mapped.some(y => y === "props" ? state !== prev : state.get(x) !== prev.get(x));
+
+        return new Trigger(deps.concat(key), [guard], [], [], key);
+    }
+
     constructor(descr = {}) {
         if(descr instanceof Unit) return descr;
 
-        const { props = {}, triggers = {} } = Object.getPrototypeOf(this).constructor;
-        const properties                    = Immutable.Map(props);
-        const description                   = Immutable.fromJS(descr);
-        const dependencies                  = properties.filter(Unit.DependencyFilter);
-        const initialProps                  = properties
+        const {
+            props = {},
+            triggers = {}
+        } = Object.getPrototypeOf(this).constructor;
+
+        const properties   = Immutable.Map(props);
+        const description  = Immutable.fromJS(descr);
+        const dependencies = properties
+            .filter(Unit.DependencyFilter)
+            .map(x => Unit.UnitFilter(x) ? x.setParent(this) : x);
+
+        const initialProps = properties
             .mergeDeep(description)
-            .filter(x => (
-                !(x instanceof Property) &&
-                !(x instanceof Unit) &&
-                !(x instanceof Trigger)
-            ));
+            .filter(Unit.OnlyValueFilter);
+
+        const computed = dependencies
+            .filter(Unit.PropertyFilter)
+            .map(Unit.PropertyMapper);
+
+        const propsTrigger = new Trigger(initialProps.keySeq().toJS());
+        const allTriggers  = Immutable.Map(triggers)
+            .map((x, key) => x.addAction(key))
+            .merge(computed)
+            .set("props", propsTrigger.addAction("props"));
+
+        const unit = Immutable.Map({
+            revision:     0,
+            id:           uuid(),
+            dependencies: dependencies,
+            progress:     this.onProgress.bind(this),
+            trigger:      this.trigger.bind(this),
+            triggers:     allTriggers
+        });
 
         this.parentDependencies = description.filter(Unit.DependencyFilter);
         this.cursor             = Cursor.of(Immutable.Map({
-            _unit: {
-                id:           uuid(),
-                dependencies: dependencies,
-                progress:     this.onProgress.bind(this),
-                trigger:      this.trigger.bind(this),
-                triggers:     Immutable.Map(triggers)
-                    .map((x, key) => x.addAction(key))
-                    .merge(dependencies
-                        .filter(Unit.PropertyFilter)
-                        .map((x, key) => new Trigger(x.getDependencies().concat(key), [], [], [], key)))
-                    .set("props", (new Trigger(initialProps.keySeq().toJS())).addAction("props"))
-            }
+            _unit: unit
         }));
 
-        this.cursor._unit.dependencies
+        Object.assign(this, this.cursor._unit.dependencies
             .filter(Unit.PropertyFilter)
-            .forEach((prop, key) => set(this, key, Unit.PropertyAction(key, prop)));
+            .map((prop, key) => Unit.PropertyAction(key, prop)).toJS());
 
         this.trigger("props", initialProps.filter(x => x !== null));
 
         return this;
+    }
+
+    setParent() {
+        assert(false, "implement");
     }
 
     toJS() {
@@ -191,7 +218,7 @@ class Unit {
     }
 
     dispatch(name) {
-        const mapped = this.cursor._unit.triggers.has(name) ? this.cursor._unit.triggers.get(name).map(this.cursor, name) : name;
+        const mapped = this.cursor._unit.triggers.has(name) ? this.cursor._unit.triggers.get(name).map(this.cursor, this.previous, name) : name;
 
         return mapped ? this[mapped] : mapped;
     }
@@ -208,10 +235,10 @@ class Unit {
         return this.merge(properties);
     }
 
-    done({ type: action, diffs }) {
+    done({ type: action, diffs, previous }) {
         const payload  = patch(Immutable.Map(), diffs);
         const promises = this._unit.triggers
-            .filter(x => x.shouldTrigger(this, action))
+            .filter(x => x.shouldTrigger(this, previous, action))
             .keySeq()
             .map(name => this._unit.trigger(name, payload))
             .toJS();
@@ -233,14 +260,15 @@ class Unit {
     onResult(data, previous, result) {
         if(!result || typeof result.toJS !== "function") return assert(false, `\n\t### ${this.constructor.name}.${data.type}\n\tYour action '${data.type}' returned an unexpected result '${result}'${data.payload ? ` for '${data.payload}'` : ""}.\n\tPlease make sure to only return updated cursors of this unit.`);
 
-        const old   = this.cursor;
-        const diffs = previous.concat(diff(old, result));
+        this.previous = this.cursor;
+        this.cursor   = Cursor.of(result.update("_unit", x => x.update("revision", y => y + 1)));
 
-        this.cursor = Cursor.of(result);
+        const diffs = previous.concat(diff(this.previous, this.cursor));
 
         return data.type === "done" ? Q.resolve(diffs) : schedule(() => this.trigger("done", {
-            type:  `${data.type}.${Trigger.DONE}`,
-            diffs: diffs
+            type:     `${data.type}.${Trigger.DONE}`,
+            diffs:    diffs,
+            previous: this.previous
         }, diffs));
     }
 

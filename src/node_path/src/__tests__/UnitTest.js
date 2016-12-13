@@ -40,7 +40,7 @@ class Security extends Unit {
 // cursor.props die props sind und target
 // nen call auf _unit durchlässt, ohne
 // an die props zu gehen
-throw new Error("hier weiter");
+/* throw new Error("hier weiter");
 
 class Addresses extends Unit { // eslint-disable-line
     static props = [{
@@ -53,7 +53,7 @@ class Addresses extends Unit { // eslint-disable-line
 
         return this.set(id, address.set("id", id));
     }
-}
+}*/
 
 /* class Users extends Unit {
     static props = {
@@ -147,12 +147,12 @@ class App extends Unit {
 }*/
 
 describe("UnitTest", function() { // eslint-disable-line
-    it("checks for idempotent constructor", function() {
+        /* it("checks for idempotent constructor", function() {
         const domain = new Addresses();
 
         expect(domain).to.equal(new Security(domain));
         expect(domain).to.equal(new Addresses(domain));
-    });
+    });*/
 
     it("creates a domain", function(done) {
         const security = new Security();

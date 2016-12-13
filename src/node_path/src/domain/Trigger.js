@@ -47,14 +47,14 @@ export default class Trigger {
         return new Trigger(this.triggers, this.guards, this.delays, this.bindings.concat(binding), this.action);
     }
 
-    shouldTrigger(state, action) {
+    shouldTrigger(state, prev, action) {
         const idx = this.triggers.indexOf(action);
 
-        return idx === -1 ? false : defaults(this.guards[idx]).to(() => true)(state);
+        return idx === -1 ? false : defaults(this.guards[idx]).to(() => true)(state, prev);
     }
 
-    map(state, action) {
-        if(!this.shouldTrigger(state, action)) return undefined; // eslint-disable-line
+    map(state, prev, action) {
+        if(!this.shouldTrigger(state, prev, action)) return undefined; // eslint-disable-line
 
         const result = this.triggers.find(x => x === action);
 
