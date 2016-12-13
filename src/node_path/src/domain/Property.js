@@ -5,6 +5,7 @@ import assert from "assert";
 import Relation from "./Relation";
 import Join from "./Join";
 import ImmutableMethods from "../util/ImmutableMethods";
+import Trigger from "./Trigger";
 
 /**
  * This class describes a property, derived from some parent
@@ -122,6 +123,18 @@ class Property {
             op:   op,
             args: args
         })), this.current);
+    }
+
+    /**
+     * returns the dependencies of this computed
+     * property
+     *
+     * @return {string[]}
+     */
+    getDependencies() {
+        return this.relations.isEmpty() ? Immutable.List.of(`props.${Trigger.DONE}`) : this.relations
+            .slice(1)
+            .map(x => `${x.name}.${Trigger.DONE}`);
     }
 
     /**

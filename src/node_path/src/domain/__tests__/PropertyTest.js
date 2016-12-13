@@ -10,6 +10,8 @@ describe("PropertyTest", function() {
         const property2 = Property.derive(x => x.get("acc") + x.get("counter"));
         const property3 = Property.derive(x => x.reduce(reducer, 0));
 
+        expect(property.getDependencies().toJS()).to.eql(["props.done"]);
+        expect(property2.getDependencies().toJS()).to.eql(["props.done"]);
         expect(property.receive(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
         expect(property.receive(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
         expect(property2.receive(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
@@ -29,6 +31,7 @@ describe("PropertyTest", function() {
             .reduce((dest, name) => `${dest}, ${name}`, "")
             .slice(2);
 
+        expect(property.getDependencies().toJS()).to.eql(["props.done"]);
         expect(property.receive(Immutable.fromJS({
             0: {
                 id:   0,
@@ -177,6 +180,7 @@ describe("PropertyTest", function() {
             }
         };
 
+        expect(property.getDependencies().toJS()).to.eql(["sorter.done", "x.done", "messages.done", "addresses.done", "users.done"]);
         expect(property.relations.toJS()).to.eql([{
             key:      null,
             cascades: [],

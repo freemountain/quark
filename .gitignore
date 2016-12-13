@@ -12,3 +12,4 @@ tmp
 Makefile
 qmake.mk
 docs
+*.bak

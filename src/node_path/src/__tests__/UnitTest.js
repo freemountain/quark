@@ -35,7 +35,7 @@ class Security extends Unit {
     }
 }
 
-class Addresses extends Unit {
+/* class Addresses extends Unit {
     static props = [{
         id:     0,
         street: ""
@@ -85,10 +85,10 @@ class Users extends Unit {
 
         return this.update("height", x => x + 1);
     }
-}
+}*/
 
 
-class Message extends Unit {
+/* class Message extends Unit {
     static props = {
         successMessage: null,
         hidden:         derive(x => x.has("successMessage"))
@@ -137,17 +137,35 @@ class App extends Unit {
             menu:   {}
         }]
     }
-}
+}*/
 
 describe("UnitTest", function() {
     it("checks for idempotent constructor", function() {
-        const domain = new Security();
+        expect();
 
+        /* const domain = new Users();
         expect(domain).to.equal(new Security(domain));
-        expect(domain).to.equal(new Addresses(domain));
+        expect(domain).to.equal(new Addresses(domain));*/
     });
 
     it("creates a domain", function() {
+        const security = new Security();
+
+        expect(security._triggers.map(x => x.triggers).toJS()).to.eql({
+            login:    ["login", "blub"],
+            logout:   ["logout"],
+            props:    ["props", "currentUser", "users"],
+            loggedIn: ["props.done"]
+        });
+
+        expect(security.toJS()).to.eql({
+            currentUser: null,
+            users:       [],
+            loggedIn:    false
+        });
+    });
+
+/* it("creates a domain", function() {
         // im state einen speziellen key actions
         // reservieren, der speichert die reihenfolge
         // Dadurch kann der state später auch wieder
@@ -159,7 +177,8 @@ describe("UnitTest", function() {
         // - join unit test
         const domain = new App();
 
-        console.log(domain.cursor.toJS());
+        // expect(domain.update()).to.eql([]);
+
         // expect(domain).to.be.an("object");
         expect(domain.cursor.toJS()).to.eql({});
 
@@ -168,6 +187,6 @@ describe("UnitTest", function() {
             payload: [0, "huhu"]
         }).then(result => {
             expect(result).to.eql([]);
-        }).catch(cb);*/
-    });
+        }).catch(cb);
+});*/
 });
