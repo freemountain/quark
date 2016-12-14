@@ -155,7 +155,7 @@ class Unit extends Duplex {
             triggers = {}
         } = Object.getPrototypeOf(this).constructor;
 
-        const properties   = Immutable.Map(props);
+        const properties   = Immutable.fromJS(props);
         const description  = Immutable.fromJS(descr);
         const dependencies = properties
             .filter(Unit.DependencyFilter)
@@ -195,7 +195,7 @@ class Unit extends Duplex {
             .map((prop, key) => Unit.PropertyAction(key, prop)).toJS());
 
         this.trigger("props", initialProps.filter(x => x !== null))
-            .then(diffs => schedule(() => this.buffers.push(diffs), 17))
+            .then(diffs => this.buffers.push(diffs.toJS()))
             .catch(e => this.emit("error", e));
 
         return this;
@@ -226,9 +226,21 @@ class Unit extends Duplex {
     }
 
     dispatch(name) {
-        const mapped = this.cursor._unit.triggers.has(name) ? this.cursor._unit.triggers.get(name).map(this.cursor, this.previous, name) : name;
+        const triggers = this.cursor._unit.triggers;
 
-        return mapped ? this[mapped] : mapped;
+        if(triggers.has(name)) return this[triggers.get(name).map(this.cursor, this.previous, name)];
+
+        const ops = triggers
+            .filter(x => x.triggers.indexOf(name) !== -1)
+            .keySeq()
+            .map(key => this[key]);
+
+        if(ops.size > 1) return function(...args) {
+            return Q.all(ops.map(op => op.call(this, ...args))
+                .then(results => results.reduce((dest, result) => dest.concat(result), [])));
+        };
+
+        return ops.isEmpty() ? this[name] : ops.first();
     }
 
 
@@ -244,7 +256,7 @@ class Unit extends Duplex {
     }
 
     done({ type: action, diffs, previous }) {
-        const payload  = patch(Immutable.Map(), diffs);
+        const payload  = patch(Immutable.Map(), Immutable.fromJS(diffs));
         const promises = this._unit.triggers
             .filter(x => x.shouldTrigger(this, previous, action))
             .keySeq()
@@ -256,7 +268,7 @@ class Unit extends Duplex {
 
     onError(data, e) {
         // hier wird <action>.error getriggert
-        console.log(e);
+        console.error(e);
         throw e;
     }
 
@@ -273,7 +285,12 @@ class Unit extends Duplex {
 
         const diffs = previous.concat(diff(this.previous, this.cursor));
 
-        return data.type === "done" ? Q.resolve(diffs) : schedule(() => this.trigger("done", {
+        if(data.type === "done") {
+            console.log(result);
+            return Q.resolve(diffs);
+        }
+
+        return schedule(() => this.trigger("done", {
             type:     `${data.type}.${Trigger.DONE}`,
             diffs:    diffs,
             previous: this.previous

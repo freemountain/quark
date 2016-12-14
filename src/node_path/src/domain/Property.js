@@ -132,9 +132,11 @@ class Property {
      * @return {string[]}
      */
     getDependencies() {
-        return this.relations.isEmpty() ? Immutable.List.of(`props.${Trigger.DONE}`) : this.relations
-            .slice(1)
-            .map(x => `${x.name}.${Trigger.DONE}`);
+        const props = `props.${Trigger.DONE}`;
+
+        return this.relations.isEmpty() ? Immutable.List.of(props) : this.relations
+            .map(x => `${x.name}.${Trigger.DONE}`)
+            .concat(props).toSet();
     }
 
     /**

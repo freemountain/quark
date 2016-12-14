@@ -64,14 +64,10 @@ describe("GluonTest", function() {
     });
 
     it("uses gluon to write", function(done) {
-            expect(this.out) // eslint-disable-line
+        expect(this.out) // eslint-disable-line
             .to.exactly.produce([
                 "{\"type\":\"value\",\"payload\":{\"test\":\"test\"}}\n",
-                "{\"type\":\"action\",\"payload\":{\"type\":\"loadQml\",\"payload\":{\"url\":\"path\"}}}\n",
-                "{\"type\":\"value\",\"payload\":{\"qml\":\"test2\"}}\n",
-                "{\"type\":\"action\",\"payload\":{\"type\":\"loadQml\",\"payload\":{\"url\":\"test2\"}}}\n",
-                "{\"type\":\"action\",\"payload\":{\"type\":\"startProcess\",\"payload\":\"blub\\\\prog\\\\prog\"}}\n",
-                "{\"type\":\"action\",\"payload\":{\"type\":\"killProcess\",\"payload\":\"blub\\\\prog\\\\prog\"}}\n"
+                "{\"type\":\"value\",\"payload\":{\"qml\":\"test2\"}}\n"
             ])
             .notify(done);
 

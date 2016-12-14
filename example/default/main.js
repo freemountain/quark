@@ -1,30 +1,36 @@
 const Quark = require("quark");
-const path  = require("path");
+// const path  = require("path");
 
 // require("shelljs/global");
 
-const app = Quark.of({
-    initialState: {
-        apps: []
-    },
-    mappings: {
-        startProcess: "onStart",
-        deployApp:    "onDeploy"
-    },
-    intents: {
-        onStart(state, dir) {
-            console.error("start");
-            return state.update("processes", processes => processes.concat(dir));
-        },
-        
-        onDeploy(state, program) {
-            console.error("deploy");
-            return state.update("apps", apps => apps.concat(program))
-        } 
-    }
-});
+const triggered = Quark.triggered;
 
-app.listen("processes").on("data", console.error.bind(console));
+class QuarkDefault extends Quark.Unit {
+    start(dir) {
+        return this.update("processes", processes => processes.concat({
+            path: dir
+        }));
+    }
+        
+    deploy(program) {
+        console.error("deploy", program);
+        return this.update("apps", apps => apps.concat(program))
+    } 
+}
+
+QuarkDefault.props = {
+    apps:      [],
+    processes: []
+}
+
+QuarkDefault.triggers = {
+    start:  triggered.by("startProcess"),
+    deploy: triggered.by("deployApp")
+}
+
+Quark.of(QuarkDefault);
+
+// app.listen("processes").on("data", console.error.bind(console));
 // app.listen("apps").on("data", console.error.bind(console));
 //
 /*

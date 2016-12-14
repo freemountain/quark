@@ -4,18 +4,22 @@ import Unit from "./Unit";
 import map from "through2-map";
 import patch from "Immutablepatch";
 import Immutable from "immutable";
+import Property from "./domain/Property";
+import Trigger from "./domain/Trigger";
 
 export default class Quark {
-    static Unit = Unit;
+    static triggered = Trigger.triggered;
+    static derive    = Property.derive;   // eslint-disable-line
+    static Unit      = Unit;              // eslint-disable-line
 
     static of(...args) {
         return new Quark(...args);
     }
 
     constructor(app) {
-        const message = `Your app has to be a class that extends Unit, but you gave me ${app}`;
+        const message = `Your app has to be a class that extends Unit, but you gave me ${JSON.stringify(app)}`;
 
-        assert(app instanceof Function, `Your app has to be a class that extends Unit, but you gave me ${app}`);
+        assert(app instanceof Function, `Your app has to be a class that extends Unit, but you gave me '${JSON.stringify(app)}' instead.`);
 
         this.app   = new app();
         this.state = this.app.state();
@@ -35,10 +39,36 @@ export default class Quark {
     }
 
     update(diffs) {
+        this.updateWindows(diffs);
+        this.updateProcesses(diffs);
+
         this.state = patch(this.state, Immutable.fromJS(diffs));
 
-        console.error("update");
-
         return this.state.toJS();
+    }
+
+    updateProcesses(diffs) {
+        diffs
+            .filter(diff => (
+                diff.path.indexOf("/processes") === 0 &&
+                (diff.op === "add" || diff.op === "replace")
+            ))
+            .forEach(({ value }) => value.forEach(({ path }) => this.view.start(path)));
+
+        diffs
+            .filter(diff => (
+                diff.path.indexOf("/processes") === 0 &&
+                (diff.op === "add" || diff.op === "replace")
+            ))
+            .forEach(({ op, value }) => console.error(op, value));
+    }
+
+    updateWindows(diffs) {
+        diffs
+            .filter(diff => (
+                diff.path.indexOf("/windows") === 0 &&
+                (diff.op === "add" || diff.op === "replace")
+            ))
+            .forEach(({ value }) => value.forEach(({ qml }) => this.view.load(qml)));
     }
 }

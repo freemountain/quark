@@ -55,8 +55,7 @@ export default class Gluon extends Duplex {
     // sowohl load als auch start/kill sollten später als io
     // über das plugin system gelöst werden iwie ?
     load(url) {
-        this.initialLoad = false;
-
+        console.error(url);
         this.actionOut.emit("data", {
             type:    "loadQml",
             payload: {
@@ -74,6 +73,7 @@ export default class Gluon extends Duplex {
     }
 
     start(process) {
+        console.error("start");
         this.actionOut.emit("data", {
             type:    "startProcess",
             payload: this.trim(process)
@@ -94,8 +94,6 @@ export default class Gluon extends Duplex {
     _write(data, enc, next) {
         this.valueOut.emit("data", data);
 
-        this.qmlPath = this.initialLoad && this.qmlPath ? this.load(this.qmlPath) : this.qmlPath;
-        this.qmlPath = !this.initialLoad && data.qml && data.qml !== this.qmlPath ? this.load(data.qml) : this.qmlPath;
         next();
     }
 

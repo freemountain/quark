@@ -180,7 +180,7 @@ describe("PropertyTest", function() {
             }
         };
 
-        expect(property.getDependencies().toJS()).to.eql(["sorter.done", "x.done", "messages.done", "addresses.done", "users.done"]);
+        expect(property.getDependencies().toJS()).to.eql(["users.done", "sorter.done", "x.done", "messages.done", "addresses.done", "props.done"]);
         expect(property.relations.toJS()).to.eql([{
             key:      null,
             cascades: [],
