@@ -33,7 +33,7 @@ endif
 #  runs the quark app at $(APP)
 #
 run: APP=$(PROJECT_PATH)/example/default
-run: $(RUN_DEPS)
+run: $(RUN_DEPS) build
 	@echo $(BUILD_PATH)
 	$< $(APP)/package.json
 

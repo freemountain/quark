@@ -1,64 +1,44 @@
-import { Duplex } from "stream";
-import GCD from "./GCD";
-import Store from "./Store";
 import Gluon from "./Gluon";
+import assert from "assert";
+import Unit from "./Unit";
+import map from "through2-map";
+import patch from "Immutablepatch";
+import Immutable from "immutable";
 
-export default class Quark extends Duplex {
+export default class Quark {
+    static Unit = Unit;
+
     static of(...args) {
         return new Quark(...args);
     }
 
-    constructor({ initialState: state, intents, qml, mappings }) {
-        super({
-            objectMode: true
-        });
+    constructor(app) {
+        const message = `Your app has to be a class that extends Unit, but you gave me ${app}`;
 
-        // TODO options parsen und hinzufügen
-        this.store   = Store.of(Object.assign({ qml, processes: [] }, state || {}));
-        this.gcd     = GCD.of(intents || {}, mappings);
-        this.view    = Gluon.of(qml);
-        this.qml     = qml;
-        this.timeout = 0;
-        this.buffer  = [];
+        assert(app instanceof Function, `Your app has to be a class that extends Unit, but you gave me ${app}`);
 
-        this.store.on("data", this.buffer.push.bind(this.buffer));
+        this.app   = new app();
+        this.state = this.app.state();
+        this.view  = Gluon.of(this.state.get("qml"));
+
+        assert(this.app instanceof Unit, message);
+
         this.view
-            .pipe(this.gcd)
-            .pipe(this.store)
-            .pipe(this.view);
+            .pipe(this.app.on("error", this.onError.bind(this)))
+            .pipe(map.obj(this.update.bind(this)).on("error", this.onError.bind(this)))
+            .pipe(this.view)
+            .on("error", this.onError.bind(this));
     }
 
-    after(timeout) {
-        this.timeout = timeout;
-
-        return this;
+    onError(e) {
+        throw e;
     }
 
-    trigger(type, payload) {
-        setTimeout(() => this.write({ type, payload }), this.timeout);
+    update(diffs) {
+        this.state = patch(this.state, Immutable.fromJS(diffs));
 
-        return this.after(0);
-    }
+        console.error("update");
 
-    listen(path) {
-        return this.store.listen(path);
-    }
-
-    write(...args) {
-        super.write(...args);
-
-        return this;
-    }
-
-    _write(data, enc, cb) {
-        this.gcd.write(data);
-        cb();
-    }
-
-    _read() { // eslint-disable-line
-        if(this.buffer.length === 0) return setTimeout(this._read.bind(this), 17); // eslint-disable-line
-
-        this.buffer.forEach(this.push.bind(this));
-        this.buffer.length = 0;
+        return this.state.toJS();
     }
 }

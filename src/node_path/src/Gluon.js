@@ -47,7 +47,9 @@ export default class Gluon extends Duplex {
             .pipe(Filter(Gluon.opts, msg => msg.type === "action"))
             .pipe(Mapper(Gluon.opts, msg => msg.payload));
 
-        this.actions.on("data", data => this.push(data));
+        this.actions.on("data", data => {
+            this.push(data);
+        });
     }
 
     // sowohl load als auch start/kill sollten später als io

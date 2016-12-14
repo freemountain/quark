@@ -11,6 +11,7 @@ import Q from "q";
 import { schedule } from "./Runloop";
 import uuid from "uuid";
 import curry from "lodash.curry";
+import { Duplex } from "stream";
 
 /**
  * a Unit represents coherent set of logically
@@ -120,7 +121,7 @@ import curry from "lodash.curry";
  * //     }
  * // }
  */
-class Unit {
+class Unit extends Duplex {
     static PropertyFilter   = x => x instanceof Property;                        // eslint-disable-line
     static UnitFilter       = x => x instanceof Unit;                            // eslint-disable-line
     static DependencyFilter = x => Unit.PropertyFilter(x) || Unit.UnitFilter(x);
@@ -142,8 +143,12 @@ class Unit {
         return new Trigger(deps.concat(key), [guard], [], [], key);
     }
 
-    constructor(descr = {}) {
+    constructor(descr = {}) { // eslint-disable-line
         if(descr instanceof Unit) return descr;
+
+        super({
+            objectMode: true
+        });
 
         const {
             props = {},
@@ -179,6 +184,7 @@ class Unit {
             triggers:     allTriggers
         });
 
+        this.buffers            = [];
         this.parentDependencies = description.filter(Unit.DependencyFilter);
         this.cursor             = Cursor.of(Immutable.Map({
             _unit: unit
@@ -188,7 +194,9 @@ class Unit {
             .filter(Unit.PropertyFilter)
             .map((prop, key) => Unit.PropertyAction(key, prop)).toJS());
 
-        this.trigger("props", initialProps.filter(x => x !== null));
+        this.trigger("props", initialProps.filter(x => x !== null))
+            .then(diffs => schedule(() => this.buffers.push(diffs), 17))
+            .catch(e => this.emit("error", e));
 
         return this;
     }
@@ -198,13 +206,13 @@ class Unit {
     }
 
     toJS() {
-        return this.toImmutable().toJS();
+        return this.state().toJS();
     }
 
-    toImmutable() {
+    state() {
         const deps = this.cursor._unit.dependencies
             .filter(Unit.UnitFilter)
-            .map(dep => dep.toImmutable());
+            .map(dep => dep.state());
 
         return this.cursor
             .filter((_, key) => key.indexOf("_") === -1)
@@ -224,11 +232,11 @@ class Unit {
     }
 
 
-    trigger(action, payload) {
+    trigger(action, payload, diffs) {
         return this.receive({
             type:    action,
             payload: payload
-        }).then(() => this.cursor);
+        }, diffs);
     }
 
     props(properties) {
@@ -272,14 +280,14 @@ class Unit {
         }, diffs));
     }
 
-    apply(data, previous) {
+    apply(data, diffs) {
         try {
             // hier werden alle <action> handler ausgeführt
             const { payload } = data;
             const args        = Array.isArray(payload) ? payload : [payload];
             const action      = defaults(this.dispatch(data.type)).to(() => this.cursor);
             const result      = action.apply(this.cursor, args);
-            const handler     = this.onResult.bind(this, data, previous);
+            const handler     = this.onResult.bind(this, data, diffs);
 
             return !(result && typeof result.then === "function") ? handler(result) : result
                 .then(handler)
@@ -317,7 +325,20 @@ class Unit {
         if(this.childHandles(data.type)) return this.applyOnChild(data, diffs).then(x => x.toJS());
         if(!this.handles(data.type))     return Q.resolve(diffs.toJS());
 
-        return this.apply(data, diffs).then(x => x.toJS());
+        return this.apply(data, diffs);
+    }
+
+    _write(data, enc, cb) {
+        this.receive(data)
+            .then(diffs => this.buffers.push(diffs.toJS()))
+            .then(() => cb())
+            .catch(cb);
+    }
+
+    _read() {
+        if(this.buffers.length === 0) return schedule(() => this._read(), 17);
+
+        return this.push(this.buffers.shift());
     }
 }
 

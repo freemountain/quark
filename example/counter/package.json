@@ -2,5 +2,5 @@
   "name": "quark-counter",
   "version": "0.1.0",
   "main": "main.js",
-  "initialQml": "Controls1.qml"
+  "initialQml": "index.qml"
 }

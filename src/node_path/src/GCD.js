@@ -1,44 +1,32 @@
 import { Transform } from "stream";
-import assert from "assert";
-import set from "lodash.set";
-import Intent from "./Intent";
+import Immutable from "immutable";
+import patch from "immutablepatch";
 
+// TODO: GCD selbs soll auch ne unit sein
 export default class GCD extends Transform {
     static of(...args) {
         return new GCD(...args);
     }
 
-    constructor(intents = {}, mappings = {}) {
+    constructor(app) {
         super({
             objectMode: true
         });
 
-        this.intents  = intents;
-        this.mappings = Object.assign(Object.keys(intents)
-            .reduce((dest, key) => set(dest, this.toAction(key), key), {}), mappings);
-
-        this.mappingsString = JSON.stringify(this.mappings);
+        this.app   = new app();
+        this.state = Immutable.Map();
     }
 
-    toAction(key) {
-        return key
-            .slice(2, 3)
-            .toLowerCase()
-            .concat(key.slice(3));
+    update(diffs) {
+        this.state = patch(this.state, diffs);
+
+        return this.state;
     }
 
     _transform(data, enc, cb) {
-        assert(data && typeof data.type === "string", `Your action is in the wrong format. Expected an object with key type, but got '${JSON.stringify(data)}' of type ${typeof data}.`);
-
-        const key = this.mappings[data.type];
-
-        assert(typeof key === "string", `There is exists no mapping for '${data.type}' in ${this.mappingsString}.`);
-
-        const intent = this.intents[key];
-
-        assert(typeof intent === "function", `No intent found for '${data.type}' -> '${key}' in intents [${Object.keys(this.intents)}].`);
-
-        this.push(Intent.of(intent, data.payload, this));
-        cb();
+        this.app.receive(data)
+            .then(this.update.bind(this))
+            .then(cb)
+            .catch(cb);
     }
 }

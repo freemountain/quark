@@ -92,7 +92,7 @@ class Addresses extends Unit { // eslint-disable-line
 
         return this.update("height", x => x + 1);
     }
-}*
+}*/
 
 
 /* class Message extends Unit {
@@ -147,6 +147,7 @@ class App extends Unit {
 }*/
 
 describe("UnitTest", function() { // eslint-disable-line
+
         /* it("checks for idempotent constructor", function() {
         const domain = new Addresses();
 

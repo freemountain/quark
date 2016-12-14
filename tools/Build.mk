@@ -33,7 +33,7 @@ cpp-build: js-build
 $(JS_BUILD)/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(DEPENDENCIES) $(JS_BUILD)/quark.js
 	mkdir -p $(dir $@)
 	$(NODE_CMD) $(JS_BUILD)/node_modules/eslint/bin/eslint.js $<
-	$(NODE_CMD) $(JS_BUILD)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2017,es2016,node6 --plugins transform-runtime,transform-class-properties
+	$(NODE_CMD) $(JS_BUILD)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2015 --plugins transform-runtime,transform-class-properties
 
 ##
 #  unit test js

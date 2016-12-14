@@ -10,13 +10,9 @@ const app = Quark.of({
     }
 });*/
 
-const { Domain } = require("quark");
+const Quark = require("quark");
 
-module.exports = class QuarkCounter extends Domain {
-    static props = {
-        count: 0
-    };
-
+class QuarkCounter extends Quark.Unit {
     sub() {
         return this.update("count", count => count - 1);
     }
@@ -25,3 +21,11 @@ module.exports = class QuarkCounter extends Domain {
         return this.update("count", count => count + 1);
     }
 }
+
+QuarkCounter.props = {
+    count: 0
+};
+
+Quark.of(QuarkCounter);
+
+
