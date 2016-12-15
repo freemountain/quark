@@ -39,6 +39,7 @@ export default class Quark {
     }
 
     update(diffs) {
+        console.error("update: ", diffs);
         this.updateWindows(diffs);
         this.updateProcesses(diffs);
 

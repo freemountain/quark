@@ -28,9 +28,9 @@ QuarkTodo.props = {
         { id: 30, title: "learn C++", completed: false }
     ],
 
-    completed: derive
+    /* completed: derive
         .from("todos")
-        .filter(({ completed }) => completed),
+        .filter(({ completed }) => completed),*/
 
     currentId: derive
         .from("todos")

@@ -136,7 +136,7 @@ class Property {
 
         return this.relations.isEmpty() ? Immutable.List.of(props) : this.relations
             .map(x => `${x.name}.${Trigger.DONE}`)
-            .concat(props).toSet();
+            .concat(props).toSet().toList();
     }
 
     /**

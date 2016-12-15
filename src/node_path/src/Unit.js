@@ -255,6 +255,7 @@ class Unit extends Duplex {
         return this.merge(properties);
     }
 
+    // todo: raceconditions bei parallelem shit
     done({ type: action, diffs, previous }) {
         const payload  = patch(Immutable.Map(), Immutable.fromJS(diffs));
         const promises = this._unit.triggers
@@ -277,18 +278,17 @@ class Unit extends Duplex {
         assert(false, "implement");
     }
 
-    onResult(data, previous, result) {
+    onResult(data, previous, result) { // eslint-disable-line
         if(!result || typeof result.toJS !== "function") return assert(false, `\n\t### ${this.constructor.name}.${data.type}\n\tYour action '${data.type}' returned an unexpected result '${result}'${data.payload ? ` for '${data.payload}'` : ""}.\n\tPlease make sure to only return updated cursors of this unit.`);
 
         this.previous = this.cursor;
         this.cursor   = Cursor.of(result.update("_unit", x => x.update("revision", y => y + 1)));
 
+        // race conditions, wahrscheinlich bei done nich parallel
+        console.error(data.type, "revision: ", this.previous._unit.revision, this.cursor._unit.revision);
         const diffs = previous.concat(diff(this.previous, this.cursor));
 
-        if(data.type === "done") {
-            console.log(result);
-            return Q.resolve(diffs);
-        }
+        if(data.type === "done") return Q.resolve(diffs);
 
         return schedule(() => this.trigger("done", {
             type:     `${data.type}.${Trigger.DONE}`,
