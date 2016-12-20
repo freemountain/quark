@@ -150,10 +150,11 @@ class Unit extends Duplex {
             objectMode: true
         });
 
+        const proto = Object.getPrototypeOf(this);
         const {
             props = {},
             triggers = {}
-        } = Object.getPrototypeOf(this).constructor;
+        } = proto.constructor;
 
         const properties   = Immutable.fromJS(props);
         const description  = Immutable.fromJS(descr);
@@ -169,7 +170,13 @@ class Unit extends Duplex {
             .filter(Unit.PropertyFilter)
             .map(Unit.PropertyMapper);
 
-        const propsTrigger = new Trigger(initialProps.keySeq().toJS());
+        const propsTrigger = new Trigger(initialProps
+            .keySeq()
+            .toJS()
+            .concat(Object.getOwnPropertyNames(proto))
+            .filter(x => x !== "constructor")
+            .map(x => `${x}.done`));
+
         const allTriggers  = Immutable.Map(triggers)
             .map((x, key) => x.addAction(key))
             .merge(computed)
@@ -260,7 +267,7 @@ class Unit extends Duplex {
     }
 
     done({ type: action, diffs, previous }) {
-        const payload  = patch(Immutable.Map(), Immutable.fromJS(diffs).toList());
+        const payload  = patch(previous, Immutable.fromJS(diffs).toList());
         const actions  = this._unit.triggers
             .filter(x => x.shouldTrigger(this, previous, action))
             .keySeq()
