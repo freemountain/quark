@@ -15,7 +15,7 @@ class QuarkTodo extends Quark.Unit {
     }
 
     flipCompleted(id) {
-        const updater = todo => todo.id === id ? todo.set("completed", !todo.completed) : todo;
+        const updater = todo => id === todo.get("id") ? todo.set("completed", !todo.get("completed")) : todo;
 
         return this.update("todos", todos => todos.map(updater));
     }

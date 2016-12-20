@@ -39,12 +39,12 @@ export default class Quark {
     }
 
     update(diffs) {
-        console.error("update: ", diffs);
         this.updateWindows(diffs);
         this.updateProcesses(diffs);
 
         this.state = patch(this.state, Immutable.fromJS(diffs));
 
+        console.error("update: ", this.state.toJS());
         return this.state.toJS();
     }
 
@@ -61,7 +61,7 @@ export default class Quark {
                 diff.path.indexOf("/processes") === 0 &&
                 (diff.op === "add" || diff.op === "replace")
             ))
-            .forEach(({ op, value }) => console.error(op, value));
+            .forEach(({ op, value }) => console.error("processes", op, value));
     }
 
     updateWindows(diffs) {

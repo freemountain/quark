@@ -173,6 +173,9 @@ class Unit extends Duplex {
         const allTriggers  = Immutable.Map(triggers)
             .map((x, key) => x.addAction(key))
             .merge(computed)
+            // TODO: hier müssen alle actions hin, damit
+            // nach jeder action die props recomputed werden
+            // (atm nich der fall)
             .set("props", propsTrigger.addAction("props"));
 
         const unit = Immutable.Map({
@@ -194,9 +197,10 @@ class Unit extends Duplex {
             .filter(Unit.PropertyFilter)
             .map((prop, key) => Unit.PropertyAction(key, prop)).toJS());
 
-        this.trigger("props", initialProps.filter(x => x !== null))
-            .then(diffs => this.buffers.push(diffs.toJS()))
-            .catch(e => this.emit("error", e));
+        this.write({
+            type:    "props",
+            payload: initialProps.filter(x => x !== null)
+        });
 
         return this;
     }
@@ -244,27 +248,27 @@ class Unit extends Duplex {
     }
 
 
-    trigger(action, payload, diffs) {
-        return this.receive({
-            type:    action,
-            payload: payload
-        }, diffs);
+    trigger(...args) { // eslint-disable-line
+        const diffs   = args.length > 1 ? args.pop() : args;
+        const payload = diffs instanceof Immutable.Set && args.length > 1 ? args.pop() : diffs;
+
+        return this.receive(args.concat(diffs instanceof Immutable.Set || typeof diffs !== "string" ? [] : diffs).map(action => ({ type: action, payload })), diffs instanceof Immutable.Set ? diffs : Immutable.Set());
     }
 
     props(properties) {
         return this.merge(properties);
     }
 
-    // todo: raceconditions bei parallelem shit
     done({ type: action, diffs, previous }) {
-        const payload  = patch(Immutable.Map(), Immutable.fromJS(diffs));
-        const promises = this._unit.triggers
+        const payload  = patch(Immutable.Map(), Immutable.fromJS(diffs).toList());
+        const actions  = this._unit.triggers
             .filter(x => x.shouldTrigger(this, previous, action))
             .keySeq()
-            .map(name => this._unit.trigger(name, payload))
             .toJS();
 
-        return Q.all(promises).then(() => this);
+        return actions.length === 0 ? previous : this._unit
+            .trigger(...actions, payload, diffs)
+            .then(diffs2 => patch(previous, diffs2.toList()));
     }
 
     onError(data, e) {
@@ -281,19 +285,15 @@ class Unit extends Duplex {
     onResult(data, previous, result) { // eslint-disable-line
         if(!result || typeof result.toJS !== "function") return assert(false, `\n\t### ${this.constructor.name}.${data.type}\n\tYour action '${data.type}' returned an unexpected result '${result}'${data.payload ? ` for '${data.payload}'` : ""}.\n\tPlease make sure to only return updated cursors of this unit.`);
 
-        this.previous = this.cursor;
-        this.cursor   = Cursor.of(result.update("_unit", x => x.update("revision", y => y + 1)));
-
-        // race conditions, wahrscheinlich bei done nich parallel
-        console.error(data.type, "revision: ", this.previous._unit.revision, this.cursor._unit.revision);
-        const diffs = previous.concat(diff(this.previous, this.cursor));
+        const cursor = Cursor.of(result.update("_unit", x => x.update("revision", y => y + 1)));
+        const diffs  = previous.concat(diff(this.cursor, cursor));
 
         if(data.type === "done") return Q.resolve(diffs);
 
         return schedule(() => this.trigger("done", {
             type:     `${data.type}.${Trigger.DONE}`,
             diffs:    diffs,
-            previous: this.previous
+            previous: this.cursor
         }, diffs));
     }
 
@@ -303,7 +303,7 @@ class Unit extends Duplex {
             const { payload } = data;
             const args        = Array.isArray(payload) ? payload : [payload];
             const action      = defaults(this.dispatch(data.type)).to(() => this.cursor);
-            const result      = action.apply(this.cursor, args);
+            const result      = action.apply(Cursor.of(patch(this.cursor, diffs.toList())), args);
             const handler     = this.onResult.bind(this, data, diffs);
 
             return !(result && typeof result.then === "function") ? handler(result) : result
@@ -335,9 +335,10 @@ class Unit extends Duplex {
         return !isUndefined(this.dispatch(action)) || this.childHandles(action);
     }
 
-    receive(data, diffs = Immutable.List()) {
+    handle(data, diffs) {
         assert(typeof data.type === "string", `${this.constructor.name}: Received invalied action '${data.type}'.`);
 
+        // console.error("handle ", this.cursor);
         // hier wird <action>.cancel verarbeitet
         if(this.childHandles(data.type)) return this.applyOnChild(data, diffs).then(x => x.toJS());
         if(!this.handles(data.type))     return Q.resolve(diffs.toJS());
@@ -345,9 +346,20 @@ class Unit extends Duplex {
         return this.apply(data, diffs);
     }
 
+    receive(actions, diffs = Immutable.Set()) {
+        return Q.all(actions.map(action => this.handle(action, diffs)))
+            .then(results => results.reduce((dest, x) => dest.concat(x), Immutable.Set()));
+    }
+
     _write(data, enc, cb) {
-        this.receive(data)
-            .then(diffs => this.buffers.push(diffs.toJS()))
+        this.receive([data])
+            .then(result => {
+                this.cursor = Cursor.of(patch(this.cursor, result.toList()));
+
+                // iwie received der noch alles 2ma :D, wahrsceinlih immer noch die diffs
+                this.buffers.push(result.toJS());
+                return result;
+            })
             .then(() => cb())
             .catch(cb);
     }

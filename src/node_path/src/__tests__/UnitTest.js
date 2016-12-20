@@ -10,7 +10,10 @@ class Security extends Unit {
     static props = {
         currentUser: null,
         users:       [],
-        loggedIn:    derive(x => x.has("currentUser"))
+        loggedIn:    derive(x => x.has("currentUser")),
+        loggedIn2:   derive
+            .from("users")
+            .has("currentUser")
     }
 
     static triggers = {
@@ -34,6 +37,40 @@ class Security extends Unit {
         return this.model.update();
     }
 }
+
+/*
+// later:
+class Security extends Unit {
+    @Type(User.maybe())
+    currentUser: null
+
+    @Type([User])
+    users: []
+
+    @Type(boolean)
+    loggedIn: derive(x => x.has("currentUser"))
+
+    @Type([User])
+    loggedIn2 = derive
+        .from("users")
+        .has("currentUser")
+
+    @Action
+    @Guard(x => !x.get("loggedIn"))
+    @Trigger("blub")
+    login(id, password) {
+        const user = this.users.find(x => x.id === id && x.password === password);
+
+        return this.set("currentUser", user);
+    }
+
+    @Action
+    @Guard(x => !x.get("loggedIn"))
+    logout() {
+        return this.model.update();
+    }
+}
+*/
 
 // TODO: needs to work with lists, too:
 // dafür cursor un target anpassen, sodass
@@ -156,23 +193,42 @@ describe("UnitTest", function() { // eslint-disable-line
     });*/
 
     it("creates a domain", function(done) {
+        // let counter    = 0;
         const security = new Security();
 
         expect(security.triggers()).to.eql({
-            login:    ["login", "blub"],
-            logout:   ["logout"],
-            props:    ["props", "currentUser", "users"],
-            loggedIn: ["props.done", "loggedIn"]
+            login:     ["login", "blub"],
+            logout:    ["logout"],
+            props:     ["props", "currentUser", "users"],
+            loggedIn:  ["props.done", "loggedIn"],
+            loggedIn2: ["users.done", "props.done", "loggedIn2"]
         });
 
         setTimeout(() => {
             expect(security.toJS()).to.eql({
-                users:    [],
-                loggedIn: false
+                users:     [],
+                loggedIn:  false,
+                loggedIn2: false
             });
 
             done();
-        }, 1);
+        }, 10);
+
+         /* security.on("data", () => {
+            if(counter === 2) {
+                expect(security.toJS()).to.eql({
+                    users:     [],
+                    loggedIn:  false,
+                    loggedIn2: false
+                });
+
+                return done();
+            }
+
+            counter = counter + 1;
+
+            return done;
+        });*/
     });
 
 /* it("creates a domain", function() {
