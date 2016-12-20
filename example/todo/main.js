@@ -28,9 +28,13 @@ QuarkTodo.props = {
         { id: 30, title: "learn C++", completed: false }
     ],
 
-    /* completed: derive
+    open: derive
         .from("todos")
-        .filter(({ completed }) => completed),*/
+        .filter(({ completed }) => !completed),
+
+    completed: derive
+        .from("todos")
+        .filter(({ completed }) => completed),
 
     currentId: derive
         .from("todos")
@@ -40,8 +44,9 @@ QuarkTodo.props = {
 
     windows: [{
         qml: path.join(__dirname, 'Controls2.qml')
+    }, {
+        qml: path.join(__dirname, 'Controls3.qml')
     }]
 };
 
-const app = Quark.of(QuarkTodo);
-//setInterval(() => console.error(app.app.toJS()), 1000);
+Quark.of(QuarkTodo);

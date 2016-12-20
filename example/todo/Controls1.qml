@@ -17,7 +17,7 @@ ApplicationWindow {
 
     ListModel {
         id:   m
-        path: "$['todos']"
+        path: "$['open']"
     }
 
     RowLayout {

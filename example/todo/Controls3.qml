@@ -17,7 +17,7 @@ ApplicationWindow {
 
     ListModel {
         id:   m
-        path: "$['completed']"
+        path: "$['todos']"
     }
 
     RowLayout {
