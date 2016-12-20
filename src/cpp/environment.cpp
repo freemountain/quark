@@ -11,11 +11,10 @@
 #include <QStandardPaths>
 #include <QFileInfo>
 
-Environment::Environment(QStringList args, QObject *parent) : QObject(parent)
-{
-    this->out = new QTextStream(stdout);
+Environment::Environment(QStringList args, QObject *parent) : QObject(parent) {
+    this->out    = new QTextStream(stdout);
     this->parser = new QCommandLineParser();
-    this->env = QProcessEnvironment::systemEnvironment();
+    this->env    = QProcessEnvironment::systemEnvironment();
 
     parser->setApplicationDescription("Test helper");
     parser->addHelpOption();
@@ -26,7 +25,7 @@ Environment::Environment(QStringList args, QObject *parent) : QObject(parent)
 
 QString Environment::getBundledCommand(QString name) {
     QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
-    QString path = binPath + "/" + name;
+    QString path    = binPath + "/" + name;
 
     #ifdef _WIN32
         path = path + ".exe";
@@ -42,8 +41,8 @@ QString Environment::getBundledCommand(QString name) {
 QString Environment::getSystemCommand(QString name) {
     #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
         QString files[] = {"/bin/", "/usr/bin/", "/usr/local/bin/"};
-        for( unsigned int i = 0; i < 3; i = i + 1 )
-        {
+
+        for( unsigned int i = 0; i < 3; i = i + 1 ) {
             this->printLine("get " + name);
             QString current = files[i] + name;
             QFileInfo info = QFileInfo(current);
@@ -55,19 +54,16 @@ QString Environment::getSystemCommand(QString name) {
 }
 
 QString Environment::getCommand(QString name) {
-    QString cmd = NULL;
-
-    QString envCmd = this->env.value("QUARK_CMD_" + name.toUpper(), NULL);    
-    if(envCmd != NULL) cmd = QDir::fromNativeSeparators(envCmd);
-
+    QString cmd        = NULL;
+    QString envCmd     = this->env.value("QUARK_CMD_" + name.toUpper(), NULL);
     QString bundledCmd = this->getBundledCommand(name);
-    if(cmd == NULL && bundledCmd != NULL) cmd = bundledCmd;
+    QString shellCmd   = this->getShellCommand(name);
+    QString sysCmd     = this->getSystemCommand(name);
 
-    QString shellCmd = this->getShellCommand(name);
-    if(cmd == NULL && shellCmd != NULL) cmd = shellCmd;
-
-    QString sysCmd = this->getSystemCommand(name);
-    if(cmd == NULL && sysCmd != NULL) cmd = sysCmd;
+    cmd = envCmd != NULL ? QDir::fromNativeSeparators(envCmd) : cmd;
+    cmd = cmd == NULL && bundledCmd != NULL ? bundledCmd : cmd;
+    cmd = cmd == NULL && shellCmd != NULL ? shellCmd : cmd;   
+    cmd = cmd == NULL && sysCmd != NULL ? sysCmd : cmd;
 
     if(cmd == NULL) return NULL;
 
@@ -78,8 +74,10 @@ QString Environment::getCommand(QString name) {
 QString Environment::getShellCommand(QString name) {    
     #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
         QProcess proc;
-        QString cmd = "which " + name;
+
+        QString cmd   = "which " + name;
         QString shell = env.value("SHELL", "/bin/bash");
+
         proc.start(shell, QStringList() << "-c" << cmd);
 
         if (!proc.waitForStarted()) {
@@ -89,10 +87,10 @@ QString Environment::getShellCommand(QString name) {
 
         if (!proc.waitForFinished()) {
             this->printLine("not finished");
-                return nullptr;
+            return nullptr;
         }
 
-        QString result =  proc.readAll(); // contains \n
+        QString result = proc.readAll(); // contains \n
         int n = result.size() - 1;
 
         return result.left(n);
@@ -114,10 +112,11 @@ QDir Environment::getDataPath() {
 
 QString Environment::getBundledAppPath() {
     QString result = NULL;
-    #ifdef _WIN32
-    QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
 
-    result =  binPath + "/default/package.json";
+    #ifdef _WIN32
+        QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
+
+        result =  binPath + "/default/package.json";
     #elif __linux__
         QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
 
@@ -125,7 +124,7 @@ QString Environment::getBundledAppPath() {
     #elif __APPLE__
         QString binPath = QFileInfo( QCoreApplication::applicationFilePath() ).absolutePath();
 
-        result =  binPath + "/../Resources/default/package.json";
+        result = binPath + "/../Resources/default/package.json";
     #endif
 
     return result;
@@ -133,11 +132,9 @@ QString Environment::getBundledAppPath() {
 
 QString Environment::getScriptPath() {
     QStringList args = this->parser->positionalArguments();
-    QString envPath = this->env.value("QUARK_SCRIPT", NULL);
+    QString envPath  = this->env.value("QUARK_SCRIPT", NULL);
 
-    if(args.size() > 0) return args.at(0);
-
-    return envPath;
+    return args.size() > 0 ? args.at(0) : envPath;
 }
 
 QProcessEnvironment Environment::getProcEnv() {
@@ -169,20 +166,21 @@ QuarkProcess* Environment::startProcess(QString path) {
     Either<QMap<QString, QString>, QJsonParseError> mayJson = this->loadJson(path);
 
     if(mayJson.is2nd()) {
-        this->printLine("Could not parse: " + path +
-                    "error: " + mayJson.as2nd().errorString());
+        this->printLine("Could not parse: " + path + "error: " + mayJson.as2nd().errorString());
         return nullptr;
     }
 
     QMap<QString, QString> json = mayJson.as1st();
 
-    QString main = json.value("main");
-    QString name = json.value("name");
+    QString main      = json.value("main");
+    QString name      = json.value("name");
+    QString bootstrap = this->getProcEnv().value("NODE_PATH") + "/bootstrap";
 
-    QStringList arguments = QStringList() << main
-               << "--dataPath" << this->getDataPath().filePath(name)
-               << "--configPath" << this->getConfigPath()
-               << "--shellPath" << QCoreApplication::applicationFilePath();
+    QStringList arguments = QStringList() << bootstrap
+        << main
+        << "--dataPath" << this->getDataPath().filePath(name)
+        << "--configPath" << this->getConfigPath()
+        << "--shellPath" << QCoreApplication::applicationFilePath();
 
     QuarkProcess* proc = new QuarkProcess(this->getProcEnv(), this, this);
 
@@ -205,16 +203,17 @@ Either<QMap<QString, QString>, QJsonParseError> Environment::loadJson(QString pa
     QFile file(path);
     QJsonParseError err;
     QMap<QString, QString> result;
+
     QDir baseDir = QDir(QFileInfo(path).path());
+
     file.open(QIODevice::ReadOnly | QIODevice::Text);
+
     data = file.readAll();
     json = QJsonDocument::fromJson(data.toUtf8(), &err).object();
 
-    if(err.error != QJsonParseError::NoError) {
-        return some(err);
-    }
+    if(err.error != QJsonParseError::NoError) return some(err);
 
-    main = json.value("main").toString("main.js");
+    main       = json.value("main").toString("main.js");
     initialQml = json.value("initialQml").toString("");
 
     if(initialQml != "") {
@@ -229,10 +228,9 @@ Either<QMap<QString, QString>, QJsonParseError> Environment::loadJson(QString pa
 
 QString Environment::hashPath(QString path) {
     const char * s = path.toStdString().c_str();
-    uint32_t hash = 0;
+    uint32_t hash  = 0;
 
-    for(; *s; ++s)
-    {
+    for(; *s; ++s) {
         hash += *s;
         hash += (hash << 10);
         hash ^= (hash >> 6);

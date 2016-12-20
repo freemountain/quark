@@ -5,8 +5,6 @@ const derive = Quark.derive;
 
 class QuarkTodo extends Quark.Unit {
     addTodo(title) {
-        assert(this.currentId, "currentId: ".concat(this.currentId));
-
         return this.update("todos", todos => todos.concat({
             id:        this.currentId,
             title:     title,
@@ -49,4 +47,4 @@ QuarkTodo.props = {
     }]
 };
 
-Quark.of(QuarkTodo);
+module.exports = QuarkTodo;

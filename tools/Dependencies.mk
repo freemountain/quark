@@ -34,6 +34,13 @@ $(TMP_PATH)/node_path/quark.js: $(JS_SRC)/quark.js
 	cp $< $@
 
 ##
+#  copy entrypoint to TMP_PATH
+#
+$(TMP_PATH)/node_path/bootstrap.js: $(JS_SRC)/bootstrap.js
+	mkdir -p $(dir $@)
+	cp $< $@
+
+##
 #  copy package.json to TMP_PATH
 #
 $(TMP_PATH)/node_path/package.json: $(JS_SRC)/package.json

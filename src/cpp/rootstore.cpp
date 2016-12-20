@@ -15,18 +15,19 @@ QJsonValue RootStore::value() {
 
 void RootStore::writeData(QString data) {
     QTextStream out(stderr);
-    QJsonDocument doc = QJsonDocument::fromJson(data.toUtf8());
-    QJsonObject msg = doc.object();
-    QString type = msg.value("type").toString();
+
+    QJsonDocument doc  = QJsonDocument::fromJson(data.toUtf8());
+    QJsonObject msg    = doc.object();
+    QString resource   = msg.value("resource").toString();
     QJsonValue payload = msg.value("payload");
 
-    if(type == "value") {
+    if(resource == "/value") {
         this->currentValue = payload;
         emit valueChanged(payload);
         return;
     }
 
-    if(type == "action") {
+    if(resource == "/action") {
         QJsonObject p = payload.toObject();
         emit action(p.value("type").toString(), p.value("payload"));
         return;
@@ -36,12 +37,12 @@ void RootStore::writeData(QString data) {
     out.flush();
 }
 
-void RootStore::trigger(QString type, QJsonValue payload) {
+void RootStore::trigger(QString resource, QJsonValue payload) {
     QJsonObject msg;
     QJsonObject msgPayload;
-    msg.insert("type", "action");
+    msg.insert("resource", "/action");
 
-    msgPayload.insert("type", type);
+    msgPayload.insert("type", resource);
     msgPayload.insert("payload", payload);
 
     msg.insert("payload", msgPayload);

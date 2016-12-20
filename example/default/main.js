@@ -28,7 +28,7 @@ QuarkDefault.triggers = {
     deploy: triggered.by("deployApp")
 }
 
-Quark.of(QuarkDefault);
+module.exports = QuarkDefault;
 
 // app.listen("processes").on("data", console.error.bind(console));
 // app.listen("apps").on("data", console.error.bind(console));

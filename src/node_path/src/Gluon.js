@@ -22,11 +22,11 @@ export default class Gluon extends Duplex {
         return new Gluon(...args);
     }
 
-    static Output(type) {
+    static Output(resource) {
         const out = new Stream(Gluon.opts);
 
         out
-            .pipe(Mapper(Gluon.opts, payload => ({ type, payload })))
+            .pipe(Mapper(Gluon.opts, payload => ({ resource, payload })))
             .pipe(JSONStringifier())
             .pipe(global.process.stdout);
 
@@ -40,11 +40,11 @@ export default class Gluon extends Duplex {
 
         this.initialLoad = true;
         this.qmlPath     = qmlPath;
-        this.valueOut    = Gluon.Output("value");
-        this.actionOut   = Gluon.Output("action");
+        this.valueOut    = Gluon.Output("/value");
+        this.actionOut   = Gluon.Output("/action");
         this.actions     = global.process.stdin
             .pipe(JSONStream.parse())
-            .pipe(Filter(Gluon.opts, msg => msg.type === "action"))
+            .pipe(Filter(Gluon.opts, msg => msg.resource === "/action"))
             .pipe(Mapper(Gluon.opts, msg => msg.payload));
 
         this.actions.on("data", data => {
@@ -55,7 +55,6 @@ export default class Gluon extends Duplex {
     // sowohl load als auch start/kill sollten später als io
     // über das plugin system gelöst werden iwie ?
     load(url) {
-        console.error(url);
         this.actionOut.emit("data", {
             type:    "loadQml",
             payload: {
@@ -73,7 +72,6 @@ export default class Gluon extends Duplex {
     }
 
     start(process) {
-        console.error("start");
         this.actionOut.emit("data", {
             type:    "startProcess",
             payload: this.trim(process)

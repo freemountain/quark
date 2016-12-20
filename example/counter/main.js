@@ -26,6 +26,5 @@ QuarkCounter.props = {
     count: 0
 };
 
-Quark.of(QuarkCounter);
-
+module.exports = QuarkCounter;
 

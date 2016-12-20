@@ -30,7 +30,7 @@ cpp-build: js-build
 ##
 #  js: lint, transpile and move to destination
 #
-$(JS_BUILD)/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(DEPENDENCIES) $(JS_BUILD)/quark.js
+$(JS_BUILD)/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(DEPENDENCIES) $(JS_BUILD)/quark.js $(JS_BUILD)/bootstrap.js
 	mkdir -p $(dir $@)
 	$(NODE_CMD) $(JS_BUILD)/node_modules/eslint/bin/eslint.js $<
 	$(NODE_CMD) $(JS_BUILD)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2015 --plugins transform-runtime,transform-class-properties
