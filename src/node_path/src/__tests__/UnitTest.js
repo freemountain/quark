@@ -38,8 +38,8 @@ class Security extends Unit {
     }
 }
 
-/*
-// later:
+/**
+ *
 class Security extends Unit {
     @Type(User.maybe())
     currentUser: null
@@ -77,7 +77,7 @@ class Security extends Unit {
 // cursor.props die props sind und target
 // nen call auf _unit durchlässt, ohne
 // an die props zu gehen
-/* throw new Error("hier weiter");
+// throw new Error("hier weiter");
 
 class Addresses extends Unit { // eslint-disable-line
     static props = [{
@@ -90,7 +90,7 @@ class Addresses extends Unit { // eslint-disable-line
 
         return this.set(id, address.set("id", id));
     }
-}*/
+}
 
 /* class Users extends Unit {
     static props = {
@@ -183,28 +183,26 @@ class App extends Unit {
     }
 }*/
 
-describe("UnitTest", function() { // eslint-disable-line
-
-        /* it("checks for idempotent constructor", function() {
+describe("UnitTest", function() {
+    it("checks for idempotent constructor", function() {
         const domain = new Addresses();
 
         expect(domain).to.equal(new Security(domain));
         expect(domain).to.equal(new Addresses(domain));
-    });*/
+    });
 
     it("creates a domain", function(done) {
-        // let counter    = 0;
         const security = new Security();
 
         expect(security.triggers()).to.eql({
             login:     ["login", "blub"],
             logout:    ["logout"],
-            props:     ["props", "currentUser", "users"],
+            props:     ["props", "currentUser.done", "users.done", "login.done", "logout.done"],
             loggedIn:  ["props.done", "loggedIn"],
             loggedIn2: ["users.done", "props.done", "loggedIn2"]
         });
 
-        setTimeout(() => {
+        security.on("data", () => {
             expect(security.toJS()).to.eql({
                 users:     [],
                 loggedIn:  false,
@@ -212,23 +210,7 @@ describe("UnitTest", function() { // eslint-disable-line
             });
 
             done();
-        }, 10);
-
-         /* security.on("data", () => {
-            if(counter === 2) {
-                expect(security.toJS()).to.eql({
-                    users:     [],
-                    loggedIn:  false,
-                    loggedIn2: false
-                });
-
-                return done();
-            }
-
-            counter = counter + 1;
-
-            return done;
-        });*/
+        });
     });
 
 /* it("creates a domain", function() {

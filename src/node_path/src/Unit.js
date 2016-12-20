@@ -180,9 +180,6 @@ class Unit extends Duplex {
         const allTriggers  = Immutable.Map(triggers)
             .map((x, key) => x.addAction(key))
             .merge(computed)
-            // TODO: hier müssen alle actions hin, damit
-            // nach jeder action die props recomputed werden
-            // (atm nich der fall)
             .set("props", propsTrigger.addAction("props"));
 
         const unit = Immutable.Map({
@@ -306,7 +303,6 @@ class Unit extends Duplex {
 
     apply(data, diffs) {
         try {
-            // hier werden alle <action> handler ausgeführt
             const { payload } = data;
             const args        = Array.isArray(payload) ? payload : [payload];
             const action      = defaults(this.dispatch(data.type)).to(() => this.cursor);
@@ -345,7 +341,6 @@ class Unit extends Duplex {
     handle(data, diffs) {
         assert(typeof data.type === "string", `${this.constructor.name}: Received invalied action '${data.type}'.`);
 
-        // console.error("handle ", this.cursor);
         // hier wird <action>.cancel verarbeitet
         if(this.childHandles(data.type)) return this.applyOnChild(data, diffs).then(x => x.toJS());
         if(!this.handles(data.type))     return Q.resolve(diffs.toJS());
@@ -363,7 +358,6 @@ class Unit extends Duplex {
             .then(result => {
                 this.cursor = Cursor.of(patch(this.cursor, result.toList()));
 
-                // iwie received der noch alles 2ma :D, wahrsceinlih immer noch die diffs
                 this.buffers.push(result.toJS());
                 return result;
             })
