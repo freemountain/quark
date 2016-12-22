@@ -33,13 +33,12 @@ export default class Gluon extends Duplex {
         return out;
     }
 
-    constructor(qmlPath) {
+    constructor() {
         super({
             objectMode: true
         });
 
         this.initialLoad = true;
-        this.qmlPath     = qmlPath;
         this.valueOut    = Gluon.Output("/value");
         this.actionOut   = Gluon.Output("/action");
         this.actions     = global.process.stdin

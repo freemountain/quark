@@ -7,14 +7,14 @@ const triggered = Quark.triggered;
 
 class QuarkDefault extends Quark.Unit {
     start(dir) {
-        return this.update("processes", processes => processes.concat({
+        return this.update("processes", processes => processes.push({
             path: dir
         }));
     }
         
     deploy(program) {
         console.error("deploy", program);
-        return this.update("apps", apps => apps.concat(program))
+        return this.update("apps", apps => apps.push(program))
     } 
 }
 

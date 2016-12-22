@@ -45,19 +45,19 @@ describe("GluonTest", function() {
         const stream = this.stream; // eslint-disable-line
 
         stream.write(JSON.stringify({
-            type:    "value",
-            payload: {
+            resource: "/value",
+            payload:  {
                 test: "test"
             }
         }));
 
         stream.write(JSON.stringify({
-            type: "action"
+            resource: "/action"
         }));
 
         stream.write(JSON.stringify({
-            type:    "action",
-            payload: {
+            resource: "/action",
+            payload:  {
                 test: "test"
             }
         }));
@@ -66,8 +66,7 @@ describe("GluonTest", function() {
     it("uses gluon to write", function(done) {
         expect(this.out) // eslint-disable-line
             .to.exactly.produce([
-                "{\"type\":\"value\",\"payload\":{\"test\":\"test\"}}\n",
-                "{\"type\":\"value\",\"payload\":{\"qml\":\"test2\"}}\n"
+                "{\"resource\":\"/value\",\"payload\":{\"test\":\"test\"}}\n"
             ])
             .notify(done);
 
