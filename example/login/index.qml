@@ -6,7 +6,7 @@ import Quark 1.0
 ApplicationWindow {
     id:      window
     visible: true
-    width:   300
+    width:   600
 
     Gluon {
         /*
@@ -18,25 +18,42 @@ ApplicationWindow {
     }
 
     RowLayout {
+        id:           input
         anchors.fill: parent
 
-        Button {
-            anchors.left: window.left
-            text:         "-"
-
-            onClicked: store.trigger("sub")
-        }
         Label {
             Layout.fillWidth:    true
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment:   Text.AlignVCenter
-            text:                JSON.stringify(store.value.count);
+            text:                JSON.stringify(store.value.security.loggedIn);
+        }
+
+
+        TextField {
+            id:               username
+            Layout.fillWidth: true
+            text:             ""
+            placeholderText:  "Username"
+        }
+
+        TextField {
+            id:               password
+            Layout.fillWidth: true
+            text:             ""
+            placeholderText:  "Password"
         }
 
         Button {
-            text:      "+"
-            onClicked: store.trigger("add")
+            text: "Login"
+            
+            onClicked: {
+                if(username.text == "" || password.text == "") return;
+
+                store.trigger("login", {
+                    username: username.text,
+                    password: password.text
+                });
+            }
         }
     }
 }
-

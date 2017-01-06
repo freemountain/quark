@@ -83,6 +83,8 @@ class Join {
      * @return {Cursor}
      */
     static of(current, first, predicate, args) {
+        assert(args.first() instanceof Immutable.Collection, "All relations have to be of type Immutable.Collection.");
+
         const data = current.name === first.name ? args.first() : args.last();
         const dest = args
             .first()

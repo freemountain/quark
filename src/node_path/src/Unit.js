@@ -158,13 +158,14 @@ class Unit extends Duplex {
 
         const properties   = Immutable.fromJS(props);
         const description  = Immutable.fromJS(descr);
-        const dependencies = properties
-            .filter(Unit.DependencyFilter)
-            .map(x => Unit.UnitFilter(x) ? x.setParent(this) : x);
+        const deps         = properties.filter(Unit.DependencyFilter);
+        const dependencies = deps
+            .merge(deps.filter(Unit.UnitFilter).map(x => x.parentDependencies));
 
         const initialProps = properties
             .mergeDeep(description)
-            .filter(Unit.OnlyValueFilter);
+            .filter(Unit.OnlyValueFilter)
+            .merge(deps.filter(Unit.UnitFilter).map(() => Immutable.Map()));
 
         const computed = dependencies
             .filter(Unit.PropertyFilter)
@@ -177,9 +178,16 @@ class Unit extends Duplex {
             .filter(x => x !== "constructor")
             .map(x => `${x}.done`));
 
-        const allTriggers  = Immutable.Map(triggers)
+        const childTriggers = deps
+            .filter(Unit.UnitFilter)
+            .map(x => new Trigger(x.parentDependencies
+                .reduce((dest, y) => dest.concat(y.getDependencies().filter(dep => dep.indexOf("props") === -1)), Immutable.List())
+            ));
+
+        const allTriggers = Immutable.Map(triggers)
             .map((x, key) => x.addAction(key))
             .merge(computed)
+            .merge(childTriggers)
             .set("props", propsTrigger.addAction("props"));
 
         const unit = Immutable.Map({
@@ -191,6 +199,11 @@ class Unit extends Duplex {
             triggers:     allTriggers
         });
 
+        deps
+            .filter(Unit.UnitFilter)
+            .forEach((x, key) => x.on("data", this.receiveFromChild.bind(this, key)));
+
+        this.deps               = deps;
         this.buffers            = [];
         this.parentDependencies = description.filter(Unit.DependencyFilter);
         this.cursor             = Cursor.of(Immutable.Map({
@@ -207,10 +220,6 @@ class Unit extends Duplex {
         });
 
         return this;
-    }
-
-    setParent() {
-        assert(false, "implement");
     }
 
     toJS() {
@@ -251,6 +260,14 @@ class Unit extends Duplex {
         return ops.isEmpty() ? this[name] : ops.first();
     }
 
+    receiveFromChild(key, data) {
+        const map = Immutable.Map();
+
+        schedule(() => this.write({
+            type:    `${key}.done`,
+            payload: map.set(key, patch(Immutable.Map(), Immutable.fromJS(data)))
+        }), 32);
+    }
 
     trigger(...args) { // eslint-disable-line
         const diffs   = args.length > 1 ? args.pop() : args;
@@ -318,20 +335,21 @@ class Unit extends Duplex {
     }
 
     applyOnChild(data, diffs) {
-        assert(false, "implement");
-
-        return diffs;
-
-        /* Q.all(this.domains.map(domain => domain.receive(data)).toJS())
-            .then(x => x.reduce((dest, diffs) => dest.concat(diffs), Immutable.List.of()))
-            .then(diffs => patch(this.cursor, diffs))
-            .then(this.update.bind(this));*/
+        return Q.all(this.deps.map((domain, key) => domain
+            .receive([data], diffs)
+            .then(x => x.map(y => y.update("path", path => `/${key}${path}`))) // eslint-disable-line
+        ).toList().toJS())
+            .then(x => x.reduce((dest, diffs2) => dest.concat(diffs2), Immutable.List.of()));
     }
 
     childHandles(action) {
-        return this.cursor._unit.dependencies
-            .filter(Unit.UnitFilter)
-            .some(unit => unit.handles(action));
+        return (
+            action.indexOf("props") === -1 &&
+            action.indexOf("done") === -1 &&
+            Immutable.Map(this.deps)
+                .filter(Unit.UnitFilter)
+                .some(unit => unit.handles(action))
+        );
     }
 
     handles(action) {
@@ -342,8 +360,8 @@ class Unit extends Duplex {
         assert(typeof data.type === "string", `${this.constructor.name}: Received invalied action '${data.type}'.`);
 
         // hier wird <action>.cancel verarbeitet
-        if(this.childHandles(data.type)) return this.applyOnChild(data, diffs).then(x => x.toJS());
-        if(!this.handles(data.type))     return Q.resolve(diffs.toJS());
+        if(this.childHandles(data.type)) return this.applyOnChild(data, diffs);
+        if(!this.handles(data.type))     return Q.resolve(diffs);
 
         return this.apply(data, diffs);
     }
@@ -359,16 +377,16 @@ class Unit extends Duplex {
                 this.cursor = Cursor.of(patch(this.cursor, result.toList()));
 
                 this.buffers.push(result.toJS());
-                return result;
+
+                return cb();
             })
-            .then(() => cb())
             .catch(cb);
     }
 
-    _read() {
-        if(this.buffers.length === 0) return schedule(() => this._read(), 17);
+    _read() { // eslint-disable-line
+        if(this.buffers.length === 0) return schedule(() => this._read(), 1);
 
-        return this.push(this.buffers.shift());
+        this.push(this.buffers.shift());
     }
 }
 

@@ -2,6 +2,7 @@ import Unit from "../Unit";
 import Property from "../domain/Property";
 import Trigger from "../domain/Trigger";
 import { expect } from "chai";
+import map from "through2-map";
 
 const derive    = Property.derive;
 const triggered = Trigger.triggered;
@@ -92,7 +93,7 @@ class Addresses extends Unit { // eslint-disable-line
     }
 }
 
-/* class Users extends Unit {
+class Users extends Unit {
     static props = {
         security: new Security({
             currentUser: derive
@@ -100,15 +101,32 @@ class Addresses extends Unit { // eslint-disable-line
                 .filter(({ loggedIn }) => loggedIn)
                 .pop()
         }),
-        open:      true,
-        addresses: new Addresses([{
+
+        open:  true,
+        users: [{
+            id:       0,
+            loggedIn: false,
+            name:     "first"
+        }, {
+            id:       1,
+            loggedIn: false,
+            name:     "second"
+        }]
+
+
+        // Hier is das problem mit nich map sondern liste
+        /* addresses: new Addresses([{
             id:     0,
             street: ""
-        }]),
-        users: derive.from("users")
+        }])*/
+
+        // Hier is das problem, dass das auf was dependet, was noch nich da is,
+        // hier muss also allgemein das dann ignoriert werden, bis setParent
+        // gecalled wird
+        /* users: derive.from("users")
             .join("addresses")
             .on("address", (user, address) => user.address === address.id)
-            .cascade("POST", "PUT", "DELETE")
+            .cascade("POST", "PUT", "DELETE")*/
     }
 
     static triggers = {
@@ -129,10 +147,10 @@ class Addresses extends Unit { // eslint-disable-line
 
         return this.update("height", x => x + 1);
     }
-}*/
+}
 
 
-/* class Message extends Unit {
+class Message extends Unit {
     static props = {
         successMessage: null,
         hidden:         derive(x => x.has("successMessage"))
@@ -142,7 +160,6 @@ class Addresses extends Unit { // eslint-disable-line
         hideSuccess: triggered.by("showSuccess.done").after(500)
     }
 
-    // @Trigger("showSuccess.done").defer(500)
     hideSuccess() {
         return this.set("successMessage", null);
     }
@@ -152,7 +169,7 @@ class Addresses extends Unit { // eslint-disable-line
     }
 }
 
-class App extends Unit {
+class App extends Unit { // eslint-disable-line
     static props = {
         users: new Users({
             open: derive
@@ -181,17 +198,9 @@ class App extends Unit {
             menu:   {}
         }]
     }
-}*/
+}
 
 describe("UnitTest", function() { // eslint-disable-line
-
-    /* it("checks for idempotent constructor", function() {
-        const domain = new Addresses();
-
-        expect(domain).to.equal(new Security(domain));
-        expect(domain).to.equal(new Addresses(domain));
-    });*/
-
     it("creates a domain", function(done) {
         const security = new Security();
 
@@ -203,16 +212,142 @@ describe("UnitTest", function() { // eslint-disable-line
             loggedIn2: ["users.done", "props.done", "loggedIn2"]
         });
 
-        security.on("data", () => {
-            expect(security.toJS()).to.eql({
-                users:     [],
-                loggedIn:  false,
-                loggedIn2: false
-            });
+        security.on("data", data => {
+            try {
+                expect(data).to.eql([{
+                    op:    "replace",
+                    path:  "/_unit/revision",
+                    value: 1
+                }, {
+                    op:    "add",
+                    path:  "/users",
+                    value: []
+                }, {
+                    op:    "replace",
+                    path:  "/_unit/revision",
+                    value: 3
+                }, {
+                    op:    "add",
+                    path:  "/loggedIn",
+                    value: false
+                }, {
+                    op:    "add",
+                    path:  "/loggedIn2",
+                    value: false
+                }]);
+                expect(security.toJS()).to.eql({
+                    users:     [],
+                    loggedIn:  false,
+                    loggedIn2: false
+                });
 
-            done();
+                done();
+            } catch(e) {
+                done(e);
+            }
         });
     });
+
+    it("creates a nested domain", function(done) { // eslint-disable-line
+        const users = new Users();
+
+        // hier fehlt das binding zwischen der derived
+        // property bei security und users.done (wg derive.
+        // from)
+        expect(users.triggers()).to.eql({
+            getUser:  ["getUser", "getUser.done"],
+            props:    ["props", "open.done", "users.done", "security.done", "getUser.done"],
+            security: ["users.done"]
+        });
+
+        users.pipe(map.obj(data => {
+            console.log(data);
+
+            return data;
+        })).on("error", done);
+
+        setTimeout(() => done(), 1000);
+
+    /* users.on("data", data => {
+            try {
+                // hier müssen alle diffs rauskommen, sprich:
+                // bei children muss on Data en update gemacht werden
+                // + die diffs auf parent umgeschrieben und dann emittet
+                // werden
+                /* expect(data).to.eql([{
+                    op:    "replace",
+                    path:  "/security/_unit/revision",
+                    value: 1
+                }, {
+                    op:    "add",
+                    path:  "/security/users",
+                    value: []
+                }, {
+                    op:    "replace",
+                    path:  "/security/_unit/revision",
+                    value: 3
+                }, {
+                    op:    "add",
+                    path:  "/security/loggedIn",
+                    value: false
+                }, {
+                    op:    "add",
+                    path:  "/security/loggedIn2",
+                    value: false
+                }]);
+
+                expect(data).to.eql([{
+                    op:    "replace",
+                    path:  "/_unit/revision",
+                    value: 1
+                }, {
+                    op:    "add",
+                    path:  "/open",
+                    value: true
+                }, {
+                    op:    "add",
+                    path:  "/users",
+                    value: [{
+                        id:       0,
+                        loggedIn: false,
+                        name:     "first"
+                    }, {
+                        id:       1,
+                        loggedIn: false,
+                        name:     "second"
+                    }]
+                }, {
+                    op:    "add",
+                    path:  "/security",
+                    value: {}
+                }]);
+
+        /* expect(users.toJS()).to.eql({
+                    security: {
+                        users:     [],
+                        loggedIn:  false,
+                        loggedIn2: false
+                    },
+                    open:  true,
+                    users: [{
+                        id:       0,
+                        loggedIn: false,
+                        name:     "first"
+                    }, {
+                        id:       1,
+                        loggedIn: false,
+                        name:     "second"
+                    }]
+            });
+                console.log(data);
+
+                // done();
+            } catch(e) {
+                done(e);
+            }
+        });*/
+    });
+
 
 /* it("creates a domain", function() {
         // im state einen speziellen key actions
