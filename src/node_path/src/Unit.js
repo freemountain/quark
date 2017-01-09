@@ -273,7 +273,7 @@ class Unit extends Duplex {
     }
 
     childAction(key, data) {
-        const data2 = Immutable.fromJS(data);
+        const data2 = Immutable.fromJS(data.payload);
         const map   = Immutable.Map().set(key, patch(Immutable.Map(), data2.filter(x => x.get("path").indexOf("/errors") !== 0)));
 
         return {
@@ -284,6 +284,24 @@ class Unit extends Duplex {
 
     receiveFromChild(key, data) {
         schedule(() => this.write(this.childAction(key, data)));
+
+        if(!this.childPromise) return;
+
+        this.childPromise.then(() => {
+            const isError = Immutable.fromJS(data.payload)
+                .some(x => x.get("path").indexOf("/errors") !== -1);
+
+            schedule(() => this.write({
+                type:    `${data.type}.${isError ? Trigger.ERROR : Trigger.DONE}`,
+                payload: {
+                    type:     `${data.type}.${isError ? Trigger.ERROR : Trigger.DONE}`,
+                    diffs:    isError ? data.payload : Immutable.Set(),
+                    previous: this.cursor
+                }
+            }));
+
+            delete this.childPromise;
+        });
     }
 
     trigger(...args) { // eslint-disable-line
@@ -326,31 +344,6 @@ class Unit extends Duplex {
         if(isCycle)              return Q.resolve(Immutable.Set());
         if(data.type === "done") return Q.resolve(diffs);
 
-        // hier das muss jetzt iwie wieder rein, damit die triggers von
-        // den kindern klappen (da wird ja keine done getriggert - müssen
-        // iwie an die callback drankommen
-        // klappen, wahrscheinlich bei dem receiveFromChild oder iwie hier anhand
-        // der actions vlt?
-        //
-        // Output der streams ändern? {
-        //      type:    x.done
-        //      payload: diffs
-        // }
-        // -> dann soltle ich das awaiten können per closure: action -> action.done
-        /*
-         * const isError = x.filter(y => y.get("path").indexOf("/errors") !== -1).size > 0;
-
-                schedule(() => this.write({
-                    type:    `${data.type}.${Trigger.DONE}`,
-                    payload: {
-                        type:     `${data.type}.${isError ? Trigger.ERROR : Trigger.DONE}`,
-                        diffs:    diffs.concat(x),
-                        previous: this.cursor
-                    }
-                }));
-
-        */
-
         return schedule(() => this.trigger("done", {
             type:     `${data.type}.${Trigger.DONE}`,
             diffs:    diffs,
@@ -376,10 +369,10 @@ class Unit extends Duplex {
     }
 
     applyOnChild(data, diffs) {
-        this.deps.forEach((dep, key) => dep.write({
+        this.childPromise = Q.all(this.deps.map((dep, key) => Q.nfcall(dep.write.bind(dep), {
             type:    this.trimAction(data.type, key),
             payload: data.payload
-        }));
+        })).valueSeq().toJS());
 
         return Q.resolve(diffs);
     }
@@ -439,7 +432,10 @@ class Unit extends Duplex {
                 // same here
                 this.cursor = Cursor.of(patch(this.cursor, result.toList()).update("_unit", x => x.delete("action")));
 
-                this.buffers.push(result.toJS());
+                this.buffers.push({
+                    type:    data.type,
+                    payload: result.toJS()
+                });
 
                 return cb();
             })

@@ -6,7 +6,6 @@ const path      = require("path");
 const Immutable = require("immutable");
 
 class Security extends Quark.Unit {
-    // der errorfall triggert beim parent trotzdem done actions
     login({ username, password }) {
         const user = this.users.find(x => x.get("name") === username);
 
@@ -27,13 +26,13 @@ Security.props = {
     users:         [],
     currentUser:   null,
     loggedIn:      derive(x => x.currentUser instanceof Object),
-    // wird aus irgend nem grund null
+    // wird aus irgend nem grund null anstatt leer
     loggedInUsers: derive(x => x.users.filter(y => x.currentUser ? x.currentUser.get("name") === y.get("name") : false))
     // hier fehlt derive
     // dass da die argument angehangen werden bei dem ganzen zeug
     // partialRight beim dispatch in cursor
-        .from("users", "currentUser")
-        .filter((user, current) => user.get("name") === current)
+    //    .from("users", "currentUser")
+    //    .filter((user, current) => user.get("name") === current)
 };
 
 Security.triggers = {
@@ -43,8 +42,6 @@ Security.triggers = {
 
 class QuarkLogin extends Quark.Unit {
     // hierfür aus initialQml generisch state machen
-    // die trigger vom kind aus funktionieren atm nich mehr,
-    // siehe Unit
     openCounter() {
         return this.update("windows", x => x.push(Immutable.Map({
             qml: path.join(__dirname, "counter.qml")     

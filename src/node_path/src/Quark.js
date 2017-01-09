@@ -38,11 +38,11 @@ export default class Quark {
         throw e;
     }
 
-    update(diffs) {
-        this.updateWindows(diffs);
-        this.updateProcesses(diffs);
+    update(data) {
+        this.updateWindows(data.payload);
+        this.updateProcesses(data.payload);
 
-        this.state = patch(this.state, Immutable.fromJS(diffs));
+        this.state = patch(this.state, Immutable.fromJS(data.payload));
 
         console.error("update ", this.app.toJS());
         return this.state.toJS();
