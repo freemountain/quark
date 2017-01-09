@@ -135,12 +135,6 @@ class Unit extends Duplex {
         return this.set(key, prop.receive(this));
     }
 
-    static UnitAction(key) {
-        console.error("###unitaction", key);
-
-        return this.set(key, "huhu");
-    }
-
     static PropertyMapper(x, key) {
         const deps   = x.getDependencies();
         const mapped = deps.map(y => y.replace(Trigger.DONE, "").replace(".", ""));
@@ -186,8 +180,7 @@ class Unit extends Duplex {
             .map(x => `${x}.done`));
 
         const childrenTrigger = new Trigger(Immutable.List.of("props.done", "children"));
-
-        const childTriggers = deps
+        const childTriggers   = deps
             .filter(Unit.UnitFilter)
             .map(x => new Trigger(x.parentDependencies
                 .reduce((dest, y) => dest.concat(y.getDependencies()), Immutable.List())
@@ -203,6 +196,8 @@ class Unit extends Duplex {
         const unit = Immutable.Map({
             revision:     0,
             id:           uuid(),
+            action:       null,
+            name:         this.constructor.name,
             dependencies: dependencies,
             progress:     this.onProgress.bind(this),
             trigger:      this.trigger.bind(this),
@@ -277,13 +272,18 @@ class Unit extends Duplex {
         return ops.isEmpty() ? this[name] : ops.first();
     }
 
-    receiveFromChild(key, data) {
-        const map = Immutable.Map();
+    childAction(key, data) {
+        const data2 = Immutable.fromJS(data);
+        const map   = Immutable.Map().set(key, patch(Immutable.Map(), data2.filter(x => x.get("path").indexOf("/errors") !== 0)));
 
-        schedule(() => this.write({
+        return {
             type:    `${key}.done`,
-            payload: map.set(key, patch(Immutable.Map(), Immutable.fromJS(data)))
-        }), 32);
+            payload: patch(map, data2.filter(x => x.get("path").indexOf("/errors") === 0))
+        };
+    }
+
+    receiveFromChild(key, data) {
+        schedule(() => this.write(this.childAction(key, data)));
     }
 
     trigger(...args) { // eslint-disable-line
@@ -293,49 +293,26 @@ class Unit extends Duplex {
         return this.receive(args.concat(diffs instanceof Immutable.Set || typeof diffs !== "string" ? [] : diffs).map(action => ({ type: action, payload })), diffs instanceof Immutable.Set ? diffs : Immutable.Set());
     }
 
-    props(properties) {
-        const props = Immutable.fromJS(properties);
-
-        return this.merge(props);
-    }
-
-    done({ type: action, diffs, previous }) {
-        const payload  = patch(previous, Immutable.fromJS(diffs).toList());
-
-        // hier brauchen wir einen circuitbreaker
-        const actions  = this._unit.triggers
-            .filter(x => x.shouldTrigger(previous, diffs, action))
-            .keySeq()
-            .toJS();
-
-        return actions.length === 0 ? previous : this._unit
-            .trigger(...actions, payload, diffs)
-            .then(diffs2 => patch(previous, diffs2.toList()));
-    }
-
-    children() {
-        return Q.all(this._unit.children
-            .map((bindings, key) => this._unit.trigger(`${key}/props`, bindings.reduce((dest, x) => dest.set(x, this.get(x)), Immutable.Map())))
-            .valueSeq()
-            .toJS())
-            .then(() => this);
-    }
-
     onError(e) {
         return schedule(() => this.receive([{
-            type:    "props",
-            payload: Immutable.fromJS({
-                errors: this.cursor.errors.push(e)
-            })
+            type:    "error",
+            payload: e
         }]));
     }
 
-    onProgress() {
-        // hier wird <action>.progess getriggert
-        assert(false, "implement");
+    onProgress(progress) {
+        return schedule(() => this.receive([{
+            type:    "progress",
+            payload: progress
+        }]));
     }
 
-    onResult(data, previous, result) { // eslint-disable-line
+    onCancel(data) {
+        // wie onprogress etc implementieren
+        throw new Error("implement", data);
+    }
+
+    onDone(data, previous, result) { // eslint-disable-line
         if(!result || typeof result.toJS !== "function") return assert(false, `\n\t### ${this.constructor.name}.${data.type}\n\tYour action '${data.type}' returned an unexpected result '${result}'${data.payload ? ` for '${data.payload}'` : ""}.\n\tPlease make sure to only return updated cursors of this unit.`);
 
         const cursor  = Cursor.of(result.update("_unit", x => x.update("revision", y => y + 1)));
@@ -348,6 +325,31 @@ class Unit extends Duplex {
 
         if(isCycle)              return Q.resolve(Immutable.Set());
         if(data.type === "done") return Q.resolve(diffs);
+
+        // hier das muss jetzt iwie wieder rein, damit die triggers von
+        // den kindern klappen (da wird ja keine done getriggert - müssen
+        // iwie an die callback drankommen
+        // klappen, wahrscheinlich bei dem receiveFromChild oder iwie hier anhand
+        // der actions vlt?
+        //
+        // Output der streams ändern? {
+        //      type:    x.done
+        //      payload: diffs
+        // }
+        // -> dann soltle ich das awaiten können per closure: action -> action.done
+        /*
+         * const isError = x.filter(y => y.get("path").indexOf("/errors") !== -1).size > 0;
+
+                schedule(() => this.write({
+                    type:    `${data.type}.${Trigger.DONE}`,
+                    payload: {
+                        type:     `${data.type}.${isError ? Trigger.ERROR : Trigger.DONE}`,
+                        diffs:    diffs.concat(x),
+                        previous: this.cursor
+                    }
+                }));
+
+        */
 
         return schedule(() => this.trigger("done", {
             type:     `${data.type}.${Trigger.DONE}`,
@@ -363,7 +365,7 @@ class Unit extends Duplex {
             const cursor      = Cursor.of(patch(this.cursor, diffs.toList()));
             const action      = defaults(this.dispatch(data.type, diffs)).to(() => this.cursor);
             const result      = action.apply(cursor, args);
-            const handler     = this.onResult.bind(this, data, diffs);
+            const handler     = this.onDone.bind(this, data, diffs);
 
             return !(result && typeof result.then === "function") ? handler(result) : result
                 .then(handler)
@@ -374,28 +376,12 @@ class Unit extends Duplex {
     }
 
     applyOnChild(data, diffs) {
-        return Q.all(this.deps.map((domain, key) => domain
-            .receive([Object.assign(data, { type: this.trimAction(data.type, key) })], diffs)
-            .then(x => {
-                domain.cursor = Cursor.of(patch(domain.cursor, x.toList()));
+        this.deps.forEach((dep, key) => dep.write({
+            type:    this.trimAction(data.type, key),
+            payload: data.payload
+        }));
 
-                return x.map(y => y.get("path").indexOf("/errors") !== -1 ? y : y.update("path", path => `/${key}${path}`)); // eslint-disable-line
-            })
-        ).toList().toJS())
-            .then(x => x.reduce((dest, diffs2) => dest.concat(diffs2), Immutable.List.of()))
-            .then(x => {
-                const isError = x.filter(y => y.get("path").indexOf("/errors") !== -1).size > 0;
-
-                schedule(() => this.write({
-                    type:    `${data.type}.${Trigger.DONE}`,
-                    payload: {
-                        type:     `${data.type}.${isError ? Trigger.ERROR : Trigger.DONE}`,
-                        diffs:    diffs,
-                        previous: this.cursor
-                    }
-                }));
-                return x;
-            });
+        return Q.resolve(diffs);
     }
 
     trimAction(action, key) {
@@ -426,12 +412,12 @@ class Unit extends Duplex {
         return !isUndefined(this.dispatch(action, diffs)) || this.childHandles(action);
     }
 
-    handle(data, diffs) {
+    handle(data, diffs = Immutable.Set()) {
         assert(typeof data.type === "string", `${this.constructor.name}: Received invalied action '${data.type}'.`);
 
-        // hier wird <action>.cancel verarbeitet
-        if(this.childHandles(data.type))    return this.applyOnChild(data, diffs);
-        if(!this.handles(data.type, diffs)) return Q.resolve(diffs);
+        if(data.type.indexOf(`.${Trigger.CANCEL}`) !== -1) return this.onCancel(diffs, data);
+        if(this.childHandles(data.type))                   return this.applyOnChild(data, diffs);
+        if(!this.handles(data.type, diffs))                return Q.resolve(diffs);
 
         return this.apply(data, diffs);
     }
@@ -443,11 +429,15 @@ class Unit extends Duplex {
     }
 
     _write(data, enc, cb) {
+        // hier das muss über progress getriggert werden
+        this.cursor = Cursor.of(this.cursor.update("_unit", x => x.set("action", Immutable.Map({ type: data.type, payload: data.payload, progress: 0 }))));
+
         this.receive([data])
             .then(result => {
                 if(result.size === 0) return cb();
 
-                this.cursor = Cursor.of(patch(this.cursor, result.toList()));
+                // same here
+                this.cursor = Cursor.of(patch(this.cursor, result.toList()).update("_unit", x => x.delete("action")));
 
                 this.buffers.push(result.toJS());
 
@@ -457,13 +447,60 @@ class Unit extends Duplex {
     }
 
     _read() { // eslint-disable-line
-        if(this.buffers.length === 0) return schedule(() => this._read(), 1);
+        if(this.buffers.length === 0) return schedule(() => this._read());
 
         this.push(this.buffers.shift());
     }
+
+    // hier das sind actions, die als solche benutzt werden, sollte vlt mal
+    // über vererbung deutlich gemacht werden sprich:
+    // Unit extends Runtime
+    //
+    // Runtime {
+    //     write,
+    //     apply...
+    // }
+    // Unit < Runtime{
+    //    props,
+    //    done...
+    // }
+    props(properties) {
+        const props = Immutable.fromJS(properties);
+
+        return this.mergeDeep(props);
+    }
+
+    done({ type: action, diffs, previous }) {
+        const payload  = patch(previous, Immutable.fromJS(diffs).toList());
+        const actions  = this._unit.triggers
+            .filter(x => x.shouldTrigger(previous, diffs, action))
+            .keySeq()
+            .toJS();
+
+        return actions.length === 0 ? previous : this._unit
+            .trigger(...actions, payload, diffs)
+            .then(diffs2 => patch(previous, diffs2.toList()));
+    }
+
+    children() {
+        return Q.all(this._unit.children
+            .map((bindings, key) => this._unit.trigger(`${key}/props`, bindings.reduce((dest, x) => dest.set(x, this.get(x)), Immutable.Map())))
+            .valueSeq()
+            .toJS())
+            .then(diffs => patch(this, diffs.reduce((dest, x) => dest.concat(x), Immutable.Set()).toList()));
+    }
+
+    error(e) {
+        return this.update("errors", x => x.push(e));
+    }
+
+    progress(progress) {
+        return this.update("_unit", x => x.update("action", action => action.set("progress", progress)));
+    }
+
+
 }
 
 Unit.PropertyAction = curry(Unit.PropertyAction, 3);
-Unit.UnitAction     = curry(Unit.UnitAction, 3);
 
 export default Unit;

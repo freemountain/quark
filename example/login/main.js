@@ -24,9 +24,16 @@ class Security extends Quark.Unit {
 }
 
 Security.props = {
-    users:       [],
-    currentUser: null,
-    loggedIn:    derive(x => x.currentUser instanceof Object)
+    users:         [],
+    currentUser:   null,
+    loggedIn:      derive(x => x.currentUser instanceof Object),
+    // wird aus irgend nem grund null
+    loggedInUsers: derive(x => x.users.filter(y => x.currentUser ? x.currentUser.get("name") === y.get("name") : false))
+    // hier fehlt derive
+    // dass da die argument angehangen werden bei dem ganzen zeug
+    // partialRight beim dispatch in cursor
+        .from("users", "currentUser")
+        .filter((user, current) => user.get("name") === current)
 };
 
 Security.triggers = {
@@ -36,10 +43,12 @@ Security.triggers = {
 
 class QuarkLogin extends Quark.Unit {
     // hierfür aus initialQml generisch state machen
-    openCounter() { 
+    // die trigger vom kind aus funktionieren atm nich mehr,
+    // siehe Unit
+    openCounter() {
         return this.update("windows", x => x.push(Immutable.Map({
             qml: path.join(__dirname, "counter.qml")     
-        })));
+        }))).update("users", x => x.map(y => y.set("name", "Mu")));
     }
 
     // close von windows muss noch rein
@@ -64,33 +73,10 @@ QuarkLogin.props = {
         password: "hard"
     }],
     security: new Security({
-        // geinlined als props läuft
-        // mit binding nich,
-        // da müssen jetz die richtigen trigger angelegt werden:
-        // 
-        // derived property müsste aufm kind liegen
-        // (users dadurch ersetzen quasi bei den deps)
-        // parent muss nur das binding anlegen
-        //
-        // Security:
-        //     users (computed): props
-        //
-        // QuarkLogin:
-        //     security/props: props.done
-        //      -> eigtl is das ne eigene action in quarklogin,
-        //      die aus dem eigenen state das relevante extrahiert
-        //      und dann als props an das kind sendet
-        //
-        //      -> PROBLEM: der pfad zeig eigtl auf die props action
-        //      im kind
-        //
-        //      idee:
-        //
-        //      "children" action, die von props.done getriggert wird
-        //      hierbei werden dann aus dem state die relevanten daten
-        //      extrahiert und an das kind weitergegeben
-        //
-        //
+        // aktuell wird der parent state nich geupdated
+        // -> wahrscheinlich stimmt was mit dem mapping der diffs
+        // nich, weil die ommen an: daher nich mappen, sondern
+        // en patch machen un dann diffen
         users: derive
             .from("users")
     }),

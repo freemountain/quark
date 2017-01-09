@@ -44,7 +44,7 @@ export default class Quark {
 
         this.state = patch(this.state, Immutable.fromJS(diffs));
 
-        console.error("update", this.state.toJS());
+        console.error("update ", this.app.toJS());
         return this.state.toJS();
     }
 

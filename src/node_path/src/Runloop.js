@@ -1,6 +1,6 @@
 import Q from "q";
 
-export const schedule = function schedule(operation, delay = 16) {
+export const schedule = function schedule(operation, delay = 0) {
     const deferred = Q.defer();
 
     setTimeout(() => {
