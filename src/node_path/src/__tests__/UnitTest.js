@@ -39,8 +39,7 @@ class Security extends Unit {
     }
 }
 
-/**
- *
+/*
 class Security extends Unit {
     @Type(User.maybe())
     currentUser: null
@@ -71,7 +70,7 @@ class Security extends Unit {
         return this.model.update();
     }
 }
-*/
+#*/
 
 // TODO: needs to work with lists, too:
 // dafür cursor un target anpassen, sodass

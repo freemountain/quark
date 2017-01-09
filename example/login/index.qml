@@ -28,6 +28,12 @@ ApplicationWindow {
             text:                JSON.stringify(store.value.security.loggedIn);
         }
 
+        Label {
+            Layout.fillWidth:    true
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment:   Text.AlignVCenter
+            text:                store.value.errors.shift().message
+        }
 
         TextField {
             id:               username
@@ -53,6 +59,14 @@ ApplicationWindow {
                     username: username.text,
                     password: password.text
                 });
+            }
+        }
+
+        Button {
+            text: "Logout"
+            
+            onClicked: {
+                store.trigger("logout");
             }
         }
     }

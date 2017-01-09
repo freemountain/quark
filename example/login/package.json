@@ -2,5 +2,8 @@
   "name": "quark-counter",
   "version": "0.1.0",
   "main": "main.js",
-  "initialQml": "index.qml"
+  "initialQml": "index.qml",
+  "dependencies": {
+    "immutable": "^3.8.1"
+  }
 }

@@ -135,6 +135,12 @@ class Unit extends Duplex {
         return this.set(key, prop.receive(this));
     }
 
+    static UnitAction(key) {
+        console.error("###unitaction", key);
+
+        return this.set(key, "huhu");
+    }
+
     static PropertyMapper(x, key) {
         const deps   = x.getDependencies();
         const mapped = deps.map(y => y.replace(Trigger.DONE, "").replace(".", ""));
@@ -163,11 +169,12 @@ class Unit extends Duplex {
             .merge(deps.filter(Unit.UnitFilter).map(x => x.parentDependencies));
 
         const initialProps = properties
-            .mergeDeep(description)
+            .mergeDeep(description.filter(Unit.OnlyValueFilter))
             .filter(Unit.OnlyValueFilter)
             .merge(deps.filter(Unit.UnitFilter).map(() => Immutable.Map()));
 
         const computed = dependencies
+            .merge(description)
             .filter(Unit.PropertyFilter)
             .map(Unit.PropertyMapper);
 
@@ -178,17 +185,20 @@ class Unit extends Duplex {
             .filter(x => x !== "constructor")
             .map(x => `${x}.done`));
 
+        const childrenTrigger = new Trigger(Immutable.List.of("props.done", "children"));
+
         const childTriggers = deps
             .filter(Unit.UnitFilter)
             .map(x => new Trigger(x.parentDependencies
-                .reduce((dest, y) => dest.concat(y.getDependencies().filter(dep => dep.indexOf("props") === -1)), Immutable.List())
+                .reduce((dest, y) => dest.concat(y.getDependencies()), Immutable.List())
             ));
 
         const allTriggers = Immutable.Map(triggers)
             .map((x, key) => x.addAction(key))
             .merge(computed)
             .merge(childTriggers)
-            .set("props", propsTrigger.addAction("props"));
+            .set("props", propsTrigger.addAction("props"))
+            .set("children", childrenTrigger);
 
         const unit = Immutable.Map({
             revision:     0,
@@ -196,7 +206,10 @@ class Unit extends Duplex {
             dependencies: dependencies,
             progress:     this.onProgress.bind(this),
             trigger:      this.trigger.bind(this),
-            triggers:     allTriggers
+            triggers:     allTriggers,
+            children:     deps
+                .filter(Unit.UnitFilter)
+                .map(x => x.parentDependencies.filter(Unit.PropertyFilter).keySeq())
         });
 
         deps
@@ -207,12 +220,14 @@ class Unit extends Duplex {
         this.buffers            = [];
         this.parentDependencies = description.filter(Unit.DependencyFilter);
         this.cursor             = Cursor.of(Immutable.Map({
-            _unit: unit
+            _unit:  unit,
+            errors: Immutable.List()
         }));
 
         Object.assign(this, this.cursor._unit.dependencies
             .filter(Unit.PropertyFilter)
-            .map((prop, key) => Unit.PropertyAction(key, prop)).toJS());
+            .map((prop, key) => Unit.PropertyAction(key, prop))
+            .toJS());
 
         this.write({
             type:    "props",
@@ -242,19 +257,21 @@ class Unit extends Duplex {
             .toJS();
     }
 
-    dispatch(name) {
+    dispatch(name, diffs) { // eslint-disable-line
         const triggers = this.cursor._unit.triggers;
 
-        if(triggers.has(name)) return this[triggers.get(name).map(this.cursor, this.previous, name)];
+        if(triggers.has(name)) return this[triggers.get(name).map(this.cursor, diffs, name)];
 
         const ops = triggers
             .filter(x => x.triggers.indexOf(name) !== -1)
             .keySeq()
-            .map(key => this[key]);
+            .map(key => this[key])
+            .filter(op => op instanceof Function);
 
         if(ops.size > 1) return function(...args) {
-            return Q.all(ops.map(op => op.call(this, ...args))
-                .then(results => results.reduce((dest, result) => dest.concat(result), [])));
+            // hier stimmt iwas nich mit den ops
+            return Q.all(ops.map(op => op.call(this, ...args)))
+                .then(results => results.reduce((dest, result) => dest.concat(result), []));
         };
 
         return ops.isEmpty() ? this[name] : ops.first();
@@ -277,13 +294,17 @@ class Unit extends Duplex {
     }
 
     props(properties) {
-        return this.merge(properties);
+        const props = Immutable.fromJS(properties);
+
+        return this.merge(props);
     }
 
     done({ type: action, diffs, previous }) {
         const payload  = patch(previous, Immutable.fromJS(diffs).toList());
+
+        // hier brauchen wir einen circuitbreaker
         const actions  = this._unit.triggers
-            .filter(x => x.shouldTrigger(this, previous, action))
+            .filter(x => x.shouldTrigger(previous, diffs, action))
             .keySeq()
             .toJS();
 
@@ -292,10 +313,21 @@ class Unit extends Duplex {
             .then(diffs2 => patch(previous, diffs2.toList()));
     }
 
-    onError(data, e) {
-        // hier wird <action>.error getriggert
-        console.error(e);
-        throw e;
+    children() {
+        return Q.all(this._unit.children
+            .map((bindings, key) => this._unit.trigger(`${key}/props`, bindings.reduce((dest, x) => dest.set(x, this.get(x)), Immutable.Map())))
+            .valueSeq()
+            .toJS())
+            .then(() => this);
+    }
+
+    onError(e) {
+        return schedule(() => this.receive([{
+            type:    "props",
+            payload: Immutable.fromJS({
+                errors: this.cursor.errors.push(e)
+            })
+        }]));
     }
 
     onProgress() {
@@ -309,6 +341,11 @@ class Unit extends Duplex {
         const cursor = Cursor.of(result.update("_unit", x => x.update("revision", y => y + 1)));
         const diffs  = previous.concat(diff(this.cursor, cursor));
 
+        if(
+            data.type === "props.done" &&
+            this.cursor._unit.revision + 1 === cursor._unit.revision &&
+            diffs.size < 2
+        )                        return Q.resolve(Immutable.Set());
         if(data.type === "done") return Q.resolve(diffs);
 
         return schedule(() => this.trigger("done", {
@@ -322,58 +359,93 @@ class Unit extends Duplex {
         try {
             const { payload } = data;
             const args        = Array.isArray(payload) ? payload : [payload];
-            const action      = defaults(this.dispatch(data.type)).to(() => this.cursor);
-            const result      = action.apply(Cursor.of(patch(this.cursor, diffs.toList())), args);
+            const cursor      = Cursor.of(patch(this.cursor, diffs.toList()));
+            const action      = defaults(this.dispatch(data.type, diffs)).to(() => this.cursor);
+            const result      = action.apply(cursor, args);
             const handler     = this.onResult.bind(this, data, diffs);
 
             return !(result && typeof result.then === "function") ? handler(result) : result
                 .then(handler)
                 .catch(this.onError.bind(this));
         } catch(e) {
-            return this.onError(data, e);
+            return this.onError(e);
         }
     }
 
     applyOnChild(data, diffs) {
         return Q.all(this.deps.map((domain, key) => domain
-            .receive([data], diffs)
-            .then(x => x.map(y => y.update("path", path => `/${key}${path}`))) // eslint-disable-line
+            .receive([Object.assign(data, { type: this.trimAction(data.type, key) })], diffs)
+            .then(x => {
+                domain.cursor = Cursor.of(patch(domain.cursor, x.toList()));
+
+                return x.map(y => y.get("path").indexOf("/errors") !== -1 ? y : y.update("path", path => `/${key}${path}`)); // eslint-disable-line
+            })
         ).toList().toJS())
-            .then(x => x.reduce((dest, diffs2) => dest.concat(diffs2), Immutable.List.of()));
+            .then(x => x.reduce((dest, diffs2) => dest.concat(diffs2), Immutable.List.of()))
+            .then(x => {
+                const isError = x.filter(y => y.get("path").indexOf("/errors") !== -1).size > 0;
+
+                schedule(() => this.write({
+                    type:    `${data.type}.${Trigger.DONE}`,
+                    payload: {
+                        type:     `${data.type}.${isError ? Trigger.ERROR : Trigger.DONE}`,
+                        diffs:    diffs,
+                        previous: this.cursor
+                    }
+                }));
+                return x;
+            });
+    }
+
+    trimAction(action, key) {
+        if(action.indexOf("/") === -1) return action;
+
+        return action.indexOf(key) === 0 ? action.split("/").slice(1).join() : action;
     }
 
     childHandles(action) {
         return (
-            action.indexOf("props") === -1 &&
-            action.indexOf("done") === -1 &&
-            Immutable.Map(this.deps)
-                .filter(Unit.UnitFilter)
-                .some(unit => unit.handles(action))
+            (
+                action.indexOf("/") !== -1 &&
+                Immutable.Map(this.deps)
+                    .filter(Unit.UnitFilter)
+                    .some((unit, key) => unit.handles(this.trimAction(action, key)))
+            ) || (
+                action.indexOf("children") === -1 &&
+                action !== "props" &&
+                action.indexOf("done") === -1 &&
+                Immutable.Map(this.deps)
+                    .filter(Unit.UnitFilter)
+                    .some(unit => unit.handles(action))
+            )
         );
     }
 
-    handles(action) {
-        return !isUndefined(this.dispatch(action)) || this.childHandles(action);
+    handles(action, diffs = Immutable.Set()) {
+        return !isUndefined(this.dispatch(action, diffs)) || this.childHandles(action);
     }
 
     handle(data, diffs) {
         assert(typeof data.type === "string", `${this.constructor.name}: Received invalied action '${data.type}'.`);
 
         // hier wird <action>.cancel verarbeitet
-        if(this.childHandles(data.type)) return this.applyOnChild(data, diffs);
-        if(!this.handles(data.type))     return Q.resolve(diffs);
+        if(this.childHandles(data.type))    return this.applyOnChild(data, diffs);
+        if(!this.handles(data.type, diffs)) return Q.resolve(diffs);
 
         return this.apply(data, diffs);
     }
 
     receive(actions, diffs = Immutable.Set()) {
         return Q.all(actions.map(action => this.handle(action, diffs)))
-            .then(results => results.reduce((dest, x) => dest.concat(x), Immutable.Set()));
+            .then(results => results.reduce((dest, x) => dest.concat(x), Immutable.Set()))
+            .then(results => results.filter(x => x.get("path") !== "/_unit/revision").size < 1 ? Immutable.Set() : results);
     }
 
     _write(data, enc, cb) {
         this.receive([data])
             .then(result => {
+                if(result.size === 0) return cb();
+
                 this.cursor = Cursor.of(patch(this.cursor, result.toList()));
 
                 this.buffers.push(result.toJS());
@@ -391,5 +463,6 @@ class Unit extends Duplex {
 }
 
 Unit.PropertyAction = curry(Unit.PropertyAction, 3);
+Unit.UnitAction     = curry(Unit.UnitAction, 3);
 
 export default Unit;

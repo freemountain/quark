@@ -1,4 +1,6 @@
 import defaults from "set-default-value";
+import patch from "immutablepatch";
+// import Immutable from "immutable";
 
 export default class Trigger {
     static triggered = {
@@ -47,14 +49,15 @@ export default class Trigger {
         return new Trigger(this.triggers, this.guards, this.delays, this.bindings.concat(binding), this.action);
     }
 
-    shouldTrigger(state, prev, action) {
-        const idx = this.triggers.indexOf(action);
+    shouldTrigger(state, diffs, action) {
+        const idx     = this.triggers.indexOf(action);
+        const current = patch(state, diffs.toList());
 
-        return idx === -1 ? false : defaults(this.guards[idx]).to(() => true)(state, prev);
+        return idx === -1 ? false : defaults(this.guards[idx]).to(() => true)(current, state);
     }
 
-    map(state, prev, action) {
-        if(!this.shouldTrigger(state, prev, action)) return undefined; // eslint-disable-line
+    map(state, diffs, action) {
+        if(!this.shouldTrigger(state, diffs, action)) return undefined; // eslint-disable-line
 
         const result = this.triggers.find(x => x === action);
 

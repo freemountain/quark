@@ -44,7 +44,7 @@ export default class Quark {
 
         this.state = patch(this.state, Immutable.fromJS(diffs));
 
-        console.error("update: ", this.state.toJS());
+        console.error("update", this.state.toJS());
         return this.state.toJS();
     }
 
@@ -68,8 +68,15 @@ export default class Quark {
         diffs
             .filter(diff => (
                 diff.path.indexOf("/windows") === 0 &&
-                (diff.op === "add" || diff.op === "replace")
+                diff.op === "add"
             ))
-            .forEach(({ value }) => value.forEach(({ qml }) => this.view.load(qml)));
+            .forEach(({ value }) => this.view.load(value.qml));
+
+        diffs
+            .filter(diff => (
+                diff.path.indexOf("/windows") === 0 &&
+                diff.op === "replace"
+            ))
+        .forEach(({ value }) => value.forEach(({ qml }) => this.view.load(qml)));
     }
 }

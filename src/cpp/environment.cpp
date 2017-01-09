@@ -184,8 +184,6 @@ QuarkProcess* Environment::startProcess(QString path) {
 
     QuarkProcess* proc = new QuarkProcess(this->getProcEnv(), this, this);
 
-    if(json.contains("initialQml")) proc->handleLoadQml(json.value("initialQml"));
-
     connect(proc, &QuarkProcess::startProcess, [this](const QString &path)  {
         this->startProcess(path);
     });
