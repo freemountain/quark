@@ -338,14 +338,15 @@ class Unit extends Duplex {
     onResult(data, previous, result) { // eslint-disable-line
         if(!result || typeof result.toJS !== "function") return assert(false, `\n\t### ${this.constructor.name}.${data.type}\n\tYour action '${data.type}' returned an unexpected result '${result}'${data.payload ? ` for '${data.payload}'` : ""}.\n\tPlease make sure to only return updated cursors of this unit.`);
 
-        const cursor = Cursor.of(result.update("_unit", x => x.update("revision", y => y + 1)));
-        const diffs  = previous.concat(diff(this.cursor, cursor));
-
-        if(
+        const cursor  = Cursor.of(result.update("_unit", x => x.update("revision", y => y + 1)));
+        const diffs   = previous.concat(diff(this.cursor, cursor));
+        const isCycle = (
             data.type === "props.done" &&
             this.cursor._unit.revision + 1 === cursor._unit.revision &&
             diffs.size < 2
-        )                        return Q.resolve(Immutable.Set());
+        );
+
+        if(isCycle)              return Q.resolve(Immutable.Set());
         if(data.type === "done") return Q.resolve(diffs);
 
         return schedule(() => this.trigger("done", {
