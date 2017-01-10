@@ -6,6 +6,7 @@
 #include <QProcessEnvironment>
 #include <QString>
 #include <QStringList>
+#include <QQuickWindow>
 
 #include <QJsonValue>
 
@@ -21,9 +22,12 @@ public:
 public slots:
     void start(QString path, QStringList arguments);
     void terminate();
+    void handleCloseQml(QString path);
     void handleLoadQml(QString path);
+    void handleWindow(QObject* window, QUrl url);
 
 private:
+    QMap<QString, QQuickWindow*>* windows;
     Logger* log;
     QProcess proc;
     QQmlApplicationEngine* qmlEngine;
@@ -32,6 +36,7 @@ private:
 signals:
     void startProcess(QString path);
     void loadQml(QString url);
+    void closeQml(QString url);
 
 private slots:
     void onData();

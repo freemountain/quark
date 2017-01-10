@@ -64,6 +64,17 @@ export default class Gluon extends Duplex {
         return url;
     }
 
+    close(url) {
+        this.actionOut.emit("data", {
+            type:    "closeQml",
+            payload: {
+                url
+            }
+        });
+
+        return url;
+    }
+
     trim(path) {
         return path
             .slice(1)

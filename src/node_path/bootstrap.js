@@ -13,7 +13,8 @@ quark.app.write({
     type:    "props",
     payload: {
         windows: [{
-            qml: dir.concat("/").concat(config.initialQml)
+            name: config.initialQml.replace(".qml", ""),
+            qml:  dir.concat("/").concat(config.initialQml)
         }]
     }
 });

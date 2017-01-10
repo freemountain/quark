@@ -6,6 +6,7 @@ import patch from "Immutablepatch";
 import Immutable from "immutable";
 import Property from "./domain/Property";
 import Trigger from "./domain/Trigger";
+import util from "util";
 
 export default class Quark {
     static triggered = Trigger.triggered;
@@ -44,7 +45,7 @@ export default class Quark {
 
         this.state = patch(this.state, Immutable.fromJS(data.payload));
 
-        console.error("update ", this.app.toJS());
+        console.error("update ", util.inspect(this.app.toJS(), { depth: null }));
         return this.state.toJS();
     }
 
@@ -77,6 +78,13 @@ export default class Quark {
                 diff.path.indexOf("/windows") === 0 &&
                 diff.op === "replace"
             ))
-        .forEach(({ value }) => value.forEach(({ qml }) => this.view.load(qml)));
+            .forEach(({ value }) => value.forEach(({ qml }) => this.view.load(qml)));
+
+        diffs
+            .filter(diff => (
+                diff.path.indexOf("/windows") === 0 &&
+                diff.op === "remove"
+            ))
+        .forEach(({ path }) => this.view.close(this.state.get("windows").get(parseInt(path.split("/").pop(), 10)).get("qml")));
     }
 }

@@ -1,6 +1,5 @@
 import defaults from "set-default-value";
 import patch from "immutablepatch";
-// import Immutable from "immutable";
 
 export default class Trigger {
     static triggered = {
@@ -61,6 +60,6 @@ export default class Trigger {
 
         const result = this.triggers.find(x => x === action);
 
-        return result ? result : action;
+        return result ? result : action; // eslint-disable-line
     }
 }
