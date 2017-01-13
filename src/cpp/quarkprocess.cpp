@@ -91,6 +91,25 @@ void QuarkProcess::handleLoadQml(QString path) {
 }
 
 
+void QuarkProcess::onWindowClose(QQuickCloseEvent*) {
+    QJsonObject payload;
+    QJsonArray diffs;
+    QJsonObject diff;
+
+    QString path = sender()->property("path").toString();
+
+    diff.insert("op", "remove");
+    diff.insert("path", "/windows/" + sender()->property("idx").toString());
+
+    diffs.append(diff);
+
+    payload.insert("diffs", diffs);
+
+    this->windows->remove(path);
+    this->rootStore->trigger("diffs", payload);
+    this->log->printLine("onWindowClose: " + path);
+}
+
 void QuarkProcess::handleCloseQml(QString path) {
     QQuickWindow* window = this->windows->value(path);
 
@@ -103,6 +122,13 @@ void QuarkProcess::handleCloseQml(QString path) {
 void QuarkProcess::handleWindow(QObject* object, QUrl url) {
     if(object == NULL) return this->log->printLine("unable to open" + url.path());
 
-    this->windows->insert(url.path(), qobject_cast<QQuickWindow*>(object));
+    QQuickWindow* window = qobject_cast<QQuickWindow*>(object);
+
+    window->setProperty("path", url.path());
+    window->setProperty("idx", this->windows->count());
+
+    connect(window, SIGNAL(closing(QQuickCloseEvent*)), this, SLOT(onWindowClose(QQuickCloseEvent*)));
+
+    this->windows->insert(url.path(), window);
 }
 

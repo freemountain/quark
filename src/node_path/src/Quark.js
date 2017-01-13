@@ -29,6 +29,11 @@ export default class Quark {
         assert(this.app instanceof Unit, message);
 
         this.view
+            .pipe(map.obj(x => {
+                if(x.type === "diffs") console.error("new diffs", x);
+
+                return x;
+            }))
             .pipe(this.app.on("error", this.onError.bind(this)))
             .pipe(map.obj(this.update.bind(this)).on("error", this.onError.bind(this)))
             .pipe(this.view)
@@ -68,7 +73,14 @@ export default class Quark {
     updateWindows(diffs) {
         diffs
             .filter(diff => (
-                diff.path.indexOf("/windows") === 0 &&
+                diff.path === "/windows" &&
+                diff.op === "add"
+            ))
+            .forEach(({ value }) => value.forEach(({ qml }) => this.view.load(qml)));
+
+        diffs
+            .filter(diff => (
+                diff.path.indexOf("/windows/") === 0 &&
                 diff.op === "add"
             ))
             .forEach(({ value }) => this.view.load(value.qml));

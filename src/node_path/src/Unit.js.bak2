@@ -207,36 +207,6 @@ class Unit extends Duplex {
                 .map(x => x.parentDependencies.filter(Unit.PropertyFilter).keySeq())
         });
 
-        // Todo: alles soll actionbasiert ablaufen
-        // dazu folgende daten extrahieren aus triggers, props, children:
-        //
-        // basis sind alle action, die enthalten:
-        //
-        // Action: {
-        //    triggers:  [string],
-        //    params:    [*]
-        //    guards:    [* -> boolean],
-        //    cascades:  [Cascade]       // hier gehts um bindings
-        //    operation: function
-        // }
-        //
-        //
-        // actions:
-        //  -> definierte
-        //  -> computed props
-        //  -> für jedes kind
-        //
-        //
-        // danach werden die alle assigned,
-        //
-        // wenn jetz ne nachricht kommt wird so lange gewartet, bis
-        // alles wieder in nem sauberen state is und dann die nächste
-        //
-        // es gibt eine trigger funktion, die ne liste von actions nimmt
-        // oder genau eine, die sendet an message, wartet auf den neuen
-        // cursor, erstellt diffs und triggert alle weiteren actions, solange
-        // bis keiner mehr getriggert werden will
-
         deps
             .filter(Unit.UnitFilter)
             .forEach((x, key) => x.on("data", this.receiveFromChild.bind(this, key)));
@@ -506,10 +476,6 @@ class Unit extends Duplex {
         return actions.length === 0 ? previous : this._unit
             .trigger(...actions, payload, diffs)
             .then(diffs2 => patch(previous, diffs2.toList()));
-    }
-
-    diffs(change) {
-        return patch(this, Immutable.fromJS(change.diffs));
     }
 
     children() {

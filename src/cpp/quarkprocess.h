@@ -25,6 +25,7 @@ public slots:
     void handleCloseQml(QString path);
     void handleLoadQml(QString path);
     void handleWindow(QObject* window, QUrl url);
+    void onWindowClose(QQuickCloseEvent* close);
 
 private:
     QMap<QString, QQuickWindow*>* windows;
