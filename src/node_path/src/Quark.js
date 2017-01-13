@@ -5,7 +5,7 @@ import map from "through2-map";
 import patch from "Immutablepatch";
 import Immutable from "immutable";
 import Property from "./domain/Property";
-import Trigger from "./domain/Trigger";
+import Trigger from "./domain/Trigger2";
 import util from "util";
 
 export default class Quark {

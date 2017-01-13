@@ -1,6 +1,6 @@
 import Immutable from "immutable";
 import Property from "./domain/Property";
-import Trigger from "./domain/Trigger";
+import Trigger from "./domain/Trigger2";
 import isUndefined from "lodash.isUndefined";
 import assert from "assert";
 import Cursor from "./domain/Cursor";

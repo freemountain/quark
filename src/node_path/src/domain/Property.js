@@ -5,7 +5,7 @@ import assert from "assert";
 import Relation from "./Relation";
 import Join from "./Join";
 import ImmutableMethods from "../util/ImmutableMethods";
-import Trigger from "./Trigger";
+import Trigger from "./Trigger2";
 
 /**
  * This class describes a property, derived from some parent
