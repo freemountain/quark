@@ -16,7 +16,18 @@ export default class Trigger {
         return new Trigger(this.name, this.guards.push(guard), this.params, this.delay);
     }
 
-    addArgument(argument) {
-        return new Trigger(this.name, this.guards, this.params.push(argument), this.delay);
+    addArguments(args) {
+        return new Trigger(this.name, this.guards, this.params.concat(args), this.delay);
+    }
+
+    setName(name) {
+        return new Trigger(name, this.guards, this.params, this.delay);
+    }
+
+    toJS() {
+        return Object.assign({}, this, {
+            guards: this.guards.toJS(),
+            params: this.params.toJS()
+        });
     }
 }
