@@ -9,12 +9,12 @@ describe("ActionTest", function() {
             name:     "anonymous",
             triggers: [{
                 delay:  0,
-                guards: [],
+                guards: 0,
                 name:   "anonymous",
                 params: []
             }, {
                 delay:  0,
-                guards: [],
+                guards: 0,
                 name:   "blub",
                 params: []
             }]
@@ -30,12 +30,12 @@ describe("ActionTest", function() {
             name:     "test",
             triggers: [{
                 delay:  0,
-                guards: [],
+                guards: 0,
                 name:   "test",
                 params: []
             }, {
                 delay:  0,
-                guards: [],
+                guards: 0,
                 name:   "blub",
                 params: []
             }]
@@ -63,17 +63,17 @@ describe("ActionTest", function() {
             name:     "test",
             triggers: [{
                 delay:  0,
-                guards: [guard0],
+                guards: 1,
                 name:   "test",
                 params: []
             }, {
                 delay:  10,
-                guards: [guard1, guard2],
+                guards: 2,
                 name:   "blub",
                 params: []
             }, {
                 delay:  0,
-                guards: [guard3],
+                guards: 1,
                 name:   "lulu",
                 params: ["blub", 1, 0]
             }]

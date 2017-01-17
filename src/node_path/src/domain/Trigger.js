@@ -1,11 +1,12 @@
 import Immutable from "immutable";
 
 export default class Trigger {
-    constructor(name, guards = Immutable.List(), params = Immutable.List(), delay = 0) {
-        this.name   = name;
-        this.guards = guards;
-        this.params = params;
-        this.delay  = delay;
+    constructor(name, guards = Immutable.List(), params = Immutable.List(), delay = 0, destination) {
+        this.name        = name;
+        this.guards      = guards;
+        this.params      = params;
+        this.delay       = delay;
+        this.destination = destination;
     }
 
     setDelay(delay) {
@@ -24,10 +25,18 @@ export default class Trigger {
         return new Trigger(name, this.guards, this.params, this.delay);
     }
 
+    setDestination(destination) {
+        return new Trigger(this.name, this.guards, this.params, this.delay, destination);
+    }
+
     toJS() {
-        return Object.assign({}, this, {
-            guards: this.guards.toJS(),
+        const obj = Object.assign({}, this, {
+            guards: this.guards.size,
             params: this.params.toJS()
         });
+
+        if(!this.destination) delete obj.destination;
+
+        return obj;
     }
 }

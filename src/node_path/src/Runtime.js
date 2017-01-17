@@ -5,13 +5,33 @@ import Immutable from "immutable";
 // import Trigger from "./domain/Trigger";
 // import uuid from "uuid";
 // import Cursor from "./domain/Cursor";
-// import Action from "./domain/Action";
 import curry from "lodash.curry";
+import TriggerDescription from "./domain/TriggerDescription";
+import ActionDescription from "./domain/ActionDescription";
+import Trigger from "./domain/Trigger";
+import Cursor from "./domain/Cursor";
+import defaults from "set-default-value";
+import uuid from "uuid";
 
 export default class Runtime extends Duplex {
+    static UnitFilter  = x => x instanceof Runtime; // eslint-disable-line
+    static ValueFilter = x => (
+        !Runtime.UnitFilter(x) &&
+        !(x instanceof Trigger)
+    );
+
     static SetAction = curry(function(key, value) {
         return this.set(key, value);
     });
+
+    static StateFilter(_, key) {
+        return (
+            key !== "description" &&
+            key !== "id" &&
+            key !== "history" &&
+            key !== "diffs"
+        );
+    }
 
     static ActionFilter(x) {
         return (
@@ -21,22 +41,43 @@ export default class Runtime extends Duplex {
             x !== "cancel" &&
             x !== "progress" &&
             x !== "before" &&
-            x !== "trigger"
+            x !== "trigger" &&
+            x !== "ready" &&
+            x !== "state" &&
+            x !== "cursor" &&
+            x !== "readyPromise" &&
+            x !== "buffers" &&
+            x !== "actions"
         );
     }
 
-    static update() {
-        const cursor = this.cursor
-            .update("_unit", x => x
-                .update("revision", y => y + 1)
-                .update("history", y => y.push(this.cursor))
-            );
+    static update(instance, cursor) {
+        instance.cursor = cursor;
 
-        const diffs = diff(this.cursor, cursor);
+        return cursor.get("_unit", "diffs");
+    }
 
-        this.cursor = cursor;
+    static diff(instance, updated) {
+        return new Promise((resolve, reject) => {
+            try {
+                if(!(updated instanceof Cursor)) return assert(false, `Every action needs to return a cursor, but got ${updated}`);
 
-        return diffs;
+                const previous = instance.cursor === null ? updated.__data.constructor() : instance.cursor.__data;
+                const cursor   = updated.update("_unit", x => x
+                    .update("revision", y => y + 1)
+                    .update("history", y => y.push(previous))
+                );
+
+                const diffs = diff(previous, cursor.__data);
+
+                return resolve({
+                    cursor: Cursor.of(cursor),
+                    diffs
+                });
+            } catch(e) {
+                return reject(e);
+            }
+        });
     }
 
     static allActions(x, carry = Immutable.Map()) {
@@ -46,20 +87,42 @@ export default class Runtime extends Duplex {
 
         const keys    = Object.getOwnPropertyNames(proto);
         const actions = Immutable.List(keys)
+            .filter(y => proto[y] instanceof Function)
             .filter(Runtime.ActionFilter)
             .reduce((dest, key) => dest.set(key, x[key]), Immutable.Map());
 
         return Runtime.allActions(proto, actions.merge(carry));
     }
 
-    static toUnit(instance, bindings) {
-        const proto = Object.getPrototypeOf(instance);
+    static allTriggers(x, carry = Immutable.Map()) {
+        const proto = Object.getPrototypeOf(x);
 
+        if(proto === Duplex.prototype) return carry;
+
+        const triggers = Immutable.Map(proto.constructor.triggers)
+            .map((y, key) => y.setName(key));
+
+        return Runtime.allTriggers(proto, triggers.mergeWith((prev, next) => prev.merge(next), carry));
+    }
+
+    static declToImpTriggers(triggers) {
+        return Immutable.Map(triggers)
+            .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new TriggerDescription(key, y))), Immutable.List());
+    }
+
+    static toUnit(instance, proto) {
         if(proto.__Unit) return instance;
 
-        // update prototype, and thus instance
-        //
-        console.log(bindings);
+        const triggers = Runtime.declToImpTriggers(Runtime.allTriggers(instance));
+
+        const actions = Runtime
+            .allActions(instance)
+            .map((x, key) => new ActionDescription(key, triggers, instance[key] === Runtime.prototype.message ? null : instance[key]));
+
+        proto.__actions = actions;
+        proto.__Unit    = uuid();
+
+        Object.assign(proto, actions.map(action => action.func).toJS());
 
         return instance;
     }
@@ -71,138 +134,89 @@ export default class Runtime extends Duplex {
             objectMode: true
         });
 
-        const proto = Object.getPrototypeOf(this);
-
-        const {
-            triggers
-        } = proto.constructor;
-
-        const unit    = Runtime.toUnit(this, bindings);
-        const actions = triggers;
-
-        this.actions = actions;
-        this.buffers = [];
-
-
-        return unit;
-
-    /* const proto = Object.getPrototypeOf(this);
-
-        const {
-            props,
-            triggers
-        } = proto.constructor;
-
-        const properties   = Immutable.fromJS(props);
-        const description  = Immutable.fromJS(additions);
-        const deps         = properties.filter(Runtime.DependencyFilter);
+        const id           = uuid();
+        const proto        = Object.getPrototypeOf(this);
+        const unit         = Runtime.toUnit(this, proto, bindings);
+        const properties   = Immutable.fromJS(defaults(proto.constructor.props).to({}));
+        const deps         = properties.filter(Runtime.UnitFilter);
         const initialProps = properties
-            .mergeDeep(description)
-            .filter(Runtime.OnlyValueFilter)
-            .merge(deps.filter(Runtime.UnitFilter).map(() => null));
+            .merge(Immutable.fromJS(bindings))
+            .filter(Runtime.ValueFilter)
+            .merge(deps.map(() => null))
+            .set("_unit", Immutable.fromJS({
+                description: proto.__actions,
+                id:          id,
+                revision:    0,
+                history:     [],
+                errors:      [],
+                diffs:       []
+            }));
 
-        const dependencies = deps
-            .merge(deps.filter(Runtime.UnitFilter).map(x => x.parentDependencies));
-
-        console.log(dependencies, triggers);
-        // TODO: hier müssen keys die existieren mit den triggers gemerged werden
-        /* const actions = Immutable.fromJS(proto)
-            .map((operation, name) => new Action({ name, operation }))
-            .merge(properties
-                .filter(Runtime.OnlyValueFilter)
-                .map((_, name) => new Action({ name, operation: Runtime.SetAction(name) })))
-            .merge(properties
-                .filter(Runtime.OnlyUnitFilter)
-                .map((_, name) => new Action({ name, operation: Runtime.SetAction(name) })))
-            .merge(triggers
-                .map((x, name) => x.setName(name))
-                .map((x, name) => this[name] instanceof Function ? x.setOperation(this[name]) : x));
-
-            Object.assign(this, actions.map(action => action.getFunction()).toJS());*/
-
-        /* const computed = dependencies
-            .merge(description)
-            .filter(Runtime.PropertyFilter)
-            .map(Runtime.PropertyMapper);
-
-        const propsTrigger = new Trigger(initialProps
-            .keySeq()
-            .toJS()
-            .concat(Object.getOwnPropertyNames(proto))
-            .filter(x => x !== "constructor")
-            .map(x => `${x}.done`));
-
-        const childrenTrigger = new Trigger(Immutable.List.of("props.done", "children"));
-        const childTriggers   = deps
-            .filter(Runtime.UnitFilter)
-            .map(x => new Trigger(x.parentDependencies
-                .reduce((dest, y) => dest.concat(y.getDependencies()), Immutable.List())
-            ));
-
-        const allTriggers = Immutable.Map(triggers)
-            .map((x, key) => x.addAction(key))
-            .merge(computed)
-            .merge(childTriggers)
-            .set("props", propsTrigger.addAction("props"))
-            .set("children", childrenTrigger);
-
-        const unit = Immutable.Map({
-            revision: 0,
-            id:       uuid(),
-            action:   null,
-            name:     this.constructor.name
+        this.id           = id;
+        this.description  = proto.__actions;
+        this.buffers      = [];
+        this.cursor       = null;
+        this.readyPromise = unit.trigger({
+            type:    "init",
+            payload: initialProps
         });
 
-        deps
-            .filter(Runtime.UnitFilter)
-            .forEach((x, key) => x.on("data", this.receiveFromChild.bind(this, key)));
-
-        this.deps               = deps;
-        this.buffers            = [];
-        this.parentDependencies = description.filter(Runtime.DependencyFilter);
-        this.cursor             = Cursor.of(Immutable.Map({
-            _unit:  unit,
-            errors: Immutable.List()
-        }));
-
-        Object.assign(this, this.cursor._unit.dependencies
-            .filter(Runtime.PropertyFilter)
-            .map((prop, key) => Runtime.PropertyAction(key, prop))
-            .toJS());
-
-        this.write({
-            type:    "props",
-            payload: initialProps.filter(x => x !== null)
-        });*/
+        return unit;
     }
 
-    trigger(action) {
-        return this.message.apply(this.cursor, action)
-            .then(cursor => Runtime.update(this, cursor))
-            .catch(error => Runtime.update(this, this.cursor.update("_unit", x => x.update("errors", y => y.push(error)))));
+    ready() {
+        return this.readyPromise;
+    }
+
+    state() {
+        if(this.cursor === null) return this.cursor;
+
+        return this.cursor.update("_unit", x => x.filter(Runtime.StateFilter)).toJS();
+    }
+
+    actions() {
+        return this.description.map(x => x.toJS()).toJS();
+    }
+
+    trigger(data) {
+        const action = Immutable.fromJS(data);
+        const cursor = defaults(this.cursor).to(Cursor.of(action.get("payload"), this));
+
+        return Promise.resolve(this.before.call(cursor, data))
+            .then(x => this.message.call(x, x.get("_unit").get("action")).catch(this.error.bind(x)))
+            .then(x => Runtime.diff(this, Cursor.of(x)))
+            .then(update => this.done.call(update.cursor, update.diffs))
+            .then(x => Runtime.update(this, x))
+            .catch(e => this.emit("error", e));
+    }
+
+    init(action) {
+        return action.get("payload");
     }
 
     message() {
         assert(false, "Every unit needs to implement a 'message' action");
     }
 
-    before() {
-        assert(false, "Every unit needs to implement an 'before' action");
+    before(action) {
+        return this.update("_unit", x => x.set("action", Immutable.fromJS(action)));
     }
 
+    // muss man sehn, ob das nötig is
     progress() {
         assert(false, "Every unit needs to implement a 'progress' action");
     }
 
+    // vlt eher revert?
     cancel() {
         assert(false, "Every unit needs to implement a 'cancel' action");
     }
 
-    done() {
-        assert(false, "Every unit needs to implement a 'done' action");
+    done(diffs) {
+        return this.update("_unit", x => x.set("diffs", diffs).delete("action"));
     }
 
-    error() {
-        assert(false, "Every unit needs to implement an 'error' action");
+    error(error) {
+        return this.update("_unit", x => x.update("errors", y => y.push(error)));
     }
 }

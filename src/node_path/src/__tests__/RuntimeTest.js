@@ -1,74 +1,100 @@
 import Runtime from "../Runtime";
 import { expect } from "chai";
+import TestUnit from "./mocks/TestUnit";
 import Action from "../domain/Action";
+import Trigger from "../domain/Trigger";
+import Immutable from "immutable";
 
 const triggered = Action.triggered;
 
-class TestUnit extends Runtime {
-    static isAction = x => x.resource.indexOf("/action") !== -1;
-
+class Inheritance extends TestUnit {
     static triggers = {
-        action: triggered
-            .by("message")
-            .if((x, unit) => (
-                Runtime.isAction(x) &&
-                !unit.childHandles(x)
-            )),
-
-        children: triggered
-            .by("message")
-            .if(x => (
-                Runtime.isAction(x) &&
-                !x.triggers("action")
-            )),
-
-        diffs: triggered
-            .by("message")
-            .if(x => !Runtime.isAction(x)),
-
-        props: triggered.by("action.done")
+        props: triggered.by("test"),
+        blub:  triggered.by("bla")
     };
 
-    children() {}
-
-    diffs() {}
-
-    props() {}
-
-    actions() {}
+    static props = {
+        name:     "Jupp",
+        age:      40,
+        loggedIn: false
+    };
 }
 
 describe("RuntimeTest", function() {
-    it("extract all methods from a class", function() {
+    it("extracts all methods from a class instance", function() {
         const methods = Runtime.allActions(new TestUnit());
 
         expect(methods.keySeq().toJS()).to.eql([
+            "init",
             "message",
             "children",
             "diffs",
             "props",
-            "actions"
+            "action"
         ]);
     });
 
-        /* it("creates a an extended Runtime", function() {
+    it("extracts all triggers from an instance", function() {
+        const triggers = Runtime.allTriggers(new Inheritance());
+
+        expect(triggers.toJS()).to.eql({
+            action: {
+                name:     "action",
+                triggers: [
+                    (new Trigger("action")).toJS(),
+                    (new Trigger("message", Immutable.List([() => true]))).toJS()
+                ]
+            },
+            children: {
+                name:     "children",
+                triggers: [
+                    (new Trigger("children")).toJS(),
+                    (new Trigger("message", Immutable.List([() => true]))).toJS()
+                ]
+            },
+            diffs: {
+                name:     "diffs",
+                triggers: [
+                    (new Trigger("diffs")).toJS(),
+                    (new Trigger("message", Immutable.List([() => true]))).toJS()
+                ]
+            },
+            props: {
+                name:     "props",
+                triggers: [
+                    (new Trigger("message.done")).toJS(),
+                    (new Trigger("props")).toJS(),
+                    (new Trigger("test")).toJS()
+                ]
+            },
+            blub: {
+                name:     "blub",
+                triggers: [
+                    (new Trigger("blub")).toJS(),
+                    (new Trigger("bla")).toJS()
+                ]
+            }
+        });
+    });
+
+    it("creates an extended Runtime and checks the actions", function() {
         const unit = new TestUnit();
 
-        expect(unit.actions).to.eql({
+        expect(unit.actions()).to.eql({
             message: {
                 name:   "message",
                 before: [{
-                    name:   "children",
+                    emits:  "action",
                     guards: 1,
                     params: [],
                     delay:  0
                 }, {
-                    name:   "diffs",
+                    emits:  "children",
                     guards: 1,
                     params: [],
                     delay:  0
                 }, {
-                    name:   "action",
+                    emits:  "diffs",
                     guards: 1,
                     params: [],
                     delay:  0
@@ -76,7 +102,12 @@ describe("RuntimeTest", function() {
                 cancel:   [],
                 progress: [],
                 error:    [],
-                done:     []
+                done:     [{
+                    emits:  "props",
+                    guards: 0,
+                    params: [],
+                    delay:  0
+                }]
             },
 
             action: {
@@ -85,13 +116,81 @@ describe("RuntimeTest", function() {
                 cancel:   [],
                 progress: [],
                 error:    [],
-                done:     [{
-                    name:   "props",
-                    guards: 0,
-                    params: [],
-                    delay:  0
-                }]
+                done:     []
+            },
+
+            children: {
+                name:     "children",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     []
+            },
+
+            diffs: {
+                name:     "diffs",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     []
+            },
+
+            init: {
+                name:     "init",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     []
+            },
+
+            props: {
+                name:     "props",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     []
             }
         });
-});*/
+    });
+
+    it("it checks for valid method mappings", function() {
+        const unit = new Inheritance();
+
+        expect(unit.state()).to.eql(null);
+
+        return unit.message(Immutable.fromJS({
+            type:    "init",
+            payload: {
+                name: "jupp"
+            }
+        })).then(x => {
+            expect(x.toJS()).to.eql({
+                name: "jupp"
+            });
+        });
+    });
+
+
+    it("creates an inerhited runtime and checks the initial cursor", function() {
+        const unit = new Inheritance();
+
+        expect(unit.state()).to.eql(null);
+
+        return unit.ready()
+            .then(() => {
+                expect(unit.state()).to.eql({
+                    _unit: {
+                        revision: 1,
+                        errors:   []
+                    },
+                    name:     "Jupp",
+                    age:      40,
+                    loggedIn: false
+                });
+            });
+    });
 });
