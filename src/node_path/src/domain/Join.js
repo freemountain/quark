@@ -1,6 +1,6 @@
 import Immutable from "immutable";
 import assert from "assert";
-import Cursor from "./Cursor2";
+import Cursor from "./Cursor";
 import curry from "lodash.curry";
 
 /**

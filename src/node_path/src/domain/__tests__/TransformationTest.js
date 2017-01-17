@@ -6,7 +6,7 @@ describe("TransformationTest", function() {
     it("creates a transformation", function() {
         const transformation = new Transformation({
             op:   "map",
-            args: [x => x.id]
+            args: [x => x.get("id")]
         });
 
         expect(transformation.compute(Immutable.Map({
@@ -21,7 +21,7 @@ describe("TransformationTest", function() {
     it("triggers an error", function() {
         const transformation = new Transformation({
             op:   "lulu",
-            args: [x => x.id]
+            args: [x => x.get("id")]
         });
 
         expect(() => transformation.compute(Immutable.Map({

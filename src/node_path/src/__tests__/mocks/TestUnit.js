@@ -10,20 +10,20 @@ export default class TestUnit extends Runtime {
         action: triggered
             .by("message")
             .if((x, unit) => (
-                Runtime.isAction(x) &&
+                TestUnit.isAction(x) &&
                 !unit.childHandles(x)
             )),
 
         children: triggered
             .by("message")
             .if(x => (
-                Runtime.isAction(x) &&
+                TestUnit.isAction(x) &&
                 !x.triggers("action")
             )),
 
         diffs: triggered
             .by("message")
-            .if(x => !Runtime.isAction(x)),
+            .if(x => !TestUnit.isAction(x)),
 
         props: triggered.by("message.done")
     };

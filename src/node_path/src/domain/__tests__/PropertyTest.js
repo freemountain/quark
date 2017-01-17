@@ -6,14 +6,14 @@ import sinon from "sinon";
 describe("PropertyTest", function() {
     it("creates a property", function() {
         const reducer   = (dest, y) => dest + y;
-        const property  = Property.derive(({ counter, acc }) => counter + acc);
+        // const property  = Property.derive(({ counter, acc }) => counter + acc);
         const property2 = Property.derive(x => x.get("acc") + x.get("counter"));
         const property3 = Property.derive(x => x.reduce(reducer, 0));
 
-        expect(property.getDependencies().toJS()).to.eql(["props.done"]);
+        // expect(property.getDependencies().toJS()).to.eql(["props.done"]);
         expect(property2.getDependencies().toJS()).to.eql(["props.done"]);
-        expect(property.receive(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
-        expect(property.receive(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
+        // expect(property.receive(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
+        // expect(property.receive(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
         expect(property2.receive(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
         expect(property2.receive(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
         expect(property3.receive(Immutable.fromJS({ counter: 1, acc: 2 }))).to.equal(3);
@@ -24,8 +24,10 @@ describe("PropertyTest", function() {
         const spy      = sinon.spy();
         const property = Property.derive
             .from("*")
-            .filter(({ id }) => id > 0)
-            .filter(x => x.id < 3)
+            .filter(x => x.get("id") > 0)
+            .filter(x => x.get("id") < 3)
+            // .filter(({ id }) => id > 0)
+            // .filter(x => x.id < 3)
             .tap(spy)
             .map(x => x.get("name"))
             .reduce((dest, name) => `${dest}, ${name}`, "")
@@ -71,13 +73,14 @@ describe("PropertyTest", function() {
         const property = Property.derive
             .from("users", "sorter", "x")
             .join("messages")
-                .on("message", (user, message) => user.message === message.id)
+                .on("message", (user, message) => user.get("message") === message.get("id"))
+                // .on("message", (user, message) => user.message === message.id)
                 .cascade("ALL")
             .join("addresses")
-                .on("addresses", (user, address) => user.addresses === address.id)
+                .on("addresses", (user, address) => user.get("address") === address.get("id"))
                 .cascade("PUT")
             .join.self
-                 .on("parent", (user, parent) => user.parent === parent.id)
+                 .on("parent", (user, parent) => user.get("parent") === parent.get("id"))
             .filter(data => data.message.text.indexOf("geier") !== -1)
             .sort((a, b, { sorter }) => sorter(a, b))
             .pop()
@@ -254,7 +257,7 @@ describe("PropertyTest", function() {
     it("creates a property with declarative constructor (3)", function() {
         const property = Property.derive
             .from("users.addresses")
-            .find(address => address.id === 1);
+            .find(address => address.get("id") === 1);
 
         expect(property.receive(Immutable.fromJS({
             users: {

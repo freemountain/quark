@@ -12,6 +12,7 @@ import Trigger from "./domain/Trigger";
 import Cursor from "./domain/Cursor";
 import defaults from "set-default-value";
 import uuid from "uuid";
+import { schedule } from "./Runloop";
 
 export default class Runtime extends Duplex {
     static UnitFilter  = x => x instanceof Runtime; // eslint-disable-line
@@ -35,6 +36,7 @@ export default class Runtime extends Duplex {
 
     static ActionFilter(x) {
         return (
+            x.indexOf("_") === -1 &&
             x !== "constructor" &&
             x !== "done" &&
             x !== "error" &&
@@ -179,15 +181,18 @@ export default class Runtime extends Duplex {
     }
 
     trigger(data) {
-        const action = Immutable.fromJS(data);
-        const cursor = defaults(this.cursor).to(Cursor.of(action.get("payload"), this));
+        try {
+            const action = Immutable.fromJS(data);
+            const cursor = defaults(this.cursor).to(Cursor.of(action.get("payload"), this));
 
-        return Promise.resolve(this.before.call(cursor, data))
-            .then(x => this.message.call(x, x.get("_unit").get("action")).catch(this.error.bind(x)))
-            .then(x => Runtime.diff(this, Cursor.of(x)))
-            .then(update => this.done.call(update.cursor, update.diffs))
-            .then(x => Runtime.update(this, x))
-            .catch(e => this.emit("error", e));
+            return Promise.resolve(this.before.call(cursor, data))
+                .then(x => this.message.call(x, x.get("_unit").get("action")).catch(this.error.bind(x)))
+                .then(x => Runtime.diff(this, Cursor.of(x)))
+                .then(update => this.done.call(update.cursor, update.diffs))
+                .then(x => Runtime.update(this, x));
+        } catch(e) {
+            return Promise.reject(e);
+        }
     }
 
     init(action) {
@@ -218,5 +223,18 @@ export default class Runtime extends Duplex {
 
     error(error) {
         return this.update("_unit", x => x.update("errors", y => y.push(error)));
+    }
+
+    _write(message, enc, cb) {
+        this.ready()
+            .then(() => this.trigger(message))
+            .then(() => cb())
+            .catch(e => this.emit("error", e));
+    }
+
+    _read() { // eslint-disable-line
+        if(this.buffers.length === 0) return schedule(() => this._read());
+
+        this.push(this.buffers.shift());
     }
 }

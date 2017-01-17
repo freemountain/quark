@@ -7,7 +7,7 @@ describe("JoinTest", function() { // eslint-disable-line
     it("creates and applies a join", function() {
         const dest     = new Relation("dest", Relation.SELF);
         const relation = new Relation("relations", Relation.JOINED, "relation", ["PUT"]);
-        const join     = Join.of(relation, dest, (x, y) => x.relation === y.id);
+        const join     = Join.of(relation, dest, (x, y) => x.get("relation") === y.get("id"));
 
         const joined = join(Immutable.fromJS([[{
             id:       0,

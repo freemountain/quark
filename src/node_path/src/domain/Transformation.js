@@ -1,4 +1,4 @@
-import Cursor from "./Cursor2";
+import Cursor from "./Cursor";
 import assert from "assert";
 import printPublicMethods from "../util/printPublicMethods";
 import Immutable from "immutable";

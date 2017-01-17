@@ -6,7 +6,7 @@ class Cursor {
         return new Cursor(data);
     }
 
-    constructor(data) {
+    constructor(data) { // eslint-disable-line
         if(data instanceof Cursor) return data;
 
         this.__data = Immutable.fromJS(data);
@@ -18,6 +18,8 @@ class Cursor {
                 return this.__data.size;
             }
         });
+
+        if(!this.__data.get || !this.__data.get("_unit")) return Object.freeze(this);
 
         const description = this.__data.get("_unit").get("description");
 
