@@ -45,6 +45,7 @@ describe("RuntimeTest", function() {
                     (new Trigger("message", Immutable.List([() => true]))).toJS()
                 ]
             },
+
             children: {
                 name:     "children",
                 triggers: [
@@ -52,6 +53,7 @@ describe("RuntimeTest", function() {
                     (new Trigger("message", Immutable.List([() => true]))).toJS()
                 ]
             },
+
             diffs: {
                 name:     "diffs",
                 triggers: [
@@ -59,6 +61,15 @@ describe("RuntimeTest", function() {
                     (new Trigger("message", Immutable.List([() => true]))).toJS()
                 ]
             },
+
+            init: {
+                name:     "init",
+                triggers: [
+                    (new Trigger("init")).toJS(),
+                    (new Trigger("message", Immutable.List([() => true]))).toJS()
+                ]
+            },
+
             props: {
                 name:     "props",
                 triggers: [
@@ -67,6 +78,7 @@ describe("RuntimeTest", function() {
                     (new Trigger("test")).toJS()
                 ]
             },
+
             blub: {
                 name:     "blub",
                 triggers: [
@@ -84,6 +96,11 @@ describe("RuntimeTest", function() {
             message: {
                 name:   "message",
                 before: [{
+                    emits:  "init",
+                    guards: 1,
+                    params: [],
+                    delay:  0
+                }, {
                     emits:  "action",
                     guards: 1,
                     params: [],
@@ -157,18 +174,25 @@ describe("RuntimeTest", function() {
         });
     });
 
-    it("it checks for valid method mappings", function() {
+    it("it calls some methods", function() {
         const unit = new Inheritance();
 
         expect(unit.state()).to.eql(null);
 
-        return unit.message(Immutable.fromJS({
+        const message = Immutable.fromJS({
             type:    "init",
             payload: {
                 name: "jupp"
             }
-        })).then(x => {
-            expect(x.toJS()).to.eql({
+        });
+
+        return unit.message.call(message.get("payload").set("_unit", Immutable.fromJS({
+            id:          "blub",
+            error:       [],
+            history:     [],
+            description: unit.__actions
+        })), message).then(x => {
+            expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql({
                 name: "jupp"
             });
         });

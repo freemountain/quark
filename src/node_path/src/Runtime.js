@@ -8,6 +8,7 @@ import Immutable from "immutable";
 import curry from "lodash.curry";
 import TriggerDescription from "./domain/TriggerDescription";
 import ActionDescription from "./domain/ActionDescription";
+import Action from "./domain/Action";
 import Trigger from "./domain/Trigger";
 import Cursor from "./domain/Cursor";
 import defaults from "set-default-value";
@@ -129,6 +130,12 @@ export default class Runtime extends Duplex {
         return instance;
     }
 
+    static triggers = {
+        init: Action.triggered
+            .by("message")
+            .if(x => x.triggers("action"))
+    };
+
     constructor(bindings) { // eslint-disable-line
         if(bindings instanceof Runtime) return bindings;
 
@@ -196,6 +203,7 @@ export default class Runtime extends Duplex {
     }
 
     init(action) {
+        console.log("#####", "init");
         return action.get("payload");
     }
 

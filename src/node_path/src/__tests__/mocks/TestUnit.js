@@ -10,6 +10,7 @@ export default class TestUnit extends Runtime {
         action: triggered
             .by("message")
             .if((x, unit) => (
+                !x.triggers("init") &&
                 TestUnit.isAction(x) &&
                 !unit.childHandles(x)
             )),

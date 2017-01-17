@@ -1,4 +1,7 @@
 import curry from "lodash.curry";
+import Immutable from "immutable";
+import patch from "immutablepatch";
+import diff from "immutablediff";
 
 class ActionDescription {
     static BEFORE = x => (
@@ -12,23 +15,34 @@ class ActionDescription {
     static DONE     = x => x.action.indexOf(".done") !== -1;     // eslint-disable-line
     static ERROR    = x => x.action.indexOf(".error") !== -1;    // eslint-disable-line
 
+    static applyTriggers(triggers, cursor, params) {
+        const diffs = triggers
+            .reduce((dest, x) => dest.concat(diff(cursor, x.apply(cursor, params))), Immutable.Set());
+
+        return patch(cursor, diffs);
+    }
+
     static Handler(description, ...params) {
         return new Promise((resolve, reject) => {
             try {
-                // console.log("### ActionDescription.Handler ", params[0]);
-                // trigger before stuff
+                // hier klappt das applyTriggers noch nich, dazu erstmal
+                // den unittest von triggerdescription schreiben, problem
+                // is ziemlich sicher da
+                const cursor = ActionDescription.applyTriggers(description.before, this, params);
+
                 // check guards
                 // trigger op and merge, wenn keine op, einfach weiterleiten
                 // trigger done stuff oder error stuff
 
-                return resolve(params[0].get("payload"));
+                console.log("###", description.name, cursor.toJS());
+                return resolve(this);
             } catch(e) {
                 return reject(e);
             }
         });
     }
 
-    static guardsToJS(triggers) {
+    guardsToJS(triggers) {
         return triggers.map(x => Object.assign({}, x, {
             guards: x.guards.length
         }));
@@ -52,11 +66,11 @@ class ActionDescription {
     toJS() {
         return {
             name:     this.name,
-            before:   ActionDescription.guardsToJS(this.before.toJS()),
-            progress: ActionDescription.guardsToJS(this.progress.toJS()),
-            cancel:   ActionDescription.guardsToJS(this.cancel.toJS()),
-            done:     ActionDescription.guardsToJS(this.done.toJS()),
-            error:    ActionDescription.guardsToJS(this.error.toJS())
+            before:   this.guardsToJS(this.before.toJS()),
+            progress: this.guardsToJS(this.progress.toJS()),
+            cancel:   this.guardsToJS(this.cancel.toJS()),
+            done:     this.guardsToJS(this.done.toJS()),
+            error:    this.guardsToJS(this.error.toJS())
         };
     }
 }

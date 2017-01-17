@@ -1,4 +1,6 @@
 export const schedule = function schedule(operation, delay = 0) {
+    if(delay === 0) return operation();
+
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             try {

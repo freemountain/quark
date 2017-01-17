@@ -1,3 +1,5 @@
+import { schedule } from "../Runloop";
+
 export default class TriggerDescription {
     constructor(action, trigger) {
         this.emits  = action;
@@ -14,5 +16,22 @@ export default class TriggerDescription {
             guards: this.guards.toJS(),
             params: this.params.toJS()
         };
+    }
+
+    shouldTrigger() {
+        console.log("###shouldTrigger");
+        return false;
+    }
+
+    apply(cursor, params) {
+        const enhanced = params.concat(this.params.toJS());
+        const op       = cursor[this.emits];
+
+        if((
+            !(op instanceof Function) ||
+            !this.shouldTrigger(cursor, enhanced)
+        )) return cursor;
+
+        return schedule(() => op.apply(cursor, enhanced), this.delay);
     }
 }
