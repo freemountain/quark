@@ -143,10 +143,7 @@ export default class Runtime extends Duplex {
     static triggers = {
         init: Action.triggered
             .by("message")
-            .if(x => {
-                console.log("Runtime.triggers ", Object.getPrototypeOf(x));
-                return x.triggers("action");
-            })
+            .if((message, unit) => unit.triggers("action").on(message))
     };
 
     constructor(bindings) { // eslint-disable-line

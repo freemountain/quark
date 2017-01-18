@@ -4,6 +4,7 @@ import TestUnit from "./mocks/TestUnit";
 import Action from "../domain/Action";
 import Trigger from "../domain/Trigger";
 import Immutable from "immutable";
+import Internals from "../domain/Internals";
 
 const triggered = Action.triggered;
 
@@ -192,12 +193,10 @@ describe("RuntimeTest", function() {
             }
         });
 
-        return unit.message.call(new unit.__Cursor(message.get("payload").set("_unit", Immutable.fromJS({
+        return unit.message.call(new unit.__Cursor(message.get("payload").set("_unit", new Internals({
             id:          "blub",
             name:        "Inheritance",
-            error:       [],
-            history:     [],
-            actions:     [[]],
+            actions:     Immutable.fromJS([[]]),
             description: unit.__actions
         }))), message).then(x => {
             expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql({

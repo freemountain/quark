@@ -53,7 +53,7 @@ class Cursor {
         // assert(this.__inherited, "Cursor can only be used, when inherited");
 
         this.__data = {
-            x: data instanceof Object ? Immutable.fromJS(data) : data
+            x: Immutable.fromJS(data)
         };
 
         Object.defineProperty(this, "size", {
@@ -71,8 +71,14 @@ class Cursor {
         return mapper(this);
     }
 
-    triggers() {
-        return assert(false, "Cursor.triggers: implement!");
+    triggers(action) {
+        assert(false, "Cursor.trigger: implement!");
+
+        return {
+            on: message => this.__data
+                .get("_unit")
+                .triggersOn(message, action)
+        };
     }
 
     toValue() {
