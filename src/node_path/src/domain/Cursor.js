@@ -1,5 +1,6 @@
 import Immutable from "immutable";
 import ImmutableMethods from "../util/ImmutableMethods";
+import assert from "assert";
 
 class Cursor {
     static of(data) {
@@ -7,7 +8,10 @@ class Cursor {
     }
 
     constructor(data) { // eslint-disable-line
-        if(data instanceof Cursor) return data;
+        if((
+            !(data instanceof Immutable.List) &&
+            !(data instanceof Immutable.Map)
+        ) || data instanceof Cursor) return data;
 
         this.__data = Immutable.fromJS(data);
 
@@ -25,18 +29,26 @@ class Cursor {
 
         if(!description || !description.forEach) return Object.freeze(this);
 
-        description.forEach((action, key) => Object.defineProperty(this, key, {
-            enumerable:   false,
-            configurable: false,
-            writable:     false,
-            value:        action.func
-        }));
+        description.forEach((action, key) => {
+            Object.defineProperty(this, key, {
+                enumerable:   false,
+                configurable: false,
+                writable:     false,
+                value:        function(...args) {
+                    return action.func.call(this, ...args);
+                }
+            });
+        });
 
         return Object.freeze(this);
     }
 
     generic(mapper) {
         return mapper(this);
+    }
+
+    triggers() {
+        return assert(false, "Cursor.triggers: implement!");
     }
 }
 

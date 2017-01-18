@@ -11,6 +11,7 @@ import ActionDescription from "./domain/ActionDescription";
 import Action from "./domain/Action";
 import Trigger from "./domain/Trigger";
 import Cursor from "./domain/Cursor";
+import NonRecoverableError from "./error/NonRecoverableError";
 import defaults from "set-default-value";
 import uuid from "uuid";
 import { schedule } from "./Runloop";
@@ -31,7 +32,8 @@ export default class Runtime extends Duplex {
             key !== "description" &&
             key !== "id" &&
             key !== "history" &&
-            key !== "diffs"
+            key !== "diffs" &&
+            key !== "actions"
         );
     }
 
@@ -50,7 +52,11 @@ export default class Runtime extends Duplex {
             x !== "cursor" &&
             x !== "readyPromise" &&
             x !== "buffers" &&
-            x !== "actions"
+            x !== "actions" &&
+            x !== "traces" &&
+            x !== "trace" &&
+            x !== "onError" &&
+            x !== "shouldThrow"
         );
     }
 
@@ -133,7 +139,10 @@ export default class Runtime extends Duplex {
     static triggers = {
         init: Action.triggered
             .by("message")
-            .if(x => x.triggers("action"))
+            .if(x => {
+                console.log("Runtime.triggers ", Object.getPrototypeOf(x));
+                return x.triggers("action");
+            })
     };
 
     constructor(bindings) { // eslint-disable-line
@@ -158,7 +167,8 @@ export default class Runtime extends Duplex {
                 revision:    0,
                 history:     [],
                 errors:      [],
-                diffs:       []
+                diffs:       [],
+                actions:     []
             }));
 
         this.id           = id;
@@ -187,19 +197,45 @@ export default class Runtime extends Duplex {
         return this.description.map(x => x.toJS()).toJS();
     }
 
-    trigger(data) {
-        try {
-            const action = Immutable.fromJS(data);
-            const cursor = defaults(this.cursor).to(Cursor.of(action.get("payload"), this));
+    traces() {
+        return this.cursor === null ? Immutable.List() : this.cursor
+            .get("_unit")
+            .get("actions");
+    }
 
-            return Promise.resolve(this.before.call(cursor, data))
-                .then(x => this.message.call(x, x.get("_unit").get("action")).catch(this.error.bind(x)))
-                .then(x => Runtime.diff(this, Cursor.of(x)))
-                .then(update => this.done.call(update.cursor, update.diffs))
-                .then(x => Runtime.update(this, x));
-        } catch(e) {
-            return Promise.reject(e);
-        }
+    trace() {
+        return this.traces().last();
+    }
+
+    shouldThrow(e) {
+        return (
+            e instanceof TypeError ||
+            e instanceof NonRecoverableError
+        );
+    }
+
+    onError(state, e) {
+        return this.shouldThrow(e) ? this.emit("error", e) : this.error.call(state, e);
+    }
+
+    trigger(data) {
+        const action = Immutable.fromJS(data);
+        const cursor = defaults(this.cursor).to(Cursor.of(action.get("payload"), this))
+            .update("_unit", unit => unit.update("actions", actions => actions.push(Immutable.List())));
+
+        const before = new Promise((resolve, reject) => {
+            try {
+                return resolve(this.before.call(cursor, data));
+            } catch(e) {
+                return reject(e);
+            }
+        });
+
+        return before
+            .then(x => this.message.call(x, x.get("_unit").get("action")).catch(this.onError.bind(this, x)))
+            .then(x => Runtime.diff(this, Cursor.of(x)))
+            .then(update => this.done.call(update.cursor, update.diffs))
+            .then(x => Runtime.update(this, x));
     }
 
     init(action) {

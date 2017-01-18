@@ -9,7 +9,7 @@ describe("TransformationTest", function() {
             args: [x => x.get("id")]
         });
 
-        expect(transformation.compute(Immutable.Map({
+        expect(transformation.compute(Immutable.fromJS({
             1: {
                 id: 2
             }

@@ -1,7 +1,7 @@
 import Property from "../Property";
 import { expect } from "chai";
 import Immutable from "immutable";
-import sinon from "sinon";
+// import sinon from "sinon";
 
 describe("PropertyTest", function() {
     it("creates a property", function() {
@@ -20,7 +20,7 @@ describe("PropertyTest", function() {
         expect(property3.receive(Immutable.fromJS({ counter: 3, acc: 2 }))).to.equal(5);
     });
 
-    it("creates a property with declarative constructor", function() {
+/* it("creates a property with declarative constructor", function() {
         const spy      = sinon.spy();
         const property = Property.derive
             .from("*")
@@ -30,7 +30,10 @@ describe("PropertyTest", function() {
             // .filter(x => x.id < 3)
             .tap(spy)
             .map(x => x.get("name"))
-            .reduce((dest, name) => `${dest}, ${name}`, "")
+            .reduce((dest, name) => {
+                console.log(Object.getPrototypeOf(name), name);
+                return `${dest}, ${name}`;
+            }, "")
             .slice(2);
 
         expect(property.getDependencies().toJS()).to.eql(["props.done"]);
@@ -67,9 +70,9 @@ describe("PropertyTest", function() {
                 name: "chantalle"
             }
         });
-    });
+});*/
 
-    it("creates a property with declarative constructor (2)", function() {
+/* it("creates a property with declarative constructor (2)", function() {
         const property = Property.derive
             .from("users", "sorter", "x")
             .join("messages")
@@ -252,7 +255,7 @@ describe("PropertyTest", function() {
         expect(prefixed.receive(Immutable.fromJS({
             test: data
         })).toJS()).to.eql(result);
-    });
+    });*/
 
     it("creates a property with declarative constructor (3)", function() {
         const property = Property.derive

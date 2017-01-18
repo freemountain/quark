@@ -190,11 +190,14 @@ describe("RuntimeTest", function() {
             id:          "blub",
             error:       [],
             history:     [],
+            actions:     [[]],
             description: unit.__actions
         })), message).then(x => {
             expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql({
                 name: "jupp"
             });
+
+            expect(x.get("_unit").get("actions").toJS()).to.eql([[{}]]);
         });
     });
 
@@ -215,6 +218,16 @@ describe("RuntimeTest", function() {
                     age:      40,
                     loggedIn: false
                 });
+
+                expect(unit.traces().toJS()).to.equal([[{
+                    action:  "init",
+                    payload: {
+                        name:     "Jupp",
+                        age:      40,
+                        loggedIn: false
+                    },
+                    diffs: []
+                }]]);
             });
     });
 });

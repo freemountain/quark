@@ -2,6 +2,8 @@ import curry from "lodash.curry";
 import Immutable from "immutable";
 import patch from "immutablepatch";
 import diff from "immutablediff";
+import Cursor from "./Cursor";
+import assert from "assert";
 
 class ActionDescription {
     static BEFORE = x => (
@@ -17,24 +19,30 @@ class ActionDescription {
 
     static applyTriggers(triggers, cursor, params) {
         const diffs = triggers
-            .reduce((dest, x) => dest.concat(diff(cursor, x.apply(cursor, params))), Immutable.Set());
+            .map(x => diff(cursor, x.apply(cursor, params)))
+            .reduce((dest, x) => dest.concat(x), Immutable.Set());
 
-        return patch(cursor, diffs);
+        return patch(cursor, diffs.toList());
     }
 
     static Handler(description, ...params) {
         return new Promise((resolve, reject) => {
             try {
-                // hier klappt das applyTriggers noch nich, dazu erstmal
-                // den unittest von triggerdescription schreiben, problem
-                // is ziemlich sicher da
-                const cursor = ActionDescription.applyTriggers(description.before, this, params);
+                // hier is noch iwie unhandled promise rejection shit, wenn das failed
+                assert((
+                    this instanceof Cursor ||
+                    this instanceof Immutable.Map ||
+                    this instanceof Immutable.List
+                ), `Invalid cursor for ${description.name}`);
+
+                // vorher das mit property auch regeln (propertyTest etc),
+                const cursor = ActionDescription.applyTriggers(description.before, Cursor.of(this), params); // eslint-disable-line
 
                 // check guards
                 // trigger op and merge, wenn keine op, einfach weiterleiten
-                // trigger done stuff oder error stuff
+                // --> hierzu muss im konstruktor noch die eigentliche op gefiltert werden
 
-                console.log("###", description.name, cursor.toJS());
+                // trigger done stuff oder error stuff
                 return resolve(this);
             } catch(e) {
                 return reject(e);
