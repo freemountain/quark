@@ -10,9 +10,10 @@ describe("ActionDescriptionTest", function() {
             .map((x, key) => x.setName(key))
             .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new TriggerDescription(key, y))), Immutable.List()); // eslint-disable-line
 
-        const descr = new ActionDescription("message", triggers);
+        const descr = new ActionDescription("Test", "message", triggers);
 
         expect(descr.toJS()).to.eql({
+            unit:   "Test",
             name:   "message",
             before: [{
                 emits:  "action",

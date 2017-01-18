@@ -43,7 +43,7 @@ export default class Transformation {
         this.op   = op;
 
         /** @private */
-        this.args = args.map(arg => arg instanceof Function ? (deps, ...args2) => arg(...args2.map(data => Cursor.of(data)), deps) : arg);
+        this.args = args.map(arg => arg instanceof Function ? (deps, ...args2) => arg(...args2.map(data => new Cursor(data)), deps) : arg);
     }
 
     /**
@@ -71,7 +71,7 @@ export default class Transformation {
      */
     compute(data, deps = {}) {
         const extracted = this.shouldExtract(data) ? data.first() : data;
-        const cursor    = Cursor.of(extracted);
+        const cursor    = new Cursor(extracted);
         const action    = cursor[this.op];
 
         if(!action || !(action instanceof Function)) return assert(false, `\n\tYou are trying to apply the non-existing method '${this.op}' on \n\t\t${data}.\n\n\tTry one of these instead: ${printPublicMethods(data)}.`);

@@ -11,10 +11,10 @@ import ActionDescription from "./domain/ActionDescription";
 import Action from "./domain/Action";
 import Trigger from "./domain/Trigger";
 import Cursor from "./domain/Cursor";
-import NonRecoverableError from "./error/NonRecoverableError";
 import defaults from "set-default-value";
 import uuid from "uuid";
 import { schedule } from "./Runloop";
+import Internals from "./domain/Internals";
 
 export default class Runtime extends Duplex {
     static UnitFilter  = x => x instanceof Runtime; // eslint-disable-line
@@ -123,13 +123,17 @@ export default class Runtime extends Duplex {
         if(proto.__Unit) return instance;
 
         const triggers = Runtime.declToImpTriggers(Runtime.allTriggers(instance));
+        const name     = instance.constructor.name;
 
         const actions = Runtime
             .allActions(instance)
-            .map((x, key) => new ActionDescription(key, triggers, instance[key] === Runtime.prototype.message ? null : instance[key]));
+            .map((x, key) => new ActionDescription(name, key, triggers, instance[key] === Runtime.prototype.message ? null : instance[key]));
 
         proto.__actions = actions;
         proto.__Unit    = uuid();
+        proto.__Cursor  = Cursor.for(instance, actions);
+
+        console.log("huhu");
 
         Object.assign(proto, actions.map(action => action.func).toJS());
 
@@ -161,14 +165,10 @@ export default class Runtime extends Duplex {
             .merge(Immutable.fromJS(bindings))
             .filter(Runtime.ValueFilter)
             .merge(deps.map(() => null))
-            .set("_unit", Immutable.fromJS({
+            .set("_unit", new Internals({
                 description: proto.__actions,
                 id:          id,
-                revision:    0,
-                history:     [],
-                errors:      [],
-                diffs:       [],
-                actions:     []
+                name:        this.constructor.name
             }));
 
         this.id           = id;
@@ -207,20 +207,14 @@ export default class Runtime extends Duplex {
         return this.traces().last();
     }
 
-    shouldThrow(e) {
-        return (
-            e instanceof TypeError ||
-            e instanceof NonRecoverableError
-        );
-    }
-
     onError(state, e) {
-        return this.shouldThrow(e) ? this.emit("error", e) : this.error.call(state, e);
+        return e.isRecoverable && e.isRecoverable() ? this.error.call(state, e) : this.emit("error", e);
     }
 
     trigger(data) {
         const action = Immutable.fromJS(data);
-        const cursor = defaults(this.cursor).to(Cursor.of(action.get("payload"), this))
+        const cursor = defaults(this.cursor).to(new this.__Cursor(action.get("payload"), this))
+            // initialisiere hier trace mit ner richtigen klasse, mit ner startzeit
             .update("_unit", unit => unit.update("actions", actions => actions.push(Immutable.List())));
 
         const before = new Promise((resolve, reject) => {
@@ -232,15 +226,19 @@ export default class Runtime extends Duplex {
         });
 
         return before
+            // adde hier ne before zeit zum trace
             .then(x => this.message.call(x, x.get("_unit").get("action")).catch(this.onError.bind(this, x)))
+            // adde hier ne handle zeit zum trace
             .then(x => Runtime.diff(this, Cursor.of(x)))
+            // adde hier ne diff zeit zum trace
             .then(update => this.done.call(update.cursor, update.diffs))
+            // adde hier ne diff zeit zum trace
             .then(x => Runtime.update(this, x));
+            // adde hier ne update zeit zum trace
     }
 
-    init(action) {
-        console.log("#####", "init");
-        return action.get("payload");
+    init(action) { // eslint-disable-line
+        return this;
     }
 
     message() {

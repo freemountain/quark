@@ -64,7 +64,7 @@ class Join {
         const isOneToMany = entity.get(key) instanceof Immutable.List;
         const idxs        = isOneToMany ? entity.get(key) : Immutable.List.of(entity.get(key));
         const result      = data.filter(relation => {
-            return idxs.some(idx => predicate(Cursor.of(entity.set(key, idx)), Cursor.of(relation))); // eslint-disable-line
+            return idxs.some(idx => predicate(new Cursor(entity.set(key, idx)), new Cursor(relation))); // eslint-disable-line
         });
 
         assert(!isOneToMany ? result.size <= 1 : true, `Ambigous relation, found for ${entity} ${result.size} matches: ${result}.`);
@@ -96,7 +96,7 @@ class Join {
             .shift()
             .unshift(dest);
 
-        return Cursor.of(transformed);
+        return new Cursor(transformed);
     }
 }
 

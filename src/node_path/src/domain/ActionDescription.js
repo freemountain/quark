@@ -29,20 +29,17 @@ class ActionDescription {
         return new Promise((resolve, reject) => {
             try {
                 // hier is noch iwie unhandled promise rejection shit, wenn das failed
-                assert((
-                    this instanceof Cursor ||
-                    this instanceof Immutable.Map ||
-                    this instanceof Immutable.List
-                ), `Invalid cursor for ${description.name}`);
+                assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
 
                 // vorher das mit property auch regeln (propertyTest etc),
-                const cursor = ActionDescription.applyTriggers(description.before, Cursor.of(this), params); // eslint-disable-line
+                const cursor = ActionDescription.applyTriggers(description.before, this, params); // eslint-disable-line
 
                 // check guards
                 // trigger op and merge, wenn keine op, einfach weiterleiten
                 // --> hierzu muss im konstruktor noch die eigentliche op gefiltert werden
 
                 // trigger done stuff oder error stuff
+                assert(cursor instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.done]'.`);
                 return resolve(this);
             } catch(e) {
                 return reject(e);
@@ -56,11 +53,12 @@ class ActionDescription {
         }));
     }
 
-    constructor(name, delarativeTriggers, op = null) {
+    constructor(unit, name, delarativeTriggers, op = null) {
         const triggers = delarativeTriggers
             .filter(trigger => trigger.action.indexOf(name) !== -1)
             .filter(trigger => trigger.emits !== name);
 
+        this.unit     = unit;
         this.name     = name;
         this.op       = op;
         this.before   = triggers.filter(ActionDescription.BEFORE);
@@ -73,6 +71,7 @@ class ActionDescription {
 
     toJS() {
         return {
+            unit:     this.unit,
             name:     this.name,
             before:   this.guardsToJS(this.before.toJS()),
             progress: this.guardsToJS(this.progress.toJS()),

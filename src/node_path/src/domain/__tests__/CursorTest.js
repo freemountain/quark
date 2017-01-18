@@ -3,21 +3,61 @@ import { expect } from "chai";
 import Immutable from "immutable";
 import sinon from "sinon";
 import ActionDescription from "../ActionDescription";
+import Internals from "../Internals";
 
 describe("CursorTest", function() { // eslint-disable-line
-    it("creates some cursors", function() {
-        const action = new ActionDescription("blub", Immutable.List(), () => 4);
-        const map    = Immutable.fromJS({
-            _unit: {
-                description: {
+    it("creates a cursor for a unit", function() {
+        const func = function(a) {
+            return this.get("test").length + 2 + a;
+        };
+        const action = new ActionDescription("Test", "blub", Immutable.List(), func);
+
+        action.func = func;
+
+        const data = Immutable.fromJS({
+            _unit: new Internals({
+                name:        "Unit",
+                description: Immutable.Map({
                     blub: action
-                }
-            },
+                })
+            }),
             test: "test"
         });
-        const cursor  = Cursor.of(map);
-        const cursor2 = Cursor.of(cursor);
-        const spy     = sinon.spy();
+        const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
+
+        expect(UnitCursor.name).to.equal("UnitCursor");
+        expect(UnitCursor).to.be.a("function");
+
+        const cursor = new UnitCursor(data);
+
+        expect(cursor).to.be.an.instanceOf(Cursor);
+        expect(cursor.toJS()).to.eql({
+            _unit: new Internals({
+                name:        "Unit",
+                description: Immutable.Map({
+                    blub: action
+                })
+            }).toJS(),
+            test: "test"
+        });
+        expect(cursor.blub).to.be.a("function");
+        expect(cursor.blub(1)).to.equal(7);
+    });
+
+    it("creates some cursors", function() {
+        const action = new ActionDescription("Test", "blub", Immutable.List(), () => 4);
+        const map    = Immutable.fromJS({
+            _unit: new Internals({
+                description: Immutable.Map({
+                    blub: action
+                })
+            }),
+            test: "test"
+        });
+        const InteritedCursor = Cursor.for(class Test {}, map.get("_unit").description);
+        const cursor          = new InteritedCursor(map);
+        const cursor2         = new InteritedCursor(cursor);
+        const spy             = sinon.spy();
 
         cursor.generic(spy);
 

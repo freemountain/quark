@@ -94,6 +94,7 @@ describe("RuntimeTest", function() {
 
         expect(unit.actions()).to.eql({
             message: {
+                unit:   "TestUnit",
                 name:   "message",
                 before: [{
                     emits:  "init",
@@ -128,6 +129,7 @@ describe("RuntimeTest", function() {
             },
 
             action: {
+                unit:     "TestUnit",
                 name:     "action",
                 before:   [],
                 cancel:   [],
@@ -137,6 +139,7 @@ describe("RuntimeTest", function() {
             },
 
             children: {
+                unit:     "TestUnit",
                 name:     "children",
                 before:   [],
                 cancel:   [],
@@ -146,6 +149,7 @@ describe("RuntimeTest", function() {
             },
 
             diffs: {
+                unit:     "TestUnit",
                 name:     "diffs",
                 before:   [],
                 cancel:   [],
@@ -155,6 +159,7 @@ describe("RuntimeTest", function() {
             },
 
             init: {
+                unit:     "TestUnit",
                 name:     "init",
                 before:   [],
                 cancel:   [],
@@ -164,6 +169,7 @@ describe("RuntimeTest", function() {
             },
 
             props: {
+                unit:     "TestUnit",
                 name:     "props",
                 before:   [],
                 cancel:   [],
@@ -186,13 +192,14 @@ describe("RuntimeTest", function() {
             }
         });
 
-        return unit.message.call(message.get("payload").set("_unit", Immutable.fromJS({
+        return unit.message.call(new unit.__Cursor(message.get("payload").set("_unit", Immutable.fromJS({
             id:          "blub",
+            name:        "Inheritance",
             error:       [],
             history:     [],
             actions:     [[]],
             description: unit.__actions
-        })), message).then(x => {
+        }))), message).then(x => {
             expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql({
                 name: "jupp"
             });
