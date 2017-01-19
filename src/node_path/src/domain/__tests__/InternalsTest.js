@@ -1,6 +1,6 @@
 import Internals from "../Internals";
 import { expect } from "chai";
-import { List } from "immutable";
+import { Map } from "immutable";
 import Message from "../../Message";
 
 describe("InternalsTest", function() {
@@ -16,13 +16,13 @@ describe("InternalsTest", function() {
             errors:      [],
             history:     [],
             id:          null,
-            description: [],
+            description: {},
             revision:    0,
             current:     0,
             action:      null
         });
 
-        expect(internals.get("description")).to.eql(List());
+        expect(internals.get("description")).to.eql(Map());
     });
 
     it("checks the action functions", function() {

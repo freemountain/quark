@@ -1,9 +1,9 @@
-import { Record, List, Stack } from "immutable";
+import { Record, List, Stack, Map } from "immutable";
 import Trace from "../telemetry/Trace";
 import assert from "assert";
 
 export default class Internals extends Record({
-    description: List(),
+    description: Map(),
     id:          null,
     revision:    0,
     history:     List(),

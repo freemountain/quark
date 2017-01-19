@@ -3,8 +3,6 @@ import ImmutableMethods from "../util/ImmutableMethods";
 import assert from "assert";
 
 class Cursor {
-    // hier müssen die actions der unit
-    // _unit.description muss vorhanden sein!
     static for(instance, description) {
         assert(instance instanceof Object, `instance has to be an object, but got ${JSON.stringify(instance)}`);
         assert(description instanceof Immutable.Map, `description has to be an Immutable.Map, but got ${JSON.stringify(description)}`);
@@ -65,8 +63,8 @@ class Cursor {
         });
 
         this.trace.triggered = () => this.__data.x.update("_unit", internals => internals.traceTriggered());
-        this.trace.error     = () => this.__data.x.update("_unit", internals => internals.traceErrored());
-        this.trace.end       = () => this.__data.x.update("_unit", internals => internals.traceEnded());
+        this.trace.error     = e => this.__data.x.update("_unit", internals => internals.traceErrored(e));
+        this.trace.end       = prev => prev.errors().size < this.errors().size ? this.trace.error(this.errors().last()) : this.__data.x.update("_unit", internals => internals.traceEnded());
 
         return Object.freeze(this);
     }
@@ -76,7 +74,11 @@ class Cursor {
     }
 
     currentMessage() {
-        return this.__data.x.get("_unit").get("action");
+        return this.__data.x.get("_unit").action;
+    }
+
+    errors() {
+        return this.__data.x.get("_unit").errors;
     }
 
     trace(...args) {
@@ -84,7 +86,8 @@ class Cursor {
 
         // schritte:
         // - TraceTest
-        // - InternalsTest die methoden
+        // - InternalsTest die methoden für trace
+        // - Curor.errorsTest
         // - CursorTest: trace
         // diese funktion soll einerseits das trace in triggerdescription ersetzen,
         // andererseits auch vom user benutzt werden können, um eigene subtraces
