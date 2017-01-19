@@ -66,13 +66,14 @@ export default class TriggerDescription {
         const enhanced = params.concat(this.params.toJS());
         const cursor   = data;
         const op       = cursor[this.emits];
-        const traced   = op instanceof Function ? this.addTrace(cursor, enhanced) : cursor;
+        const traced   = op instanceof Function ? cursor.trace(this.emits, params, this.guards.size) : cursor;
 
         if((
             !(op instanceof Function) ||
             !this.shouldTrigger(traced, enhanced)
         )) return schedule(() => traced);
 
-        return schedule(() => op.apply(this.addTriggered(traced), enhanced), this.delay);
+        return schedule(() => op.apply(cursor.trace.triggered(), enhanced), this.delay)
+            .then(x => x.trace.end());
     }
 }

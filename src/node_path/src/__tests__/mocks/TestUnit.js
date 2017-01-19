@@ -4,27 +4,24 @@ import Runtime from "../../Runtime";
 const triggered = Action.triggered;
 
 export default class TestUnit extends Runtime {
-    static isAction = x => x.resource.indexOf("/action") !== -1;
-
     static triggers = {
         action: triggered
             .by("message")
-            .if((x, unit) => (
-                !unit.triggers("init").on(x) &&
-                unit.isMessage(x) &&
-                !unit.children.some(child => child.handles(x))
+            .if((_, unit) => (
+                !unit.currentMessage().triggers("init") &&
+                unit.currentMessage().isAction()
             )),
 
         children: triggered
             .by("message")
-            .if((x, unit) => (
-                unit.isMessage(x) &&
-                !unit.triggers("action").on(x)
+            .if((_, unit) => (
+                !unit.currentMessage().triggers("props", "actions", "init") &&
+                unit.children().has(unit.currentMessage())
             )),
 
         diffs: triggered
             .by("message")
-            .if((x, unit) => unit.isMessage(x)),
+            .if((x, unit) => unit.currentMessage().isDiff()),
 
         props: triggered.by("message.done")
     };

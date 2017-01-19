@@ -4,6 +4,7 @@ import patch from "immutablepatch";
 import diff from "immutablediff";
 import Cursor from "./Cursor";
 import assert from "assert";
+import Message from "../Message";
 
 class ActionDescription {
     static BEFORE = x => (
@@ -25,14 +26,18 @@ class ActionDescription {
         return patch(cursor, diffs.toList());
     }
 
-    static Handler(description, ...params) {
+    static Handler(description, message) {
         return new Promise((resolve, reject) => {
             try {
                 // hier is noch iwie unhandled promise rejection shit, wenn das failed
+                //
+                // hier muss es aufm cursor ne methode trace() geben, hierfür muss der cursor
+                // auch mehr infos über den kontext kriegen wahrscheinlich
+                Message.assert(message);
                 assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
 
                 // vorher das mit property auch regeln (propertyTest etc),
-                const cursor = ActionDescription.applyTriggers(description.before, this, params); // eslint-disable-line
+                const cursor = ActionDescription.applyTriggers(description.before, this, message.payload); // eslint-disable-line
 
                 // check guards
                 // trigger op and merge, wenn keine op, einfach weiterleiten

@@ -4,6 +4,7 @@ import Immutable from "immutable";
 import sinon from "sinon";
 import ActionDescription from "../ActionDescription";
 import Internals from "../Internals";
+import Message from "../../Message";
 
 describe("CursorTest", function() { // eslint-disable-line
     it("creates a cursor for a unit", function() {
@@ -42,6 +43,21 @@ describe("CursorTest", function() { // eslint-disable-line
         });
         expect(cursor.blub).to.be.a("function");
         expect(cursor.blub(1)).to.equal(7);
+    });
+
+    it("checks some methods on a cursor", function() {
+        const message = new Message("/test", []);
+        const data    = Immutable.fromJS({
+            _unit: new Internals({
+                name:        "Unit",
+                description: Immutable.Map(),
+                action:      message
+            })
+        });
+        const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
+        const cursor     = new UnitCursor(data);
+
+        expect(cursor.currentMessage()).to.equal(message);
     });
 
     it("creates some cursors", function() {

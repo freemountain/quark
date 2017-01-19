@@ -15,6 +15,7 @@ import defaults from "set-default-value";
 import uuid from "uuid";
 import { schedule } from "./Runloop";
 import Internals from "./domain/Internals";
+import Message from "./Message";
 
 export default class Runtime extends Duplex {
     static UnitFilter  = x => x instanceof Runtime; // eslint-disable-line
@@ -133,8 +134,6 @@ export default class Runtime extends Duplex {
         proto.__Unit    = uuid();
         proto.__Cursor  = Cursor.for(instance, actions);
 
-        console.log("huhu");
-
         Object.assign(proto, actions.map(action => action.func).toJS());
 
         return instance;
@@ -143,7 +142,10 @@ export default class Runtime extends Duplex {
     static triggers = {
         init: Action.triggered
             .by("message")
-            .if((message, unit) => unit.triggers("action").on(message))
+            .if((_, unit) => (
+                unit.currentMessage().isAction() &&
+                unit.currentMessage().resource.indexOf("/actions/init") === 0
+            ))
     };
 
     constructor(bindings) { // eslint-disable-line
@@ -169,13 +171,11 @@ export default class Runtime extends Duplex {
             }));
 
         this.id           = id;
+        this.Props        = properties.constructor;
         this.description  = proto.__actions;
         this.buffers      = [];
         this.cursor       = null;
-        this.readyPromise = unit.trigger({
-            type:    "init",
-            payload: initialProps
-        });
+        this.readyPromise = unit.trigger(new Message("/actions/init", [initialProps]));
 
         return unit;
     }
@@ -197,7 +197,7 @@ export default class Runtime extends Duplex {
     traces() {
         return this.cursor === null ? Immutable.List() : this.cursor
             .get("_unit")
-            .get("actions");
+            .get("traces");
     }
 
     trace() {
@@ -209,14 +209,13 @@ export default class Runtime extends Duplex {
     }
 
     trigger(data) {
-        const action = Immutable.fromJS(data);
-        const cursor = defaults(this.cursor).to(new this.__Cursor(action.get("payload"), this))
-            // initialisiere hier trace mit ner richtigen klasse, mit ner startzeit
-            .update("_unit", unit => unit.update("actions", actions => actions.push(Immutable.List())));
+        const message       = new Message(data);
+        const initialCursor = defaults(this.cursor).to(new this.__Cursor(message.payload.get(0), this));
+        const cursor        = initialCursor.trace(`Message<${message.resource}>`, message.payload.toJS());
 
         const before = new Promise((resolve, reject) => {
             try {
-                return resolve(this.before.call(cursor, data));
+                return resolve(this.before.call(cursor, message));
             } catch(e) {
                 return reject(e);
             }
@@ -243,7 +242,11 @@ export default class Runtime extends Duplex {
     }
 
     before(action) {
-        return this.update("_unit", x => x.set("action", Immutable.fromJS(action)));
+        return this
+            .update("_unit", internals => internals.messageReceived(action))
+            .trace("before", [action])
+            .trace.triggered()
+            .trace.end();
     }
 
     // muss man sehn, ob das nötig is
@@ -256,8 +259,8 @@ export default class Runtime extends Duplex {
         assert(false, "Every unit needs to implement a 'cancel' action");
     }
 
-    done(diffs) {
-        return this.update("_unit", x => x.set("diffs", diffs).delete("action"));
+    done(diffs) { // eslint-disable-line
+        return this.update("_unit", internals => internals.messageProcessed());
     }
 
     error(error) {

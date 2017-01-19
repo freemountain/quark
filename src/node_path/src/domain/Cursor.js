@@ -50,7 +50,7 @@ class Cursor {
     constructor(data) { // eslint-disable-line
         if(!(data instanceof Object) || data instanceof Cursor) return data;
 
-        // assert(this.__inherited, "Cursor can only be used, when inherited");
+        assert(this.__inherited, "Cursor can only be used, when inherited");
 
         this.__data = {
             x: Immutable.fromJS(data)
@@ -64,6 +64,10 @@ class Cursor {
             }
         });
 
+        this.trace.triggered = () => this.__data.x.update("_unit", internals => internals.traceTriggered());
+        this.trace.error     = () => this.__data.x.update("_unit", internals => internals.traceErrored());
+        this.trace.end       = () => this.__data.x.update("_unit", internals => internals.traceEnded());
+
         return Object.freeze(this);
     }
 
@@ -71,18 +75,49 @@ class Cursor {
         return mapper(this);
     }
 
-    triggers(action) {
-        assert(false, "Cursor.trigger: implement!");
-
-        return {
-            on: message => this.__data
-                .get("_unit")
-                .triggersOn(message, action)
-        };
+    currentMessage() {
+        return this.__data.x.get("_unit").get("action");
     }
 
-    toValue() {
-        return this.__data.x;
+    trace(...args) {
+        assert(false, "Cursor.trace: implement!");
+
+        // schritte:
+        // - TraceTest
+        // - InternalsTest die methoden
+        // - CursorTest: trace
+        // diese funktion soll einerseits das trace in triggerdescription ersetzen,
+        // andererseits auch vom user benutzt werden können, um eigene subtraces
+        // zu erstellen, hierbei mal checken wegen baum etc, diese traces dann auch
+        // in den actions benutzen
+        //
+        // hier muss auch end un so weitergeleitet werden
+
+        return this.__data.x.update("_unit", internals => internals.trace(...args));
+    }
+
+    progress() {
+        assert(false, "Cursor.progress: implement!");
+
+        // hier soll der progress wert hochgesetzt werden um den gegebenen param
+    }
+
+    cancel() {
+        assert(false, "Cursor.progress: implement!");
+
+        // hiermit soll die aktuelle action gecanceled, werden + state revert
+    }
+
+    undo() {
+        assert(false, "Cursor.undo: implement!");
+
+        // hiermit soll die history en schritt zurückgesetzt werden
+    }
+
+    redo() {
+        assert(false, "Cursor.redo: implement!");
+
+        // hiermit soll ein schritt in der history nach vorne gegangen werden
     }
 
     toString() {

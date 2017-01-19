@@ -5,6 +5,7 @@ import Action from "../domain/Action";
 import Trigger from "../domain/Trigger";
 import Immutable from "immutable";
 import Internals from "../domain/Internals";
+import Message from "../Message";
 
 const triggered = Action.triggered;
 
@@ -186,22 +187,20 @@ describe("RuntimeTest", function() {
 
         expect(unit.state()).to.eql(null);
 
-        const message = Immutable.fromJS({
-            type:    "init",
-            payload: {
-                name: "jupp"
-            }
-        });
+        const message = new Message("/actions/init", [{
+            name: "jupp"
+        }]);
 
         return unit.message.call(new unit.__Cursor(message.get("payload").set("_unit", new Internals({
             id:          "blub",
             name:        "Inheritance",
             actions:     Immutable.fromJS([[]]),
+            action:      message,
             description: unit.__actions
         }))), message).then(x => {
-            expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql({
+            expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql([{
                 name: "jupp"
-            });
+            }]);
 
             expect(x.get("_unit").get("actions").toJS()).to.eql([[{}]]);
         });
