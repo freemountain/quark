@@ -18,15 +18,20 @@ import Internals from "./domain/Internals";
 import Message from "./Message";
 
 export default class Runtime extends Duplex {
-    static UnitFilter  = x => x instanceof Runtime; // eslint-disable-line
-    static ValueFilter = x => (
-        !Runtime.UnitFilter(x) &&
-        !(x instanceof Trigger)
-    );
-
     static SetAction = curry(function(key, value) {
         return this.set(key, value);
     });
+
+    static is(x) {
+        return x instanceof Runtime;
+    }
+
+    static ValueFilter(x) {
+        return (
+            !Runtime.is(x) &&
+            !(x instanceof Trigger)
+        );
+    }
 
     static StateFilter(_, key) {
         return (
@@ -159,7 +164,7 @@ export default class Runtime extends Duplex {
         const proto        = Object.getPrototypeOf(this);
         const unit         = Runtime.toUnit(this, proto, bindings);
         const properties   = Immutable.fromJS(defaults(proto.constructor.props).to({}));
-        const deps         = properties.filter(Runtime.UnitFilter);
+        const deps         = properties.filter(Runtime.is);
         const initialProps = properties
             .merge(Immutable.fromJS(bindings))
             .filter(Runtime.ValueFilter)

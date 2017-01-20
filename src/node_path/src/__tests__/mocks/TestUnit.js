@@ -18,7 +18,7 @@ export default class TestUnit extends Runtime {
 
         diffs: triggered
             .by("message")
-            .if((x, unit) => unit.currentMessage.isDiff()),
+            .if((_, unit) => unit.currentMessage.isDiff()),
 
         props: triggered.by("message.done")
     };

@@ -50,6 +50,13 @@ export default class Message extends Immutable.Record({
 
     willTrigger() {
         assert(false, "Message.willTrigger: implement!");
+
+        // TODO:
+        //     - TriggerDescriptionTest fixen
+        //     - Message.willTrigger implementieren + testen
+        //          => hierfür muss message wahrscheinlich ne description
+        //          von ner unit gesetzt bekommen im cursor, hier muss dann
+        //          sichergestellt werden, dass das da ist.
     }
 
     path() {
