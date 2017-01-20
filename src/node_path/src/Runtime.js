@@ -143,8 +143,8 @@ export default class Runtime extends Duplex {
         init: Action.triggered
             .by("message")
             .if((_, unit) => (
-                unit.currentMessage().isAction() &&
-                unit.currentMessage().resource.indexOf("/actions/init") === 0
+                unit.currentMessage.isAction() &&
+                unit.currentMessage.resource.indexOf("/actions/init") === 0
             ))
     };
 
@@ -222,7 +222,7 @@ export default class Runtime extends Duplex {
 
         return before
             // adde hier ne before zeit zum trace
-            .then(x => this.message.call(x, x.currentMessage()).catch(this.onError.bind(this, x)))
+            .then(x => this.message.call(x, x.currentMessage).catch(this.onError.bind(this, x)))
             // adde hier ne handle zeit zum trace
             .then(x => Runtime.diff(this, Cursor.of(x)))
             // adde hier ne diff zeit zum trace

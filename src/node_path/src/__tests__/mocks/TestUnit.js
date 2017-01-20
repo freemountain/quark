@@ -8,20 +8,17 @@ export default class TestUnit extends Runtime {
         action: triggered
             .by("message")
             .if((_, unit) => (
-                !unit.currentMessage().willTrigger("init") &&
-                unit.currentMessage().isAction()
+                !unit.currentMessage.willTrigger("init") &&
+                unit.currentMessage.isAction()
             )),
 
         children: triggered
             .by("message")
-            .if((_, unit) => (
-                !unit.currentMessage().willTrigger("props", "actions", "init") &&
-                unit.children().has(unit.currentMessage().path().first())
-            )),
+            .if((_, unit) => unit.currentMessage.willTrigger("props", "action", "init")),
 
         diffs: triggered
             .by("message")
-            .if((x, unit) => unit.currentMessage().isDiff()),
+            .if((x, unit) => unit.currentMessage.isDiff()),
 
         props: triggered.by("message.done")
     };

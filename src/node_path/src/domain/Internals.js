@@ -7,6 +7,7 @@ export default class Internals extends Record({
     description: Map(),
     id:          null,
     revision:    0,
+    children:    Map(),
     history:     List(),
     errors:      List(),
     diffs:       List(),

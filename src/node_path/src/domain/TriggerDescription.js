@@ -29,7 +29,7 @@ export default class TriggerDescription {
 
                 return dest && result;
             } catch(e) {
-                throw new GuardError(this.emits, key + 1, e);
+                throw new GuardError(cursor.currentContext, this.emits, key + 1, e);
             }
         }, true);
     }

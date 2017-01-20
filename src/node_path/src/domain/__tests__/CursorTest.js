@@ -59,9 +59,9 @@ describe("CursorTest", function() { // eslint-disable-line
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
         const cursor     = new UnitCursor(data);
 
-        expect(cursor.currentMessage()).to.equal(message);
-        expect(cursor.set("action", message).currentMessage()).to.be.an.instanceOf(Message);
-        expect(cursor.errors().toJS()).to.eql([error]);
+        expect(cursor.currentMessage).to.equal(message);
+        expect(cursor.set("action", message).currentMessage).to.be.an.instanceOf(Message);
+        expect(cursor.errors.toJS()).to.eql([error]);
     });
 
     it("creates some cursors", function() {

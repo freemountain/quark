@@ -61,6 +61,7 @@ describe("TriggerDescriptionTest", function() {
                     },
                     action:   message,
                     current:  0,
+                    children: {},
                     diffs:    [],
                     errors:   [],
                     history:  [],

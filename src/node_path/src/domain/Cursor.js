@@ -20,8 +20,8 @@ class Cursor {
     static end(prev) {
         if((
             prev &&
-            prev.errors().size < this.errors().size
-        ) || this.errors.size > 0) return this.trace.error(this.errors().last());
+            prev.errors.size < this.errors.size
+        ) || this.errors.size > 0) return this.trace.error(this.errors.last());
 
         const data = this.__data.x.update("_unit", internals => internals.updateCurrentTrace(x => x.ended()));
 
@@ -99,14 +99,24 @@ class Cursor {
         return mapper(this);
     }
 
-    currentMessage() {
+    get currentMessage() {
         const message = this.__data.x.get("_unit").action;
 
         return message;
     }
 
-    errors() {
+    get currentContext() {
+        return this.__data.x.get("_unit").name;
+    }
+
+    get errors() {
         return this.__data.x.get("_unit").errors;
+    }
+
+    get children() {
+        assert(false, "Cursor.children: implement!");
+
+        return this.__data.x.get("_unit").children;
     }
 
     trace(...args) {
@@ -116,6 +126,8 @@ class Cursor {
         // andererseits auch vom user benutzt werden können, um eigene subtraces
         // zu erstellen, hierbei mal checken wegen baum etc, diese traces dann auch
         // in den actions benutzen
+        // - message.willTrigger
+        // - cursor.children setzen
         //
         // hier muss auch end un so weitergeleitet werden
 
