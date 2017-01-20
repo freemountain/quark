@@ -209,9 +209,8 @@ export default class Runtime extends Duplex {
     }
 
     trigger(data) {
-        const message       = new Message(data);
-        const initialCursor = defaults(this.cursor).to(new this.__Cursor(message.payload.get(0), this));
-        const cursor        = initialCursor.trace(`Message<${message.resource}>`, message.payload.toJS());
+        const message = new Message(data);
+        const cursor  = defaults(this.cursor).to(new this.__Cursor(message.payload.get(0), this));
 
         const before = new Promise((resolve, reject) => {
             try {
@@ -243,10 +242,7 @@ export default class Runtime extends Duplex {
 
     before(action) {
         return this
-            .update("_unit", internals => internals.messageReceived(action))
-            .trace("before", [action])
-            .trace.triggered()
-            .trace.end();
+            .update("_unit", internals => internals.messageReceived(action));
     }
 
     // muss man sehn, ob das nötig is

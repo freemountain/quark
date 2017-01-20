@@ -1,5 +1,4 @@
 import { Record, List } from "immutable";
-import Cursor from "../domain/Cursor";
 import assert from "assert";
 
 export default class Trace extends Record({
@@ -14,54 +13,75 @@ export default class Trace extends Record({
     parent:   null,
     pos:      null
 }) {
-    constructor(data, cursor, parent = null, pos = null) {
-        assert(cursor instanceof Cursor, "Need a cursor");
+    constructor(data, context, parent = null, pos = null) {
+        assert(data && typeof data.name === "string", "a trace needs a name");
 
         super(Object.assign(data, {
-            name:   cursor.get("_unit").get("name").concat("[").concat(data.name).concat("]"),
+            name:   context ? `${context}::${data.name}` : data.name,
             start:  Date.now(),
             parent: parent,
             pos:    pos,
             traces: []
         }));
-
-        this.trace.end       = this.stop.bind(this);
-        this.trace.error     = this.errored.bind(this);
-        this.trace.triggered = this.triggered.bind(this);
     }
 
-    trace(data, cursor) {
-        const child = new Trace(data, cursor, this, this.traces.length);
+    trace(data, context) {
+        const child = new Trace(data, context, this, this.traces.length);
 
         child.parent.traces.push(child);
 
         return child;
     }
 
-    stop() {
-        assert(this.pos !== null, "Can't end a trace, when not started.");
+    ended() {
+        assert(this.end === null, "Can't stop a trace, that is already finished.");
 
-        this.parent.get("traces")[this.pos] = this.set("end", Date.now());
+        const now     = Date.now();
+        const ended   = this.set("end", now);
+        const updated = ended
+            .update("traces", traces => traces.map(trace => trace.set("parent", ended)));
 
-        return this.parent;
+        if(this.parent === null) return updated;
+
+        const parent = updated.parent;
+
+        parent.get("traces")[this.pos] = updated;
+
+        return parent;
     }
 
     errored(e) {
-        this.parent.get("traces")[this.pos] = this.set("error", e);
+        assert(this.end === null, "Can't error a trace, that is already finished.");
 
-        return this.stop();
+        const updated = this.set("error", e);
+
+        return updated.ended();
     }
 
     triggered() {
-        return this.set("triggered", true);
+        const updated = this.set("triggers", true);
+
+        if(this.parent === null) return updated;
+
+        this.parent.get("traces")[this.pos] = updated;
+
+        return updated;
     }
 
-    /* toString() {
-        return `
-        ${this.name}
-    ${this.traces.map(x => x.toString().join())}
-        `;
-    }*/
+    __isSelfConsistent() {
+        return (
+            this.end !== null &&
+            this.traces.reduce((dest, child) => dest && child.__isSelfConsistent(), true)
+        );
+    }
+
+    __isParentConsistent() {
+        return this.end !== null && (this.parent === null || this.parent.__isParentConsistent());
+    }
+
+    isConsistent() {
+        return this.__isSelfConsistent() && this.__isParentConsistent();
+    }
 
     toJS() {
         return {

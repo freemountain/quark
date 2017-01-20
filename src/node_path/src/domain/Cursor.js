@@ -3,6 +3,31 @@ import ImmutableMethods from "../util/ImmutableMethods";
 import assert from "assert";
 
 class Cursor {
+    static triggered() {
+        const data = this.__data.x
+            .update("_unit", internals => internals.updateCurrentTrace(x => x.triggered()));
+
+        return new this.constructor(data, this);
+    }
+
+    static error(e) {
+        const data = this.__data.x
+            .update("_unit", internals => internals.updateCurrentTrace(x => x.errored(e)));
+
+        return new this.constructor(data, this);
+    }
+
+    static end(prev) {
+        if((
+            prev &&
+            prev.errors().size < this.errors().size
+        ) || this.errors.size > 0) return this.trace.error(this.errors().last());
+
+        const data = this.__data.x.update("_unit", internals => internals.updateCurrentTrace(x => x.ended()));
+
+        return new this.constructor(data, this);
+    }
+
     static for(instance, description) {
         assert(instance instanceof Object, `instance has to be an object, but got ${JSON.stringify(instance)}`);
         assert(description instanceof Immutable.Map, `description has to be an Immutable.Map, but got ${JSON.stringify(description)}`);
@@ -45,7 +70,7 @@ class Cursor {
         return inherited;
     }
 
-    constructor(data) { // eslint-disable-line
+    constructor(data, prev) { // eslint-disable-line
         if(!(data instanceof Object) || data instanceof Cursor) return data;
 
         assert(this.__inherited, "Cursor can only be used, when inherited");
@@ -62,9 +87,9 @@ class Cursor {
             }
         });
 
-        this.trace.triggered = () => this.__data.x.update("_unit", internals => internals.traceTriggered());
-        this.trace.error     = e => this.__data.x.update("_unit", internals => internals.traceErrored(e));
-        this.trace.end       = prev => prev.errors().size < this.errors().size ? this.trace.error(this.errors().last()) : this.__data.x.update("_unit", internals => internals.traceEnded());
+        this.trace.triggered = Cursor.triggered.bind(this);
+        this.trace.error     = Cursor.error.bind(this);
+        this.trace.end       = Cursor.end.bind(this, prev);
 
         return Object.freeze(this);
     }
@@ -82,12 +107,7 @@ class Cursor {
     }
 
     trace(...args) {
-        assert(false, "Cursor.trace: implement!");
-
         // schritte:
-        // - TraceTest
-        // - InternalsTest die methoden für trace
-        // - Curor.errorsTest
         // - CursorTest: trace
         // diese funktion soll einerseits das trace in triggerdescription ersetzen,
         // andererseits auch vom user benutzt werden können, um eigene subtraces
@@ -96,7 +116,7 @@ class Cursor {
         //
         // hier muss auch end un so weitergeleitet werden
 
-        return this.__data.x.update("_unit", internals => internals.trace(...args));
+        return new this.constructor(this.__data.x.update("_unit", internals => internals.trace(...args)), this);
     }
 
     progress() {
@@ -165,7 +185,7 @@ ImmutableMethods
                 result instanceof Immutable.Seq ||
                 result instanceof Immutable.Iterable ||
                 result instanceof Immutable.Collection
-            ) ? new this.constructor(result) : result;
+            ) ? new this.constructor(result, this) : result;
         }
     }));
 

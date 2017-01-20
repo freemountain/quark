@@ -14,37 +14,35 @@ export default class Internals extends Record({
     action:      null,
     name:        "Default"
 }) {
-    traceBegan(...args) {
-        return this.update("traces", traces => this.action === null ? traces.push(new Trace(...args)) : traces.pop().push(traces.last().trace(...args)));
+    updateCurrentTrace(op) {
+        assert(this.action !== null, "Can't update a trace before receiving a message.");
+
+        return this.update("traces", traces => traces.pop().push(op(traces.last())));
     }
 
-    traceTriggered() {
-        assert(this.action !== null, "Can't add trigger to trace before starting.");
+    trace(name, params) {
+        const args = [{ name, params }, this.name];
 
-        return this.update("traces", traces => traces.pop().push(traces.last().trace.triggered()));
+        return this.action === null ? this.update("traces", traces => traces.push(new Trace(...args))) : this.updateCurrentTrace(trace => trace.trace(...args));
     }
 
-    traceErrored(...args) {
-        assert(this.action !== null, "Can't end a trace before starting.");
-
-        return this.update("traces", traces => traces.pop().push(traces.last().trace.error(...args)));
-    }
-
-    traceEnded() {
-        assert(this.action !== null, "Can't end a trace before starting.");
-
-        return this.update("traces", traces => traces.pop().push(traces.last().trace.end()));
-    }
-
-    messageReceived(action) {
+    messageReceived(message) {
         assert(this.action === null, "Can't start a message, if another message is currently processed.");
 
-        return this.set("action", action);
+        return this
+            .trace(`Message<${message.resource}>`, message.payload)
+            .set("action", message)
+            .updateCurrentTrace(trace => trace.triggered());
     }
 
-    messageProcessed() {
+    messageProcessed(e) {
         assert(this.action !== null, "Can't finish a message before starting.");
 
-        return this.set("action", null);
+        const updated = this
+            .updateCurrentTrace(trace => e instanceof Error ? trace.errored(e) : trace.ended());
+
+        assert(updated.traces.last().isConsistent(), "There are unfinished traces. Some end calls are missing.");
+
+        return updated.set("action", null);
     }
 }

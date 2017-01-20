@@ -42,4 +42,12 @@ export default class Message extends Immutable.Record({
     isDiff() {
         return !this.isAction();
     }
+
+    willTrigger() {
+        assert(false, "Message.willTrigger: implement!");
+    }
+
+    path() {
+        return Immutable.List(this.resource.split("/"));
+    }
 }

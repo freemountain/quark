@@ -46,18 +46,22 @@ describe("CursorTest", function() { // eslint-disable-line
     });
 
     it("checks some methods on a cursor", function() {
+        const error   = new Error("huhu");
         const message = new Message("/test", []);
         const data    = Immutable.fromJS({
             _unit: new Internals({
                 name:        "Unit",
                 description: Immutable.Map(),
-                action:      message
+                action:      message,
+                errors:      Immutable.List.of(error)
             })
         });
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
         const cursor     = new UnitCursor(data);
 
         expect(cursor.currentMessage()).to.equal(message);
+        expect(cursor.set("action", message).currentMessage()).to.be.an.instanceOf(Message);
+        expect(cursor.errors().toJS()).to.eql([error]);
     });
 
     it("creates some cursors", function() {
