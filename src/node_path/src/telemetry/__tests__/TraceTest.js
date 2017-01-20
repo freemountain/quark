@@ -32,7 +32,7 @@ describe("TraceTest", function() {
         });
 
         expect(trace.isConsistent()).to.equal(false);
-        expect(trace.toString()).to.equal("!Unit::test()@01:00:00 GMT+0100 (CET)");
+        expect(trace.toString()).to.equal("!Unit::test() - 01:00:00");
 
         const trace2  = trace.trace({
             name:   "sub1",
@@ -508,8 +508,7 @@ describe("TraceTest", function() {
             guards: 0
         });
 
-        expect(trace.toString()).to.equal("                !Unit::test()@01:00:00 GMT+0100 (CET)\n               /                                     \\\n  Blub::sub1(Number, Number)                 !Bla::sub2(String)\n                                                      |\n                                             Bli::sub3(Boolean)");
-
+        expect(trace.toString()).to.equal("              !Unit::test() - 01:00:00___\n             /                           \\\n  Blub::sub1(1, 2) - 1ms  #ERROR !Bla::sub2(\"huhu\") - 3ms #\n                                          |\n                                Bli::sub3(true) - 1ms");
         expect(trace11.__isSelfConsistent()).to.equal(true);
         expect(trace11.__isParentConsistent()).to.equal(true);
         expect(trace11.isConsistent()).to.equal(true);

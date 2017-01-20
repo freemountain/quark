@@ -99,15 +99,13 @@ export default class Trace extends Record({
     }
 
     toArray() {
-        const node = `${this.triggers ? "" : "!"}${this.name}(${this.params.map(x => x.constructor ? x.constructor.name : x).join(", ")})`;
+        const node = `${this.error ? "#ERROR " : ""}${this.triggers ? "" : "!"}${this.name}(${this.params.map(x => typeof x === "object" ? x.constructor.name : JSON.stringify(x)).join(", ")}) - ${this.end !== null ? `${this.end - this.start}ms` : (new Date(this.start)).toTimeString().slice(0, 8)}${this.error ? " #" : ""}`;
 
         return [node].concat(this.traces.map(trace => trace.toArray()));
     }
 
     toString() {
         const result = this.toArray();
-
-        result[0] = `${result[0]}@${(new Date(this.start)).toTimeString()}`;
 
         return asciiTree(result);
     }

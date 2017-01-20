@@ -419,6 +419,7 @@ describe("CursorTest", function() { // eslint-disable-line
             }
         });
 
+        expect(cursor6.get("_unit").get("traces").first().toString()).to.equal("             Unit::Message</test>(1) - 0ms\n                           |\n                Unit::test(false) - 0ms\n                           |\n             #ERROR Unit::test2(1) - 0ms #\n                           |\n                 Unit::test3(2) - 0ms_____\n                /                         \\\n  #ERROR Unit::test4(3) - 0ms #  Unit::test5(4) - 0ms");
         expect(() => cursor6.trace.end()).to.throw("AssertionError: Can\'t stop a trace, that is already finished.");
     });
 

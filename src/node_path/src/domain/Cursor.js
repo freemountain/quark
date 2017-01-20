@@ -199,10 +199,7 @@ ImmutableMethods
                 result instanceof Immutable.OrderedSet ||
                 result instanceof Immutable.OrderedMap ||
                 result instanceof Immutable.Stack ||
-                result instanceof Immutable.Record ||
-                result instanceof Immutable.Seq ||
-                result instanceof Immutable.Iterable ||
-                result instanceof Immutable.Collection
+                result instanceof Immutable.Seq
             ) ? new this.constructor(result, this) : result;
         }
     }));
