@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "quark.js",
   "dependencies": {
+    "asciitree": "^1.0.2",
     "babel-preset-node5": "^12.0.0",
     "babel-runtime": "^6.18.0",
     "dependency-graph": "^0.5.0",

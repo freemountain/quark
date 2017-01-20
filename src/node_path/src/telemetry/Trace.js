@@ -1,5 +1,6 @@
 import { Record } from "immutable";
 import assert from "assert";
+import asciiTree from "asciitree";
 
 export default class Trace extends Record({
     start:    0,
@@ -95,5 +96,19 @@ export default class Trace extends Record({
             params:   this.params,
             triggers: this.triggers
         };
+    }
+
+    toArray() {
+        const node = `${this.triggers ? "" : "!"}${this.name}(${this.params.map(x => x.constructor ? x.constructor.name : x).join(", ")})`;
+
+        return [node].concat(this.traces.map(trace => trace.toArray()));
+    }
+
+    toString() {
+        const result = this.toArray();
+
+        result[0] = `${result[0]}@${(new Date(this.start)).toTimeString()}`;
+
+        return asciiTree(result);
     }
 }
