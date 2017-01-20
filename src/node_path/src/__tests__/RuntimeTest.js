@@ -187,27 +187,28 @@ describe("RuntimeTest", function() {
 
         expect(unit.state()).to.eql(null);
 
-        const message = new Message("/actions/init", [{
-            name: "jupp"
+        const initial = new Message("/actions/init", [{
+            name:  "jupp",
+            _unit: new Internals({
+                id:          "blub",
+                name:        "Inheritance",
+                description: unit.__actions
+            })
         }]);
 
-        return unit.message.call(new unit.__Cursor(message.get("payload").set("_unit", new Internals({
-            id:          "blub",
-            name:        "Inheritance",
-            actions:     Immutable.fromJS([[]]),
-            action:      message,
-            description: unit.__actions
-        }))), message).then(x => {
+        const message = initial.update("_unit", internals => internals.messageReceived(initial));
+
+        return unit.message.call(new unit.__Cursor(message.get("payload")), message).then(x => {
             expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql([{
                 name: "jupp"
             }]);
 
-            expect(x.get("_unit").get("actions").toJS()).to.eql([[{}]]);
+            expect(x.get("_unit").get("traces").toJS()).to.eql([[{}]]);
         });
     });
 
 
-    it("creates an inerhited runtime and checks the initial cursor", function() {
+    it("creates an inherited runtime and checks the initial cursor", function() {
         const unit = new Inheritance();
 
         expect(unit.state()).to.eql(null);

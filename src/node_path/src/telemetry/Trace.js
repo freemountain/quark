@@ -1,5 +1,6 @@
 import { Record, List } from "immutable";
 import assert from "assert";
+import Immutable from "immutable";
 
 export default class Trace extends Record({
     start:    0,
@@ -21,7 +22,8 @@ export default class Trace extends Record({
             start:  Date.now(),
             parent: parent,
             pos:    pos,
-            traces: []
+            traces: [],
+            params: Immutable.List(data.params)
         }));
     }
 

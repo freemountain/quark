@@ -6,6 +6,7 @@ import Immutable from "immutable";
 import sinon from "sinon";
 import Cursor from "../Cursor";
 import Internals from "../Internals";
+import Message from "../../Message";
 
 describe("TriggerDescriptionTest", function() {
     before(function() {
@@ -24,6 +25,7 @@ describe("TriggerDescriptionTest", function() {
         const guard2      = sinon.stub().returns(true);
         const trigger     = new Trigger("blub", Immutable.List([guard1, guard2]), Immutable.List.of("huhu"), 10);
         const description = new TriggerDescription("blub", trigger);
+        const message     = new Message("/test", []);
 
         expect(description.toJS()).to.eql({
             emits:  "blub",
@@ -33,12 +35,12 @@ describe("TriggerDescriptionTest", function() {
         });
 
         const data = Immutable.fromJS({
-            _unit: new Internals({
+            _unit: (new Internals({
                 actions:     Immutable.fromJS([[]]),
                 description: Immutable.Map({
                     blub: action
                 })
-            }),
+            })).messageReceived(message),
             value: 2
         });
 
@@ -57,7 +59,7 @@ describe("TriggerDescriptionTest", function() {
                     description: {
                         blub: action
                     },
-                    action:   null,
+                    action:   message,
                     current:  0,
                     diffs:    [],
                     errors:   [],
@@ -65,14 +67,25 @@ describe("TriggerDescriptionTest", function() {
                     id:       null,
                     name:     "Default",
                     revision: 0,
-                    actions:  [[{
+                    traces:   [{
                         start:    0,
-                        end:      0,
-                        name:     "blub",
+                        end:      null,
+                        error:    null,
+                        guards:   0,
+                        name:     "Default::Message</test>",
+                        params:   [],
                         triggers: true,
-                        params:   [1, "huhu"],
-                        error:    null
-                    }]]
+                        traces:   [{
+                            name:     "Default::blub",
+                            start:    0,
+                            end:      0,
+                            guards:   2,
+                            triggers: true,
+                            params:   [1, "huhu"],
+                            error:    null,
+                            traces:   []
+                        }]
+                    }]
                 }));
 
             expect(x.toJS()).to.eql(updated.toJS());

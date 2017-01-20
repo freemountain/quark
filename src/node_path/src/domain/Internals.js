@@ -20,8 +20,8 @@ export default class Internals extends Record({
         return this.update("traces", traces => traces.pop().push(op(traces.last())));
     }
 
-    trace(name, params) {
-        const args = [{ name, params }, this.name];
+    trace(name, params, guards = 0) {
+        const args = [{ name, params, guards }, this.name];
 
         return this.action === null ? this.update("traces", traces => traces.push(new Trace(...args))) : this.updateCurrentTrace(trace => trace.trace(...args));
     }

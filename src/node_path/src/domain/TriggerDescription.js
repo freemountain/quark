@@ -39,7 +39,7 @@ export default class TriggerDescription {
         const enhanced = params.concat(this.params.toJS());
         const cursor   = data;
         const op       = cursor[this.emits];
-        const traced   = op instanceof Function ? cursor.trace(this.emits, params, this.guards.size) : cursor;
+        const traced   = op instanceof Function ? cursor.trace(this.emits, enhanced, this.guards.size) : cursor;
 
         if((
             !(op instanceof Function) ||
