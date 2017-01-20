@@ -1,6 +1,5 @@
-import { Record, List } from "immutable";
+import { Record } from "immutable";
 import assert from "assert";
-import Immutable from "immutable";
 
 export default class Trace extends Record({
     start:    0,
@@ -9,7 +8,7 @@ export default class Trace extends Record({
     error:    null,
     end:      null,
     traces:   [],
-    params:   List(),
+    params:   [],
     guards:   0,
     parent:   null,
     pos:      null
@@ -23,7 +22,7 @@ export default class Trace extends Record({
             parent: parent,
             pos:    pos,
             traces: [],
-            params: Immutable.List(data.params)
+            params: data.params && data.params.toJS ? data.params.toJS() : []
         }));
     }
 
@@ -93,7 +92,7 @@ export default class Trace extends Record({
             end:      this.end,
             error:    this.error,
             traces:   this.traces.map(trace => trace.toJS()),
-            params:   this.params.toJS(),
+            params:   this.params,
             triggers: this.triggers
         };
     }

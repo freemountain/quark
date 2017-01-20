@@ -187,18 +187,24 @@ describe("RuntimeTest", function() {
 
         expect(unit.state()).to.eql(null);
 
-        const initial = new Message("/actions/init", [{
+        const data = Immutable.Map({
             name:  "jupp",
             _unit: new Internals({
                 id:          "blub",
                 name:        "Inheritance",
                 description: unit.__actions
             })
-        }]);
+        });
 
-        const message = initial.update("_unit", internals => internals.messageReceived(initial));
+        const message  = new Message("/actions/init", [data]);
+        const data2    = data.update("_unit", internals => internals.messageReceived(message));
+        const cursor   = new unit.__Cursor(data2);
+        const payload  = Immutable.List.of(data2);
+        const message2 = message.set("payload", payload);
 
-        return unit.message.call(new unit.__Cursor(message.get("payload")), message).then(x => {
+        expect(message2.get("payload").first()).to.equal(payload.first());
+
+        return unit.message.call(cursor, message2).then(x => {
             expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql([{
                 name: "jupp"
             }]);
@@ -206,7 +212,6 @@ describe("RuntimeTest", function() {
             expect(x.get("_unit").get("traces").toJS()).to.eql([[{}]]);
         });
     });
-
 
     it("creates an inherited runtime and checks the initial cursor", function() {
         const unit = new Inheritance();

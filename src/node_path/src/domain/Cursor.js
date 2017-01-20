@@ -87,6 +87,7 @@ class Cursor {
             }
         });
 
+        console.log("###Cursor.constructor ", this.__data.x.toJS());
         this.trace.triggered = Cursor.triggered.bind(this);
         this.trace.error     = Cursor.error.bind(this);
         this.trace.end       = Cursor.end.bind(this, prev);
@@ -99,7 +100,9 @@ class Cursor {
     }
 
     currentMessage() {
-        return this.__data.x.get("_unit").action;
+        const message = this.__data.x.get("_unit").action;
+
+        return message;
     }
 
     errors() {

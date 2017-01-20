@@ -36,6 +36,7 @@ class ActionDescription {
                 Message.assert(message);
                 assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
 
+                console.log("####huhuhu", message.resource, message.payload.constructor.name);
                 // vorher das mit property auch regeln (propertyTest etc),
                 const cursor = ActionDescription.applyTriggers(description.before, this, message.payload); // eslint-disable-line
 

@@ -52,9 +52,9 @@ describe("MessageTest", function() {
     });
 
     it("creates an invalid message", function() {
-        expect(() => (new Message("/blub", "huhu")).toJS()).to.throw("AssertionError: Your inputdata is not a valid message, got {\"resource\":\"/blub\",\"payload\":\"huhu\",\"headers\":{}}");
-        expect(() => (new Message("/blub", null)).toJS()).to.throw("AssertionError: Your inputdata is not a valid message, got {\"resource\":\"/blub\",\"payload\":null,\"headers\":{}}");
-        expect(() => (new Message("/blub", undefined)).toJS()).to.throw("AssertionError: Your inputdata is not a valid message, got {\"resource\":\"/blub\",\"headers\":{}}"); // eslint-disable-line
+        expect(() => (new Message("/blub", "huhu")).toJS()).to.throw("AssertionError: Your inputdata is not a valid message, got {\"headers\":{},\"payload\":\"huhu\",\"resource\":\"/blub\"}.");
+        expect(() => (new Message("/blub", null)).toJS()).to.throw("AssertionError: Your inputdata is not a valid message, got {\"headers\":{},\"payload\":null,\"resource\":\"/blub\"}.");
+        expect(() => (new Message("/blub", undefined)).toJS()).to.throw("AssertionError: Your inputdata is not a valid message, got {\"headers\":{},\"resource\":\"/blub\"}."); // eslint-disable-line
     });
 
     it("checks the methods", function() {

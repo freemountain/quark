@@ -17,22 +17,27 @@ export default class Message extends Immutable.Record({
         return x;
     }
 
+    static assertStructure(data) {
+        if(!(
+            data &&
+            data.headers instanceof Immutable.Map &&
+            data.payload instanceof Immutable.List &&
+            typeof data.resource === "string"
+        )) assert(false, `Your inputdata is not a valid message, got ${JSON.stringify(data)}.`);
+
+        return data;
+    }
+
     constructor(resource, payload, headers = Immutable.Map()) { // eslint-disable-line
-        const data = typeof resource === "string" ? { resource, payload, headers } : resource;
+        const data = Immutable.fromJS(typeof resource === "string" ? { resource, payload, headers } : resource);
 
-        super(Immutable.fromJS(data));
+        super(data);
 
-        if(resource instanceof Message) return resource;
+        if(resource instanceof Message) return Message.assertStructure(resource);
 
         data.headers = defaults(data.headers).to(headers);
 
-        if(!(
-            data &&
-            typeof data.headers === "object" &&
-            data.headers !== null &&
-            data.payload instanceof Array &&
-            typeof data.resource === "string"
-        )) assert(false, `Your inputdata is not a valid message, got ${JSON.stringify(data)}`);
+        return Message.assertStructure(this);
     }
 
     isAction() {

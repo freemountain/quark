@@ -52,7 +52,7 @@ describe("TriggerDescriptionTest", function() {
 
         expect(action.func.call(new cursor(data), 1, "huhu").get("value")).to.eql(9);
 
-        return description.apply(new cursor(data), [1]).then(x => {
+        return description.apply(new cursor(data), Immutable.List([1])).then(x => {
             const updated = data
                 .set("value", 9)
                 .set("_unit", Immutable.fromJS({

@@ -1,5 +1,6 @@
 import { Record, List, Stack, Map } from "immutable";
 import Trace from "../telemetry/Trace";
+import Message from "../Message";
 import assert from "assert";
 
 export default class Internals extends Record({
@@ -27,6 +28,7 @@ export default class Internals extends Record({
     }
 
     messageReceived(message) {
+        Message.assert(message);
         assert(this.action === null, "Can't start a message, if another message is currently processed.");
 
         return this

@@ -2,6 +2,7 @@ import { schedule } from "../Runloop";
 import GuardError from "./error/GuardError";
 import assert from "assert";
 import Cursor from "./Cursor";
+import { List } from "immutable";
 
 export default class TriggerDescription {
     constructor(action, trigger) {
@@ -34,19 +35,21 @@ export default class TriggerDescription {
     }
 
     apply(data, params) {
-        assert(data instanceof Cursor, `Expected a cursor, got ${data}`);
+        assert(params instanceof List, `params need to be an Immutable.List, got ${params.constructor.name}`);
+        assert(data instanceof Cursor, `Expected a Cursor, got ${data}`);
 
-        const enhanced = params.concat(this.params.toJS());
+        const enhanced = params.concat(this.params);
         const cursor   = data;
         const op       = cursor[this.emits];
         const traced   = op instanceof Function ? cursor.trace(this.emits, enhanced, this.guards.size) : cursor;
+        const jsParams = enhanced.toJS();
 
         if((
             !(op instanceof Function) ||
-            !this.shouldTrigger(traced, enhanced)
+            !this.shouldTrigger(traced, jsParams)
         )) return schedule(() => traced);
 
-        return schedule(() => op.apply(cursor.trace.triggered(), enhanced), this.delay)
+        return schedule(() => op.apply(cursor.trace.triggered(), jsParams), this.delay)
             .then(x => x.trace.end(cursor));
     }
 }
