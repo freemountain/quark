@@ -3,18 +3,28 @@ import ImmutableMethods from "../util/ImmutableMethods";
 import assert from "assert";
 
 class Cursor {
+    static assertTraceStarted(cursor, caller) {
+        assert(cursor.__data.traceStarted, `You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
+    }
+
     static triggered() {
-        const data = this.__data.x
+        Cursor.assertTraceStarted(this, "triggered");
+
+        this.__data.x = this.__data.x
             .update("_unit", internals => internals.updateCurrentTrace(x => x.triggered()));
 
-        return new this.constructor(data, this);
+        return this;
     }
 
     static error(e) {
-        const data = this.__data.x
+        Cursor.assertTraceStarted(this, "errored");
+
+        this.__data.x = this.__data.x
             .update("_unit", internals => internals.updateCurrentTrace(x => x.errored(e)));
 
-        return new this.constructor(data, this);
+        this.__data.traceStarted = this.__data.x.get("_unit").isTracing();
+
+        return this;
     }
 
     static end(prev) {
@@ -23,9 +33,14 @@ class Cursor {
             prev.errors.size < this.errors.size
         ) || this.errors.size > 0) return this.trace.error(this.errors.last());
 
-        const data = this.__data.x.update("_unit", internals => internals.updateCurrentTrace(x => x.ended()));
+        Cursor.assertTraceStarted(this, "ended");
 
-        return new this.constructor(data, this);
+        this.__data.x = this.__data.x
+            .update("_unit", internals => internals.updateCurrentTrace(x => x.ended()));
+
+        this.__data.traceStarted = this.__data.x.get("_unit").isTracing();
+
+        return this;
     }
 
     static for(instance, description) {
@@ -70,24 +85,16 @@ class Cursor {
         return inherited;
     }
 
-    constructor(data, prev) { // eslint-disable-line
+    constructor(data, prev, traceStarted = false) { // eslint-disable-line
         if(!(data instanceof Object) || data instanceof Cursor) return data;
 
         assert(this.__inherited, "Cursor can only be used, when inherited");
 
         this.__data = {
-            x: Immutable.fromJS(data)
+            x:            Immutable.fromJS(data),
+            traceStarted: traceStarted
         };
 
-        Object.defineProperty(this, "size", {
-            enumerable:   false,
-            configurable: false,
-            get:          function() {
-                return this.__data.x.size;
-            }
-        });
-
-        console.log("###Cursor.constructor ", this.__data.x.toJS());
         this.trace.triggered = Cursor.triggered.bind(this);
         this.trace.error     = Cursor.error.bind(this);
         this.trace.end       = Cursor.end.bind(this, prev);
@@ -97,6 +104,10 @@ class Cursor {
 
     generic(mapper) {
         return mapper(this);
+    }
+
+    get size() {
+        return this.__data.x.size;
     }
 
     get currentMessage() {
@@ -114,24 +125,16 @@ class Cursor {
     }
 
     get children() {
-        assert(false, "Cursor.children: implement!");
-
         return this.__data.x.get("_unit").children;
     }
 
     trace(...args) {
-        // schritte:
-        // - CursorTest: trace
-        // diese funktion soll einerseits das trace in triggerdescription ersetzen,
-        // andererseits auch vom user benutzt werden können, um eigene subtraces
-        // zu erstellen, hierbei mal checken wegen baum etc, diese traces dann auch
-        // in den actions benutzen
-        // - message.willTrigger
-        // - cursor.children setzen
-        //
-        // hier muss auch end un so weitergeleitet werden
+        assert(this.__data.x.get("_unit").isTracing(), "You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
 
-        return new this.constructor(this.__data.x.update("_unit", internals => internals.trace(...args)), this);
+        this.__data.x            = this.__data.x.update("_unit", internals => internals.trace(...args));
+        this.__data.traceStarted = true;
+
+        return this;
     }
 
     progress() {

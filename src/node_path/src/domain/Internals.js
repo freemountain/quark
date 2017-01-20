@@ -16,10 +16,23 @@ export default class Internals extends Record({
     action:      null,
     name:        "Default"
 }) {
+    currentTrace() {
+        return this.traces.last();
+    }
+
+    isTracing() {
+        return this.currentTrace() instanceof Trace;
+    }
+
     updateCurrentTrace(op) {
         assert(this.action !== null, "Can't update a trace before receiving a message.");
 
-        return this.update("traces", traces => traces.pop().push(op(traces.last())));
+        return this.update("traces", traces => {
+            const current = this.currentTrace();
+
+            assert(current instanceof Trace, "Please start a trace with Internals::trace, before trying to update it");
+            return traces.pop().push(op(current));
+        });
     }
 
     trace(name, params, guards = 0) {
