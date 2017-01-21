@@ -141,6 +141,7 @@ class Cursor {
     patch(diffs) {
         assert(diffs instanceof Immutable.List, `Diffs need to be of type Immutable.List or Immutable.Set, got '${typeof diffs === "object" ? diffs.constructor.name : JSON.stringify(diffs)}'.`);
 
+        assert(false, "Cursor.patch: implement!");
         return new this.constructor(patch(this.__data.x, diffs), this.__data.x);
     }
 

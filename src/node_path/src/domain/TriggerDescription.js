@@ -35,7 +35,7 @@ export default class TriggerDescription {
 
                 cursor.trace.triggered();
 
-                result = guard(...params, cursor);
+                result = guard(...params.toJS(), cursor);
 
                 cursor.trace.end();
 
@@ -66,13 +66,12 @@ export default class TriggerDescription {
 
         cursor.trace(this.emits, enhanced, this.guards.size);
 
-        const jsParams = enhanced.toJS();
-        const x        = this.shouldTrigger(cursor, enhanced);
+        const x = this.shouldTrigger(cursor, enhanced);
 
         if(!x.result) return schedule(() => x.cursor.trace.end());
 
         x.cursor.trace.triggered();
-        return schedule(() => op.apply(x.cursor, jsParams), this.delay)
+        return schedule(() => op.apply(x.cursor, enhanced.toJS()), this.delay)
             .then(y => y.trace.end())
             .catch(e => x.cursor.error(e));
     }

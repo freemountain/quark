@@ -19,15 +19,8 @@ class ActionDescription {
         const promise = Promise.all(triggers.map(x => x.apply(cursor, params)));
 
         return promise
-            .then(x => x
-                .map(y => cursor.diff(y))
-                .reduce((dest, y) => {
-                    return dest.concat(y);
-                }, Immutable.List())
-                .toList())
-            .then(diffs => {
-                return cursor.patch(diffs);
-            });
+            .then(x => x.reduce((dest, y) => dest.concat(cursor.diff(y)), Immutable.Set()).toList())
+            .then(diffs => cursor.patch(diffs));
     }
 
     static Handler(description) { // eslint-disable-line
@@ -40,9 +33,12 @@ class ActionDescription {
                     // TODO: ab hier fängt dann an schief zu gehen, sobald die
                     // triggers ins spiel kommen: hier beim ActionDescriptionTest
                     // ansetzen
+                    // - Cursor alles testen (patch, diff)
+                    // - Internals alles testen
+                    // - dann hier weiter
                     // return resolve(this);
 
-                    assert(false, "ab hier weiter, hier vor allem die errorfälle vernünftig behandelt, dat klappt hinten un vorne nit die scheiße");
+                    // assert(false, "ab hier weiter, hier vor allem die errorfälle vernünftig behandelt, dat klappt hinten un vorne nit die scheiße");
 
                     return ActionDescription
                         .applyTriggers(description.before, this, message.payload, reject)
@@ -59,7 +55,8 @@ class ActionDescription {
                             // return resolve(cursor);
 
                             return resolve(this);
-                        });
+                        })
+                        .catch(reject);
                 } catch(e) {
                     return reject(e);
                 }

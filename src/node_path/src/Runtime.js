@@ -236,7 +236,7 @@ export default class Runtime extends Duplex {
             .then(update => !update.cursor.hasErrored ? this.done.call(update.cursor, update.diffs) : this.error.call(update.cursor))
             // adde hier ne diff zeit zum trace
             .then(x => Runtime.update(this, x))
-            .catch(this.emit.bind(this, "error"));
+            .catch(e => this.emit("error", e));
     }
 
     init(action) { // eslint-disable-line
