@@ -84,11 +84,109 @@ describe("TriggerDescriptionTest", function() {
                             triggers: true,
                             params:   [1, "huhu"],
                             error:    null,
-                            traces:   []
+                            traces:   [{
+                                name:     "Default::blub<Guard1>",
+                                start:    0,
+                                end:      0,
+                                guards:   0,
+                                triggers: true,
+                                params:   [1, "huhu"],
+                                error:    null,
+                                traces:   []
+                            }, {
+                                name:     "Default::blub<Guard2>",
+                                start:    0,
+                                end:      0,
+                                guards:   0,
+                                triggers: true,
+                                params:   [1, "huhu"],
+                                error:    null,
+                                traces:   []
+                            }]
                         }]
                     }]
                 }));
 
+            expect(x.get("_unit").currentTrace().ended().isConsistent()).to.eql(true);
+            expect(x.hasErrored).to.eql(false);
+            expect(x.toJS()).to.eql(updated.toJS());
+        });
+    });
+
+    it("it applies a triggerdescription with errors", function() {
+        const action      = new ActionDescription("Test", "blub", Immutable.List());
+        const guard1      = (param1, _, param2) => param1 && param2.name === 1;
+        const trigger     = new Trigger("blub", Immutable.List([guard1]), Immutable.List(), 10);
+        const description = new TriggerDescription("blub", trigger);
+        const message     = new Message("/test", []);
+
+        const data = Immutable.fromJS({
+            _unit: (new Internals({
+                actions:     Immutable.fromJS([[]]),
+                description: Immutable.Map({
+                    blub: action
+                })
+            })).messageReceived(message),
+            value: 2
+        });
+
+        const cursor = Cursor.for(class Test {}, data.get("_unit").description);
+
+        action.func = function() {
+            return this;
+            // this.update("value", a.name.x);
+        };
+
+        return description.apply(new cursor(data), Immutable.List([1])).then(x => {
+            const updated = data.set("_unit", Immutable.fromJS({
+                description: {
+                    blub: action
+                },
+                action:   message,
+                current:  0,
+                children: {},
+                diffs:    [],
+                errors:   [{
+                    e: new TypeError("Cannot read property 'name' of undefined")
+                }],
+                history:  [],
+                id:       null,
+                name:     "Default",
+                revision: 0,
+                traces:   [{
+                    start:    0,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Default::Message</test>",
+                    params:   [],
+                    triggers: true,
+                    traces:   [{
+                        name:     "Default::blub",
+                        start:    0,
+                        end:      0,
+                        guards:   1,
+                        triggers: false,
+                        params:   [1],
+                        error:    null,
+                        traces:   [{
+                            name:     "Default::blub<Guard1>",
+                            start:    0,
+                            end:      0,
+                            guards:   0,
+                            triggers: true,
+                            params:   [1],
+                            error:    {
+                                e: new TypeError("Cannot read property 'name' of undefined")
+                            },
+                            traces: []
+                        }]
+                    }]
+                }]
+            }));
+
+            expect(x.get("_unit").currentTrace().ended().isConsistent()).to.eql(true);
+            expect(x.hasErrored).to.eql(true);
             expect(x.toJS()).to.eql(updated.toJS());
         });
     });

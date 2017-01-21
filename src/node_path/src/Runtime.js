@@ -12,7 +12,7 @@ import Action from "./domain/Action";
 import Trigger from "./domain/Trigger";
 import Cursor from "./domain/Cursor";
 import defaults from "set-default-value";
-import uuid from "uuid";
+import Uuid from "./util/Uuid";
 import { schedule } from "./Runloop";
 import Internals from "./domain/Internals";
 import Message from "./Message";
@@ -39,7 +39,12 @@ export default class Runtime extends Duplex {
             key !== "id" &&
             key !== "history" &&
             key !== "diffs" &&
-            key !== "actions"
+            key !== "action" &&
+            key !== "diffs" &&
+            key !== "history" &&
+            key !== "traces" &&
+            key !== "id" &&
+            key !== "current"
         );
     }
 
@@ -86,7 +91,7 @@ export default class Runtime extends Duplex {
                 const diffs = diff(previous, cursor.__data);
 
                 return resolve({
-                    cursor: Cursor.of(cursor),
+                    cursor: cursor,
                     diffs
                 });
             } catch(e) {
@@ -136,7 +141,7 @@ export default class Runtime extends Duplex {
             .map((x, key) => new ActionDescription(name, key, triggers, instance[key] === Runtime.prototype.message ? null : instance[key]));
 
         proto.__actions = actions;
-        proto.__Unit    = uuid();
+        proto.__Unit    = Uuid.uuid();
         proto.__Cursor  = Cursor.for(instance, actions);
 
         Object.assign(proto, actions.map(action => action.func).toJS());
@@ -160,7 +165,7 @@ export default class Runtime extends Duplex {
             objectMode: true
         });
 
-        const id           = uuid();
+        const id           = Uuid.uuid();
         const proto        = Object.getPrototypeOf(this);
         const unit         = Runtime.toUnit(this, proto, bindings);
         const properties   = Immutable.fromJS(defaults(proto.constructor.props).to({}));
@@ -180,7 +185,8 @@ export default class Runtime extends Duplex {
         this.description  = proto.__actions;
         this.buffers      = [];
         this.cursor       = null;
-        this.readyPromise = unit.trigger(new Message("/actions/init", [initialProps]));
+        this.readyPromise = unit
+            .trigger(new Message("/actions/init", [initialProps]));
 
         return unit;
     }
@@ -192,7 +198,7 @@ export default class Runtime extends Duplex {
     state() {
         if(this.cursor === null) return this.cursor;
 
-        return this.cursor.update("_unit", x => x.filter(Runtime.StateFilter)).toJS();
+        return this.cursor.update("_unit", x => x.toMap().filter(Runtime.StateFilter)).toJS();
     }
 
     actions() {
@@ -209,32 +215,28 @@ export default class Runtime extends Duplex {
         return this.traces().last();
     }
 
-    onError(state, e) {
-        return e.isRecoverable && e.isRecoverable() ? this.error.call(state, e) : this.emit("error", e);
-    }
-
     trigger(data) {
         const message = new Message(data);
         const cursor  = defaults(this.cursor).to(new this.__Cursor(message.payload.first(), this));
 
-        const before = new Promise((resolve, reject) => {
+        const before = new Promise(resolve => {
             try {
                 return resolve(this.before.call(cursor, message));
             } catch(e) {
-                return reject(e);
+                return resolve(e);
             }
         });
 
         return before
             // adde hier ne before zeit zum trace
-            .then(x => this.message.call(x, x.currentMessage).catch(this.onError.bind(this, x)))
+            .then(x => this.message.call(x, x.currentMessage))
             // adde hier ne handle zeit zum trace
-            .then(x => Runtime.diff(this, Cursor.of(x)))
+            .then(x => Runtime.diff(this, x))
             // adde hier ne diff zeit zum trace
-            .then(update => this.done.call(update.cursor, update.diffs))
+            .then(update => !update.cursor.hasErrored ? this.done.call(update.cursor, update.diffs) : this.error.call(update.cursor))
             // adde hier ne diff zeit zum trace
-            .then(x => Runtime.update(this, x));
-            // adde hier ne update zeit zum trace
+            .then(x => Runtime.update(this, x))
+            .catch(this.emit.bind(this, "error"));
     }
 
     init(action) { // eslint-disable-line
@@ -264,8 +266,11 @@ export default class Runtime extends Duplex {
         return this.update("_unit", internals => internals.messageProcessed());
     }
 
-    error(error) {
-        return this.update("_unit", x => x.update("errors", y => y.push(error)));
+    error() {
+        // check for error recoverability
+        // if(!this.get("_unit").isRecoverable()) throw this.currentError;
+
+        return this.update("_unit", internals => internals.messageProcessed());
     }
 
     _write(message, enc, cb) {

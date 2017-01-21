@@ -1,10 +1,12 @@
 import Immutable from "immutable";
 import ImmutableMethods from "../util/ImmutableMethods";
 import assert from "assert";
+import patch from "immutablepatch";
+import diff from "immutablediff";
 
 class Cursor {
     static assertTraceStarted(cursor, caller) {
-        assert(cursor.__data.traceStarted, `You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
+        assert(cursor.__data.x.get("_unit").isTracing(), `You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
     }
 
     static triggered() {
@@ -22,23 +24,14 @@ class Cursor {
         this.__data.x = this.__data.x
             .update("_unit", internals => internals.updateCurrentTrace(x => x.errored(e)));
 
-        this.__data.traceStarted = this.__data.x.get("_unit").isTracing();
-
         return this;
     }
 
-    static end(prev) {
-        if((
-            prev &&
-            prev.errors.size < this.errors.size
-        ) || this.errors.size > 0) return this.trace.error(this.errors.last());
-
+    static end() {
         Cursor.assertTraceStarted(this, "ended");
 
         this.__data.x = this.__data.x
             .update("_unit", internals => internals.updateCurrentTrace(x => x.ended()));
-
-        this.__data.traceStarted = this.__data.x.get("_unit").isTracing();
 
         return this;
     }
@@ -82,17 +75,18 @@ class Cursor {
             });
         });
 
+        // TODO: add props getter
+
         return inherited;
     }
 
-    constructor(data, prev, traceStarted = false) { // eslint-disable-line
+    constructor(data, prev) { // eslint-disable-line
         if(!(data instanceof Object) || data instanceof Cursor) return data;
 
         assert(this.__inherited, "Cursor can only be used, when inherited");
 
         this.__data = {
-            x:            Immutable.fromJS(data),
-            traceStarted: traceStarted
+            x: Immutable.fromJS(data)
         };
 
         this.trace.triggered = Cursor.triggered.bind(this);
@@ -116,6 +110,10 @@ class Cursor {
         return message;
     }
 
+    get currentError() {
+        return this.__data.x.get("_unit").errors.first();
+    }
+
     get currentContext() {
         return this.__data.x.get("_unit").name;
     }
@@ -128,13 +126,36 @@ class Cursor {
         return this.__data.x.get("_unit").children;
     }
 
+    get hasErrored() {
+        return this.__data.x.get("_unit").hasErrored();
+    }
+
     trace(...args) {
         assert(this.__data.x.get("_unit").isTracing(), "You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
 
-        this.__data.x            = this.__data.x.update("_unit", internals => internals.trace(...args));
-        this.__data.traceStarted = true;
+        this.__data.x = this.__data.x.update("_unit", internals => internals.trace(...args));
 
         return this;
+    }
+
+    patch(diffs) {
+        assert(diffs instanceof Immutable.List, `Diffs need to be of type Immutable.List or Immutable.Set, got '${typeof diffs === "object" ? diffs.constructor.name : JSON.stringify(diffs)}'.`);
+
+        return new this.constructor(patch(this.__data.x, diffs), this.__data.x);
+    }
+
+    diff(cursor) {
+        assert(cursor instanceof this.constructor, `You can only diff two cursors of the same type ('${this.constructor.name}'), got '${typeof cursor === "object" ? cursor.constructor.name : JSON.stringify(cursor)}'.`);
+
+        return Immutable.fromJS(diff(this.__data.x, cursor.__data.x));
+    }
+
+    equals(cursor) {
+        assert(false, "Cursor.equals: implement!");
+
+        assert(cursor instanceof this.constructor, `You can only compare two cursors of the same type ('${this.constructor.name}'), got '${typeof cursor === "object" ? cursor.constructor.name : JSON.stringify(cursor)}'.`);
+
+        return this.__data.x === cursor.__data.x;
     }
 
     progress() {
@@ -159,6 +180,14 @@ class Cursor {
         assert(false, "Cursor.redo: implement!");
 
         // hiermit soll ein schritt in der history nach vorne gegangen werden
+    }
+
+    error(e) {
+        assert(e instanceof Error, `You can only error with an error, but got ${e}`);
+
+        return this
+            .update("_unit", internals => internals.error(e))
+            .trace.error(e);
     }
 
     toString() {

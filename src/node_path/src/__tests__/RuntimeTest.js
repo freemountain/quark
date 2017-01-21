@@ -4,6 +4,8 @@ import TestUnit from "./mocks/TestUnit";
 import Action from "../domain/Action";
 import Trigger from "../domain/Trigger";
 import Immutable from "immutable";
+import Uuid from "../util/Uuid";
+import sinon from "sinon";
 import Internals from "../domain/Internals";
 import Message from "../Message";
 
@@ -23,6 +25,20 @@ class Inheritance extends TestUnit {
 }
 
 describe("RuntimeTest", function() {
+    before(function() {
+        let counter = 0;
+
+        this.now  = global.Date.now;
+        this.uuid = sinon.stub(Uuid, "uuid", () => "test");
+
+        global.Date.now = () => ++counter;
+    });
+
+    after(function() {
+        global.Date.now = this.now;
+        this.uuid.restore();
+    });
+
     it("extracts all methods from a class instance", function() {
         const methods = Runtime.allActions(new TestUnit());
 
@@ -205,11 +221,35 @@ describe("RuntimeTest", function() {
         expect(message2.get("payload").first()).to.equal(payload.first());
 
         return unit.message.call(cursor, message2).then(x => {
-            expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql([{
+            expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql({
                 name: "jupp"
-            }]);
+            });
 
-            expect(x.get("_unit").get("traces").toJS()).to.eql([[{}]]);
+            expect(x.get("_unit").get("traces").toJS()).to.eql([{
+                end:      null,
+                error:    null,
+                guards:   0,
+                start:    8,
+                triggers: true,
+                params:   [{
+                    _unit: {
+                        action:      null,
+                        description: unit.description.toJS(),
+                        children:    {},
+                        diffs:       [],
+                        errors:      [],
+                        history:     [],
+                        id:          "blub",
+                        revision:    0,
+                        current:     0,
+                        traces:      [],
+                        name:        "Inheritance"
+                    },
+                    name: "jupp"
+                }],
+                traces: [],
+                name:   "Inheritance::Message</actions/init>"
+            }]);
         });
     });
 
@@ -223,6 +263,8 @@ describe("RuntimeTest", function() {
                 expect(unit.state()).to.eql({
                     _unit: {
                         revision: 1,
+                        name:     "Inheritance",
+                        children: {},
                         errors:   []
                     },
                     name:     "Jupp",
@@ -230,15 +272,33 @@ describe("RuntimeTest", function() {
                     loggedIn: false
                 });
 
-                expect(unit.traces().toJS()).to.equal([[{
-                    action:  "init",
-                    payload: {
-                        name:     "Jupp",
+                expect(unit.traces().toJS()).to.eql([{
+                    end:      11,
+                    error:    null,
+                    guards:   0,
+                    start:    10,
+                    triggers: true,
+                    params:   [{
+                        _unit: {
+                            action:      null,
+                            description: unit.description.toJS(),
+                            children:    {},
+                            diffs:       [],
+                            errors:      [],
+                            history:     [],
+                            id:          "test",
+                            revision:    0,
+                            current:     0,
+                            traces:      [],
+                            name:        "Inheritance"
+                        },
                         age:      40,
+                        name:     "Jupp",
                         loggedIn: false
-                    },
-                    diffs: []
-                }]]);
+                    }],
+                    traces: [],
+                    name:   "Inheritance::Message</actions/init>"
+                }]);
             });
     });
 });

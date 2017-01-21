@@ -12,7 +12,8 @@ export default class Trace extends Record({
     params:   [],
     guards:   0,
     parent:   null,
-    pos:      null
+    pos:      null,
+    locked:   false
 }) {
     constructor(data, context, parent = null, pos = null) {
         assert(data && typeof data.name === "string", "a trace needs a name");
@@ -83,6 +84,12 @@ export default class Trace extends Record({
 
     isConsistent() {
         return this.__isSelfConsistent() && this.__isParentConsistent();
+    }
+
+    lock() {
+        assert(this.isConsistent(), `You can only lock consistent traces. Some end calls are probably missing.\n\n${this}`);
+
+        return this.set("locked", true);
     }
 
     toJS() {

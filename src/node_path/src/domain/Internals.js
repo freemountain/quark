@@ -17,11 +17,21 @@ export default class Internals extends Record({
     name:        "Default"
 }) {
     currentTrace() {
-        return this.traces.last();
+        const trace = this.traces.last();
+
+        return trace && !trace.locked ? trace : null;
     }
 
     isTracing() {
         return this.currentTrace() instanceof Trace;
+    }
+
+    hasErrored() {
+        return this.errors.size > 0;
+    }
+
+    error(e) {
+        return this.update("errors", errors => errors.push(e));
     }
 
     updateCurrentTrace(op) {
@@ -51,14 +61,18 @@ export default class Internals extends Record({
             .updateCurrentTrace(trace => trace.triggered());
     }
 
-    messageProcessed(e) {
+    messageProcessed() {
         assert(this.action !== null, "Can't finish a message before starting.");
 
         const updated = this
-            .updateCurrentTrace(trace => e instanceof Error ? trace.errored(e) : trace.ended());
+            .updateCurrentTrace(trace => trace.ended().lock());
 
-        assert(updated.traces.last().isConsistent(), "There are unfinished traces. Some end calls are missing.");
+        return updated
+            .update("errors", errors => errors.clear())
+            .set("action", null);
+    }
 
-        return updated.set("action", null);
+    isRecoverable() {
+        return this.errors.every(x => x.isRecoverable && x.isRecoverable());
     }
 }

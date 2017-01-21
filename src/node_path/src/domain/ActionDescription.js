@@ -1,7 +1,4 @@
-import curry from "lodash.curry";
 import Immutable from "immutable";
-import patch from "immutablepatch";
-import diff from "immutablediff";
 import Cursor from "./Cursor";
 import assert from "assert";
 import Message from "../Message";
@@ -19,38 +16,55 @@ class ActionDescription {
     static ERROR    = x => x.action.indexOf(".error") !== -1;    // eslint-disable-line
 
     static applyTriggers(triggers, cursor, params) {
-        const diffs = triggers
-            .map(x => diff(cursor, x.apply(cursor, params)))
-            .reduce((dest, x) => dest.concat(x), Immutable.Set());
+        const promise = Promise.all(triggers.map(x => x.apply(cursor, params)));
 
-        return patch(cursor, diffs.toList());
+        return promise
+            .then(x => x
+                .map(y => cursor.diff(y))
+                .reduce((dest, y) => {
+                    return dest.concat(y);
+                }, Immutable.List())
+                .toList())
+            .then(diffs => {
+                return cursor.patch(diffs);
+            });
     }
 
-    static Handler(description, message) {
-        return new Promise((resolve, reject) => {
-            try {
-                // hier is noch iwie unhandled promise rejection shit, wenn das failed
-                //
-                // hier muss es aufm cursor ne methode trace() geben, hierfür muss der cursor
-                // auch mehr infos über den kontext kriegen wahrscheinlich
-                Message.assert(message);
-                assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
+    static Handler(description) { // eslint-disable-line
+        return function(message) { // eslint-disable-line
+            return new Promise((resolve, reject) => { // eslint-disable-line
+                try {
+                    Message.assert(message);
+                    assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
 
-                console.log("####huhuhu", message.resource, message.payload.constructor.name);
-                // vorher das mit property auch regeln (propertyTest etc),
-                const cursor = ActionDescription.applyTriggers(description.before, this, message.payload); // eslint-disable-line
+                    // TODO: ab hier fängt dann an schief zu gehen, sobald die
+                    // triggers ins spiel kommen: hier beim ActionDescriptionTest
+                    // ansetzen
+                    // return resolve(this);
 
-                // check guards
-                // trigger op and merge, wenn keine op, einfach weiterleiten
-                // --> hierzu muss im konstruktor noch die eigentliche op gefiltert werden
+                    assert(false, "ab hier weiter, hier vor allem die errorfälle vernünftig behandelt, dat klappt hinten un vorne nit die scheiße");
 
-                // trigger done stuff oder error stuff
-                assert(cursor instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.done]'.`);
-                return resolve(this);
-            } catch(e) {
-                return reject(e);
-            }
-        });
+                    return ActionDescription
+                        .applyTriggers(description.before, this, message.payload, reject)
+                        .then(cursor => {
+                            if(cursor.hasErrored) return resolve(cursor);
+                            // console.log("####### lulululu ######", cursor.hasErrored);
+
+                            // check guards
+                            // trigger op and merge, wenn keine op, einfach weiterleiten
+                            // --> hierzu muss im konstruktor noch die eigentliche op gefiltert werden
+
+                            // trigger done stuff oder error stuff
+                            // assert(cursor instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.done]'.`);
+                            // return resolve(cursor);
+
+                            return resolve(this);
+                        });
+                } catch(e) {
+                    return reject(e);
+                }
+            });
+        };
     }
 
     guardsToJS(triggers) {
@@ -87,7 +101,5 @@ class ActionDescription {
         };
     }
 }
-
-ActionDescription.Handler = curry(ActionDescription.Handler, 2);
 
 export default ActionDescription;

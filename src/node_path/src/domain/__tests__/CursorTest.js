@@ -84,7 +84,6 @@ describe("CursorTest", function() { // eslint-disable-line
     });
 
     it("does a trace", function() { // eslint-disable-line
-            // const error   = new Error("huhu");
         const message = new Message("/test", [1]);
         const data    = Immutable.fromJS({
             _unit: new Internals({

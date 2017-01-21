@@ -23,15 +23,35 @@ export default class TriggerDescription {
     }
 
     shouldTrigger(cursor, params) {
-        return this.guards.reduce((dest, guard, key) => {
-            try {
-                const result = guard(...params, cursor);
+        let result = true;
 
-                return dest && result;
+        // for loop to be able to return instantly
+        // if some guard does not trigger or errors
+        for(let i = 0; i < this.guards.size; i++) { // eslint-disable-line
+            cursor.trace(`${this.emits}<Guard${i + 1}>`, params);
+
+            try {
+                const guard = this.guards.get(i);
+
+                cursor.trace.triggered();
+
+                result = guard(...params, cursor);
+
+                cursor.trace.end();
+
+                if(!result) return { cursor, result };
             } catch(e) {
-                throw new GuardError(cursor.currentContext, this.emits, key + 1, e);
+                return {
+                    cursor: cursor.error(new GuardError(cursor.currentContext, this.emits, i + 1, e)),
+                    result: false
+                };
             }
-        }, true);
+        }
+
+        return {
+            result,
+            cursor
+        };
     }
 
     apply(data, params) {
@@ -41,15 +61,19 @@ export default class TriggerDescription {
         const enhanced = params.concat(this.params);
         const cursor   = data;
         const op       = cursor[this.emits];
-        const traced   = op instanceof Function ? cursor.trace(this.emits, enhanced, this.guards.size) : cursor;
+
+        if(!(op instanceof Function)) return schedule(() => cursor);
+
+        cursor.trace(this.emits, enhanced, this.guards.size);
+
         const jsParams = enhanced.toJS();
+        const x        = this.shouldTrigger(cursor, enhanced);
 
-        if((
-            !(op instanceof Function) ||
-            !this.shouldTrigger(traced, jsParams)
-        )) return schedule(() => traced);
+        if(!x.result) return schedule(() => x.cursor.trace.end());
 
-        return schedule(() => op.apply(cursor.trace.triggered(), jsParams), this.delay)
-            .then(x => x.trace.end(cursor));
+        x.cursor.trace.triggered();
+        return schedule(() => op.apply(x.cursor, jsParams), this.delay)
+            .then(y => y.trace.end())
+            .catch(e => x.cursor.error(e));
     }
 }

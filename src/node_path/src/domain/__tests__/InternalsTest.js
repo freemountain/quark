@@ -118,6 +118,6 @@ describe("InternalsTest", function() {
             }]
         });
 
-        expect(() => internals2.trace("g", Immutable.List()).messageProcessed().toJS()).to.throw("There are unfinished traces. Some end calls are missing.");
+        expect(() => internals2.trace("g", Immutable.List()).messageProcessed().toJS()).to.throw("AssertionError: You can only lock consistent traces. Some end calls are probably missing.");
     });
 });
