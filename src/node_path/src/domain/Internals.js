@@ -27,10 +27,14 @@ export default class Internals extends Record({
     }
 
     hasErrored() {
+        assert(false, "Cursor.redo: implement!");
+
         return this.errors.size > 0;
     }
 
     error(e) {
+        assert(false, "Cursor.redo: implement!");
+
         return this.update("errors", errors => errors.push(e));
     }
 
@@ -73,6 +77,8 @@ export default class Internals extends Record({
     }
 
     isRecoverable() {
+        assert(false, "Cursor.redo: implement!");
+
         return this.errors.every(x => x.isRecoverable && x.isRecoverable());
     }
 }

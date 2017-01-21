@@ -139,16 +139,19 @@ class Cursor {
     }
 
     patch(diffs) {
+        assert(false, "Cursor.patch: implement!");
+
         assert(diffs instanceof Immutable.List, `Diffs need to be of type Immutable.List or Immutable.Set, got '${typeof diffs === "object" ? diffs.constructor.name : JSON.stringify(diffs)}'.`);
 
-        assert(false, "Cursor.patch: implement!");
         return new this.constructor(patch(this.__data.x, diffs), this.__data.x);
     }
 
     diff(cursor) {
+        assert(false, "Cursor.diff: implement!");
+
         assert(cursor instanceof this.constructor, `You can only diff two cursors of the same type ('${this.constructor.name}'), got '${typeof cursor === "object" ? cursor.constructor.name : JSON.stringify(cursor)}'.`);
 
-        return Immutable.fromJS(diff(this.__data.x, cursor.__data.x));
+        return diff(this.__data.x, cursor.__data.x);
     }
 
     equals(cursor) {
@@ -184,6 +187,8 @@ class Cursor {
     }
 
     error(e) {
+        assert(false, "Cursor.error: implement!");
+
         assert(e instanceof Error, `You can only error with an error, but got ${e}`);
 
         return this

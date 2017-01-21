@@ -19,7 +19,9 @@ class ActionDescription {
         const promise = Promise.all(triggers.map(x => x.apply(cursor, params)));
 
         return promise
+            // hier müssen die ganzen cursor ers gemerged werden
             .then(x => x.reduce((dest, y) => dest.concat(cursor.diff(y)), Immutable.Set()).toList())
+            // hier versucht der wahrscheinlich pfade zu setzen, die er noch gar nich hat
             .then(diffs => cursor.patch(diffs));
     }
 
