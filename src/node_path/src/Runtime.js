@@ -221,7 +221,7 @@ export default class Runtime extends Duplex {
 
         const before = new Promise(resolve => {
             try {
-                return resolve(this.before.call(cursor, message));
+                return resolve(this.before.call(cursor, message.setCursor(cursor)));
             } catch(e) {
                 return resolve(e);
             }
@@ -235,8 +235,7 @@ export default class Runtime extends Duplex {
             // adde hier ne diff zeit zum trace
             .then(update => !update.cursor.hasErrored ? this.done.call(update.cursor, update.diffs) : this.error.call(update.cursor))
             // adde hier ne diff zeit zum trace
-            .then(x => Runtime.update(this, x))
-            .catch(e => this.emit("error", e));
+            .then(x => Runtime.update(this, x));
     }
 
     init(action) { // eslint-disable-line
@@ -247,9 +246,8 @@ export default class Runtime extends Duplex {
         assert(false, "Every unit needs to implement a 'message' action");
     }
 
-    before(action) {
-        return this
-            .update("_unit", internals => internals.messageReceived(action));
+    before(message) {
+        return this.update("_unit", internals => internals.messageReceived(message));
     }
 
     // muss man sehn, ob das nötig is
@@ -267,8 +265,7 @@ export default class Runtime extends Duplex {
     }
 
     error() {
-        // check for error recoverability
-        // if(!this.get("_unit").isRecoverable()) throw this.currentError;
+        if(!this.get("_unit").isRecoverable()) throw this.currentError;
 
         return this.update("_unit", internals => internals.messageProcessed());
     }

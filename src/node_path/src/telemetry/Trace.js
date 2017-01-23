@@ -1,4 +1,4 @@
-import { Record } from "immutable";
+import { Record, List, Map } from "immutable";
 import assert from "assert";
 import asciiTree from "asciitree";
 
@@ -24,7 +24,7 @@ export default class Trace extends Record({
             parent: parent,
             pos:    pos,
             traces: [],
-            params: data.params && data.params.toJS ? data.params.toJS() : []
+            params: data.params && data.params instanceof List ? data.params.map(x => x instanceof Map ? x.delete("_unit") : x).toJS() : []
         }));
     }
 

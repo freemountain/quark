@@ -2,7 +2,7 @@ import { schedule } from "../Runloop";
 import GuardError from "./error/GuardError";
 import assert from "assert";
 import Cursor from "./Cursor";
-import { List } from "immutable";
+import Message from "../Message";
 
 export default class TriggerDescription {
     constructor(action, trigger) {
@@ -22,20 +22,22 @@ export default class TriggerDescription {
         };
     }
 
-    shouldTrigger(cursor, params) {
+    shouldTrigger(cursor, message) {
+        const params = message.get("payload").toJS();
+
         let result = true;
 
         // for loop to be able to return instantly
         // if some guard does not trigger or errors
         for(let i = 0; i < this.guards.size; i++) { // eslint-disable-line
-            cursor.trace(`${this.emits}<Guard${i + 1}>`, params);
+            cursor.trace(`${this.emits}<Guard${i + 1}>`, message.get("payload"));
 
             try {
                 const guard = this.guards.get(i);
 
                 cursor.trace.triggered();
 
-                result = guard(...params.toJS(), cursor);
+                result = guard(...params, cursor);
 
                 cursor.trace.end();
 
@@ -54,24 +56,24 @@ export default class TriggerDescription {
         };
     }
 
-    apply(data, params) {
-        assert(params instanceof List, `params need to be an Immutable.List, got ${params.constructor.name}`);
+    apply(data, message) {
+        Message.assert(message);
         assert(data instanceof Cursor, `Expected a Cursor, got ${data}`);
 
-        const enhanced = params.concat(this.params);
+        const enhanced = message.update("payload", payload => payload.concat(this.params));
         const cursor   = data;
         const op       = cursor[this.emits];
 
         if(!(op instanceof Function)) return schedule(() => cursor);
 
-        cursor.trace(this.emits, enhanced, this.guards.size);
+        cursor.trace(this.emits, enhanced.payload, this.guards.size);
 
         const x = this.shouldTrigger(cursor, enhanced);
 
         if(!x.result) return schedule(() => x.cursor.trace.end());
 
         x.cursor.trace.triggered();
-        return schedule(() => op.apply(x.cursor, enhanced.toJS()), this.delay)
+        return schedule(() => op.call(x.cursor, enhanced), this.delay)
             .then(y => y.trace.end())
             .catch(e => x.cursor.error(e));
     }

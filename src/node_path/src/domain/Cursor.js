@@ -111,7 +111,7 @@ class Cursor {
     }
 
     get currentError() {
-        return this.__data.x.get("_unit").errors.first();
+        return this.errors.first() || null;
     }
 
     get currentContext() {
@@ -139,19 +139,19 @@ class Cursor {
     }
 
     patch(diffs) {
-        assert(false, "Cursor.patch: implement!");
-
         assert(diffs instanceof Immutable.List, `Diffs need to be of type Immutable.List or Immutable.Set, got '${typeof diffs === "object" ? diffs.constructor.name : JSON.stringify(diffs)}'.`);
+
+        const first = diffs.first();
+
+        assert(!first || (first instanceof Immutable.Map && first.get("op") && first.get("path")), `a diff needs to have the keys 'op' and 'path', got '${typeof first === "object" ? first.constructor.name : JSON.stringify(first)}'.`);
 
         return new this.constructor(patch(this.__data.x, diffs), this.__data.x);
     }
 
     diff(cursor) {
-        assert(false, "Cursor.diff: implement!");
-
         assert(cursor instanceof this.constructor, `You can only diff two cursors of the same type ('${this.constructor.name}'), got '${typeof cursor === "object" ? cursor.constructor.name : JSON.stringify(cursor)}'.`);
 
-        return diff(this.__data.x, cursor.__data.x);
+        return diff(this.__data.x.update("_unit", x => x.update("traces", traces => traces.clear())), cursor.__data.x.update("_unit", x => x.update("traces", traces => traces.clear())));
     }
 
     equals(cursor) {
@@ -169,7 +169,7 @@ class Cursor {
     }
 
     cancel() {
-        assert(false, "Cursor.progress: implement!");
+        assert(false, "Cursor.cancel: implement!");
 
         // hiermit soll die aktuelle action gecanceled, werden + state revert
     }
@@ -187,8 +187,6 @@ class Cursor {
     }
 
     error(e) {
-        assert(false, "Cursor.error: implement!");
-
         assert(e instanceof Error, `You can only error with an error, but got ${e}`);
 
         return this
@@ -227,6 +225,7 @@ ImmutableMethods
 
             const result = op.call(this.__data.x, ...args);
 
+            // TODO: hier muss nach den props gecheckt werden
             return (
                 result instanceof Immutable.Map ||
                 result instanceof Immutable.List ||

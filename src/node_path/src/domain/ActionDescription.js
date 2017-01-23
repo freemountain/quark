@@ -15,39 +15,37 @@ class ActionDescription {
     static DONE     = x => x.action.indexOf(".done") !== -1;     // eslint-disable-line
     static ERROR    = x => x.action.indexOf(".error") !== -1;    // eslint-disable-line
 
-    static applyTriggers(triggers, cursor, params) {
-        const promise = Promise.all(triggers.map(x => x.apply(cursor, params)));
+    static applyTriggers(triggers, cursor, message) {
+        const promise = Promise.all(triggers.map(x => x.apply(cursor, message)));
 
         return promise
-            // hier müssen die ganzen cursor ers gemerged werden
-            .then(x => x.reduce((dest, y) => dest.concat(cursor.diff(y)), Immutable.Set()).toList())
-            // hier versucht der wahrscheinlich pfade zu setzen, die er noch gar nich hat
-            .then(diffs => cursor.patch(diffs));
+            .then(x => x.reduce((dest, y) => Object.assign(dest, {
+                diffs:  dest.diffs.concat(cursor.diff(y)),
+                traces: dest.traces.concat(y.get("_unit").get("traces"))
+            }), { diffs: Immutable.Set(), traces: Immutable.Stack() }))
+            .then(({ diffs, traces }) => cursor
+                .patch(diffs.toList())
+                .update("_unit", internals => internals.set("traces", traces)));
     }
 
-    static Handler(description) { // eslint-disable-line
-        return function(message) { // eslint-disable-line
-            return new Promise((resolve, reject) => { // eslint-disable-line
+    static Handler(description) {
+        return function(message) {
+            return new Promise((resolve, reject) => {
                 try {
                     Message.assert(message);
                     assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
 
                     // TODO: ab hier fängt dann an schief zu gehen, sobald die
-                    // triggers ins spiel kommen: hier beim ActionDescriptionTest
-                    // ansetzen
-                    // - Cursor alles testen (patch, diff)
-                    // - Internals alles testen
-                    // - dann hier weiter
-                    // return resolve(this);
-
-                    // assert(false, "ab hier weiter, hier vor allem die errorfälle vernünftig behandelt, dat klappt hinten un vorne nit die scheiße");
+                    // triggers ins spiel kommen:
+                    // - beim ActionDescriptionTest ansetzen
 
                     return ActionDescription
-                        .applyTriggers(description.before, this, message.payload, reject)
+                        // hier muss die ganze message runtergegeben werden
+                        .applyTriggers(description.before, this, message)
                         .then(cursor => {
                             if(cursor.hasErrored) return resolve(cursor);
-                            // console.log("####### lulululu ######", cursor.hasErrored);
 
+                            assert(false, "ab hier weiter");
                             // check guards
                             // trigger op and merge, wenn keine op, einfach weiterleiten
                             // --> hierzu muss im konstruktor noch die eigentliche op gefiltert werden
@@ -66,6 +64,18 @@ class ActionDescription {
         };
     }
 
+    willTrigger(cursor, ...messages) {
+        // Test!!
+        return Immutable.List(messages)
+            .every(message => (
+                (this.before.has(message.resource) && this.before.get(message.resource).shouldTrigger(cursor, message.payload)) ||
+                (this.progress.has(message.resource) && this.progress.get(message.resource).shouldTrigger(cursor, message.payload)) ||
+                (this.cancel.has(message.resource) && this.cancel.get(message.resource).shouldTrigger(cursor, message.payload)) ||
+                (this.done.has(message.resource) && this.done.get(message.resource).shouldTrigger(cursor, message.payload)) ||
+                (this.error.has(message.resource) && this.error.get(message.resource).shouldTrigger(cursor, message.payload))
+            ));
+    }
+
     guardsToJS(triggers) {
         return triggers.map(x => Object.assign({}, x, {
             guards: x.guards.length
@@ -77,6 +87,8 @@ class ActionDescription {
             .filter(trigger => trigger.action.indexOf(name) !== -1)
             .filter(trigger => trigger.emits !== name);
 
+        const func = ActionDescription.Handler(this);
+
         this.unit     = unit;
         this.name     = name;
         this.op       = op;
@@ -85,7 +97,7 @@ class ActionDescription {
         this.cancel   = triggers.filter(ActionDescription.CANCEL);
         this.done     = triggers.filter(ActionDescription.DONE);
         this.error    = triggers.filter(ActionDescription.ERROR);
-        this.func     = ActionDescription.Handler(this);
+        this.func     = func;
     }
 
     toJS() {

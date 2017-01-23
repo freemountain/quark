@@ -212,7 +212,7 @@ describe("RuntimeTest", function() {
             })
         });
 
-        const message  = new Message("/actions/init", [data]);
+        const message  = (new Message("/actions/init", [data])).setCursor(unit.cursor);
         const data2    = data.update("_unit", internals => internals.messageReceived(message));
         const cursor   = new unit.__Cursor(data2);
         const payload  = Immutable.List.of(data2);
@@ -221,6 +221,7 @@ describe("RuntimeTest", function() {
         expect(message2.get("payload").first()).to.equal(payload.first());
 
         return unit.message.call(cursor, message2).then(x => {
+            expect(x.hasErrored).to.equal(false, x.currentError.message);
             expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql({
                 name: "jupp"
             });

@@ -65,14 +65,19 @@ describe("CursorTest", function() { // eslint-disable-line
     });
 
     it("checks some methods on a cursor", function() {
-        const error   = new Error("huhu");
-        const message = new Message("/test", []);
+        const error    = new Error("huhu");
+        const message  = new Message("/test", []);
+        const children = Immutable.Map({
+            test: Immutable.Map()
+        });
+
         const data    = Immutable.fromJS({
             _unit: new Internals({
                 name:        "Unit",
                 description: Immutable.Map(),
                 action:      message,
-                errors:      Immutable.List.of(error)
+                errors:      Immutable.List.of(error),
+                children:    children
             })
         });
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
@@ -81,6 +86,10 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor.currentMessage).to.equal(message);
         expect(cursor.set("action", message).currentMessage).to.be.an.instanceOf(Message);
         expect(cursor.errors.toJS()).to.eql([error]);
+        expect(cursor.currentError).to.equal(error);
+        expect(cursor.currentContext).to.equal("Unit");
+        expect(cursor.hasErrored).to.equal(true);
+        expect(cursor.children).to.equal(children);
     });
 
     it("does a trace", function() { // eslint-disable-line
@@ -449,5 +458,60 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor).to.equal(cursor2);
         expect(cursor.blub).to.be.a("function");
         // expect(cursor.blub()).to.equal(4);
+    });
+
+    it("errors with a cursor", function() {
+        const message = new Message("/test", [1]);
+        const func = function(a) {
+            return this.get("test").length + 2 + a;
+        };
+        const action = new ActionDescription("Test", "blub", Immutable.List(), func);
+
+        action.func = func;
+
+        const data = Immutable.fromJS({
+            _unit: (new Internals({
+                name:        "Unit",
+                description: Immutable.Map()
+            })).messageReceived(message),
+            test: "test"
+        });
+        const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
+        const cursor     = new UnitCursor(data);
+
+        cursor.trace("/error", Immutable.List());
+
+        const cursor2 = cursor.error(new Error("huhu"));
+
+        expect(cursor.currentError).to.equal(null);
+        expect(cursor.hasErrored).to.equal(false);
+        expect(cursor2.hasErrored).to.equal(true);
+        expect(cursor2.errors.toJS()).to.eql([new Error("huhu")]);
+        expect(cursor2.currentError).to.eql(new Error("huhu"));
+    });
+
+    it("patches and diffs with a cursor", function() {
+        const data = Immutable.fromJS({
+            _unit: (new Internals({
+                name:        "Unit",
+                description: Immutable.Map()
+            })),
+            test: "test"
+        });
+        const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
+        const cursor     = new UnitCursor(data);
+        const cursor2    = cursor.set("blub", 2).update("test", x => x.concat("."));
+
+        expect(cursor.diff(cursor).toJS()).to.eql([]);
+        expect(cursor.diff(cursor2).toJS()).to.eql([{
+            op:    "replace",
+            path:  "/test",
+            value: "test."
+        }, {
+            op:    "add",
+            path:  "/blub",
+            value: 2
+        }]);
+        expect(cursor.patch(cursor.diff(cursor2)).toJS()).to.eql(cursor2.toJS());
     });
 });

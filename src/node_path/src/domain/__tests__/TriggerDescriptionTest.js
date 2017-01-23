@@ -46,13 +46,15 @@ describe("TriggerDescriptionTest", function() {
 
         const cursor = Cursor.for(class Test {}, data.get("_unit").description);
 
-        action.func = function(a, b) {
-            return this.update("value", x => x + 2 + a + b.length);
+        action.func = function(y) {
+            const [a, b] = y.get("payload").toJS();
+
+            return this.update("value", value => value + a + b.length + 2);
         };
 
-        expect(action.func.call(new cursor(data), 1, "huhu").get("value")).to.eql(9);
+        expect(action.func.call(new cursor(data), new Message("/blub", Immutable.List([1, "huhu"]))).get("value")).to.equal(9);
 
-        return description.apply(new cursor(data), Immutable.List([1])).then(x => {
+        return description.apply(new cursor(data), new Message("/blub", Immutable.List([1]))).then(x => {
             const updated = data
                 .set("value", 9)
                 .set("_unit", Immutable.fromJS({
@@ -108,8 +110,8 @@ describe("TriggerDescriptionTest", function() {
                 }));
 
             expect(x.get("_unit").currentTrace().ended().isConsistent()).to.eql(true);
-            expect(x.hasErrored).to.eql(false);
             expect(x.toJS()).to.eql(updated.toJS());
+            expect(x.hasErrored).to.eql(false);
         });
     });
 
@@ -118,7 +120,7 @@ describe("TriggerDescriptionTest", function() {
         const guard1      = (param1, _, param2) => param1 && param2.name === 1;
         const trigger     = new Trigger("blub", Immutable.List([guard1]), Immutable.List(), 10);
         const description = new TriggerDescription("blub", trigger);
-        const message     = new Message("/test", []);
+        const message     = new Message("/test", [1]);
 
         const data = Immutable.fromJS({
             _unit: (new Internals({
@@ -132,12 +134,11 @@ describe("TriggerDescriptionTest", function() {
 
         const cursor = Cursor.for(class Test {}, data.get("_unit").description);
 
-        action.func = function() {
-            return this;
-            // this.update("value", a.name.x);
+        action.func = function(a) {
+            return this.update("value", a.name.x);
         };
 
-        return description.apply(new cursor(data), Immutable.List([1])).then(x => {
+        return description.apply(new cursor(data), message).then(x => {
             const updated = data.set("_unit", Immutable.fromJS({
                 description: {
                     blub: action
@@ -159,7 +160,7 @@ describe("TriggerDescriptionTest", function() {
                     error:    null,
                     guards:   0,
                     name:     "Default::Message</test>",
-                    params:   [],
+                    params:   [1],
                     triggers: true,
                     traces:   [{
                         name:     "Default::blub",

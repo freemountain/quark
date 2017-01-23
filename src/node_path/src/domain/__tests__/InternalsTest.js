@@ -56,6 +56,7 @@ describe("InternalsTest", function() {
             name: "blub"
         });
 
+        expect(internals.isTracing()).to.equal(false);
         expect(internals.trace("func", Immutable.List.of(1)).traces.toJS()).to.eql([new Trace({
             name:   "func",
             params: Immutable.List.of(1)
@@ -64,6 +65,7 @@ describe("InternalsTest", function() {
         expect(() => internals.updateCurrentTrace(x => x)).to.throw("AssertionError: Can\'t update a trace before receiving a message.");
         const internals2 = internals.messageReceived(message);
 
+        expect(internals2.isTracing()).to.equal(true);
         expect(internals2.toJS()).to.eql({
             action: {
                 headers:  {},
@@ -91,7 +93,9 @@ describe("InternalsTest", function() {
             }]
         });
 
-        expect(internals2.updateCurrentTrace(x => x.errored(new Error("blub"))).toJS()).to.eql({
+        const internals3 = internals2.updateCurrentTrace(x => x.errored(new Error("blub")));
+
+        expect(internals3.toJS()).to.eql({
             action: {
                 headers:  {},
                 payload:  [],
@@ -118,6 +122,27 @@ describe("InternalsTest", function() {
             }]
         });
 
+        expect(internals3.isTracing()).to.equal(true);
+        expect(internals2.messageProcessed().isTracing()).to.equal(false);
         expect(() => internals2.trace("g", Immutable.List()).messageProcessed().toJS()).to.throw("AssertionError: You can only lock consistent traces. Some end calls are probably missing.");
+    });
+
+    it("works with the error functions", function() {
+        const internals = new Internals({
+            name: "Blub"
+        });
+
+        expect(internals.hasErrored()).to.equal(false);
+        expect(internals.isRecoverable()).to.equal(true);
+
+        expect(internals.error(new Error("huhu")).errors.toJS()).to.eql([new Error("huhu")]);
+        expect(internals.error(new Error("huhu")).hasErrored()).to.equal(true);
+        expect(internals.error(new Error("huhu")).isRecoverable()).to.equal(false);
+
+        const e = new Error("huhu");
+
+        e.isRecoverable = () => true;
+
+        expect(internals.error(e).isRecoverable()).to.equal(true);
     });
 });
