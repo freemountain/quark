@@ -1,29 +1,16 @@
 #!/bin/bash
 
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../"
+
 TARGET_APP=$1
-TARGET_PATH=$(dirname "$TARGET_APP")
+TARGET_BIN=$PROJECT_PATH/dist/$TARGET_APP/$TARGET_APP
 
-OS="$($PROJECT_PATH/tools/uname.sh -o)"
-ARCH="$($PROJECT_PATH/tools/uname.sh -a)"
-BIN_PATH="$PROJECT_PATH/tmp/bin-$OS-$ARCH"
+QT_PATH="$($PROJECT_PATH/tools/get_qt_path.sh)"
+echo "QT: $QT_PATH"
+DEPLOY_CMD="./build/tools/linuxdeployqt $TARGET_BIN -verbose=2 -qmldir=$PROJECT_PATH/src/libquark/qml"
 
-DEPLOY_CMD="$BIN_PATH/linuxdeployqt"
+./build/tools/qbs/bin/qbs install --install-root $PROJECT_PATH/dist -p $TARGET_APP
 
-
-cat << EOF > "$TARGET_PATH/quark.desktop"
-[Desktop Entry]
-Type=Application
-Name=Quark
-Exec=AppRun %F
-Icon=default
-Comment=Edit this default file
-Terminal=true
-EOF
-
-cp "$PROJECT_PATH/quark.svg" "$TARGET_PATH/default.svg"
-
-PATH="$BIN_PATH:$PATH" "$DEPLOY_CMD" $TARGET_APP -qmldir=$PROJECT_PATH/src/qml -bundle-non-qt-libs -no-strip
-
-# we need to run this two times...
-PATH="$BIN_PATH:$PATH" "$DEPLOY_CMD" $TARGET_APP -appimage -qmldir=$PROJECT_PATH/src/qml -bundle-non-qt-libs -no-strip
+PATH="$QT_PATH:$PATH"
+$DEPLOY_CMD
+$DEPLOY_CMD

@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "install": "mkdir -p build dist && cd build && qmake .. && make && cp libnativeCap.dylib ../dist/nativeCap.qnode"
+  }
+}
