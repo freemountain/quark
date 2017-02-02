@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+set -o xtrace
+
+PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+OS="linux"
+pushd . > /dev/null
+
+cd "$PROJECT_PATH"
+git submodule update --init --recursive
+
+mkdir -p "$PROJECT_PATH/build/tools/qbs"
+cd "$PROJECT_PATH/build/tools/qbs"
+qmake -r "$PROJECT_PATH/tools/qbs/qbs.pro"
+make
+
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+  BIN_PATH="$PROJECT_PATH/build/tools/"
+  mkdir -p "$BIN_PATH"
+
+  if [ ! -f "$BIN_PATH/linuxdeployqt" ] ; then
+      cd "$BIN_PATH"
+      wget "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+      mv "linuxdeployqt-continuous-x86_64.AppImage" "linuxdeployqt"
+      chmod +x "linuxdeployqt"
+  fi
+fi
+
+popd > /dev/null

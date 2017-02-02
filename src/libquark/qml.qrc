@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/Quark/Gluon.qml</file>
+        <file>qml/Quark/qmldir</file>
+        <file>qml/Quark/jsonpath.js</file>
+        <file>qml/Quark/ListModel.qml</file>
+        <file>qml/Debugger.qml</file>
+    </qresource>
+</RCC>
