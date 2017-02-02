@@ -1,4 +1,4 @@
-import { Record, List, Stack, Map } from "immutable";
+import { Record, List, Map, Set } from "immutable";
 import Trace from "../telemetry/Trace";
 import Message from "../Message";
 import assert from "assert";
@@ -9,21 +9,22 @@ export default class Internals extends Record({
     revision:    0,
     children:    Map(),
     history:     List(),
-    errors:      List(),
+    errors:      Set(),
     diffs:       List(),
-    traces:      Stack(),
+    traces:      List(),
     current:     0,
     action:      null,
     name:        "Default"
 }) {
     currentTrace() {
-        const trace = this.traces.last();
-
-        return trace && !trace.locked ? trace : null;
+        return this.traces.findLast(x => x.end === null && !x.locked);
     }
 
     isTracing() {
-        return this.currentTrace() instanceof Trace;
+        return (
+            this.action !== null &&
+            this.currentTrace() instanceof Trace
+        );
     }
 
     hasErrored() {
@@ -31,24 +32,22 @@ export default class Internals extends Record({
     }
 
     error(e) {
-        return this.update("errors", errors => errors.push(e));
+        return this.update("errors", errors => errors.add(e));
     }
 
     updateCurrentTrace(op) {
         assert(this.action !== null, "Can't update a trace before receiving a message.");
 
-        return this.update("traces", traces => {
-            const current = this.currentTrace();
+        const current = this.currentTrace();
 
-            assert(current instanceof Trace, "Please start a trace with Internals::trace, before trying to update it");
-            return traces.pop().push(op(current));
-        });
+        return this.update("traces", traces => traces.set(this.traces.findLastKey(x => x.end === null && !x.locked), op(current)));
     }
 
     trace(name, params, guards = 0) {
-        const args = [{ name, params, guards }, this.name];
+        const current = this.currentTrace();
+        const args    = [{ name, params, guards }, this.name, current ? current.id : current];
 
-        return this.action === null ? this.update("traces", traces => traces.push(new Trace(...args))) : this.updateCurrentTrace(trace => trace.trace(...args));
+        return this.update("traces", traces => traces.push(new Trace(...args)));
     }
 
     messageReceived(message) {
@@ -61,13 +60,20 @@ export default class Internals extends Record({
             .updateCurrentTrace(trace => trace.triggered());
     }
 
+    mergeTraces(traces) {
+        return this.updateCurrentTrace(trace => traces.reduce((dest, x) => dest.merge(x), trace));
+    }
+
     messageProcessed() {
         assert(this.action !== null, "Can't finish a message before starting.");
 
-        const updated = this
-            .updateCurrentTrace(trace => trace.ended().lock());
+        const filtered = this.traces.filter(x => !x.locked);
+        const trace    = filtered
+            .shift()
+            .reduce((dest, x) => dest.addSubtrace(x), filtered.first().ended());
 
-        return updated
+        return this
+            .update("traces", traces => traces.filter(x => x.locked).push(trace.lock()))
             .update("errors", errors => errors.clear())
             .set("action", null);
     }

@@ -131,20 +131,32 @@ export default class Runtime extends Duplex {
     }
 
     static toUnit(instance, proto) {
-        if(proto.__Unit) return instance;
+        if(Object.hasOwnProperty(proto, "__Unit")) return instance;
 
         const triggers = Runtime.declToImpTriggers(Runtime.allTriggers(instance));
         const name     = instance.constructor.name;
 
-        const actions = Runtime
+        const actions0 = Runtime
             .allActions(instance)
-            .map((x, key) => new ActionDescription(name, key, triggers, instance[key] === Runtime.prototype.message ? null : instance[key]));
+            .map((x, key) => instance[key] && instance[key].__Action ? instance[key].__Action : new ActionDescription(name, key, triggers, instance[key] === Runtime.prototype.message ? null : instance[key]));
 
-        proto.__actions = actions;
-        proto.__Unit    = Uuid.uuid();
-        proto.__Cursor  = Cursor.for(instance, actions);
+        const actions = actions0
+            .concat(triggers
+                .filter(x => !actions0.find(y => y.name === x.emits))
+                .reduce((dest, x) => dest.set(x.emits, new ActionDescription(name, x.emits, triggers)), Immutable.Map()));
+
+        proto.__triggers = triggers;
+        proto.__actions  = actions;
+        proto.__Cursor   = Cursor.for(instance, actions);
 
         Object.assign(proto, actions.map(action => action.func).toJS());
+
+        Object.defineProperty(proto, "__Unit", {
+            writeable:    false,
+            enumerable:   false,
+            configurable: false,
+            value:        Uuid.uuid()
+        });
 
         return instance;
     }
@@ -185,8 +197,11 @@ export default class Runtime extends Duplex {
         this.description  = proto.__actions;
         this.buffers      = [];
         this.cursor       = null;
-        this.readyPromise = unit
-            .trigger(new Message("/actions/init", [initialProps]));
+
+        initialProps.bllalal = "test";
+
+        /* this.readyPromise = unit
+         .trigger(new Message("/actions/init", [initialProps]));*/
 
         return unit;
     }
@@ -209,10 +224,6 @@ export default class Runtime extends Duplex {
         return this.cursor === null ? Immutable.List() : this.cursor
             .get("_unit")
             .get("traces");
-    }
-
-    trace() {
-        return this.traces().last();
     }
 
     trigger(data) {
@@ -247,7 +258,7 @@ export default class Runtime extends Duplex {
     }
 
     before(message) {
-        return this.update("_unit", internals => internals.messageReceived(message));
+        return this.messageReceived(message);
     }
 
     // muss man sehn, ob das nötig is
@@ -261,13 +272,13 @@ export default class Runtime extends Duplex {
     }
 
     done(diffs) { // eslint-disable-line
-        return this.update("_unit", internals => internals.messageProcessed());
+        return this.messageProcessed();
     }
 
     error() {
-        if(!this.get("_unit").isRecoverable()) throw this.currentError;
+        if(!this.isRecoverable) throw this.currentError;
 
-        return this.update("_unit", internals => internals.messageProcessed());
+        return this.messageProcessed();
     }
 
     _write(message, enc, cb) {

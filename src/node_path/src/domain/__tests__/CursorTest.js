@@ -5,16 +5,22 @@ import sinon from "sinon";
 import ActionDescription from "../ActionDescription";
 import Internals from "../Internals";
 import Message from "../../Message";
+import Uuid from "../../util/Uuid";
 
 describe("CursorTest", function() { // eslint-disable-line
-    before(function() {
-        this.now = global.Date.now;
+    beforeEach(function() {
+        let counter = 0;
+        let id      = 0;
 
-        global.Date.now = () => 0;
+        this.now  = global.Date.now;
+        this.uuid = sinon.stub(Uuid, "uuid", () => ++id);
+
+        global.Date.now = () => ++counter;
     });
 
-    after(function() {
+    afterEach(function() {
         global.Date.now = this.now;
+        this.uuid.restore();
     });
 
     it("creates a cursor for a unit", function() {
@@ -127,14 +133,29 @@ describe("CursorTest", function() { // eslint-disable-line
                 name:        "Unit",
                 revision:    0,
                 traces:      [{
+                    id:       1,
+                    parent:   null,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::Message</test>",
+                    params:   [1],
+                    start:    1,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       2,
+                    parent:   1,
                     end:      null,
                     error:    null,
                     guards:   0,
                     name:     "Unit::test",
                     params:   [false],
-                    start:    0,
+                    start:    2,
                     traces:   [],
-                    triggers: false
+                    triggers: false,
+                    locked:   false
                 }]
             }
         });
@@ -154,14 +175,29 @@ describe("CursorTest", function() { // eslint-disable-line
                 name:        "Unit",
                 revision:    0,
                 traces:      [{
+                    id:       1,
+                    parent:   null,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::Message</test>",
+                    params:   [1],
+                    start:    1,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       2,
+                    parent:   1,
                     end:      null,
                     error:    null,
                     guards:   0,
                     name:     "Unit::test",
                     params:   [false],
-                    start:    0,
+                    start:    2,
                     traces:   [],
-                    triggers: true
+                    triggers: true,
+                    locked:   false
                 }]
             }
         });
@@ -181,14 +217,41 @@ describe("CursorTest", function() { // eslint-disable-line
                 name:        "Unit",
                 revision:    0,
                 traces:      [{
+                    id:       1,
+                    parent:   null,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::Message</test>",
+                    params:   [1],
+                    start:    1,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       2,
+                    parent:   1,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test",
+                    params:   [false],
+                    start:    2,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       3,
+                    parent:   2,
                     end:      null,
                     error:    null,
                     guards:   0,
                     name:     "Unit::test2",
                     params:   [1],
-                    start:    0,
+                    start:    3,
                     traces:   [],
-                    triggers: false
+                    triggers: false,
+                    locked:   false
                 }]
             }
         });
@@ -208,62 +271,62 @@ describe("CursorTest", function() { // eslint-disable-line
                 name:        "Unit",
                 revision:    0,
                 traces:      [{
+                    id:       1,
+                    parent:   null,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::Message</test>",
+                    params:   [1],
+                    start:    1,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       2,
+                    parent:   1,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test",
+                    params:   [false],
+                    start:    2,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       3,
+                    parent:   2,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test2",
+                    params:   [1],
+                    start:    3,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       4,
+                    parent:   3,
                     end:      null,
                     error:    null,
                     guards:   0,
                     name:     "Unit::test3",
                     params:   [2],
-                    start:    0,
+                    start:    4,
                     traces:   [],
-                    triggers: false
+                    triggers: false,
+                    locked:   false
                 }]
             }
         });
 
         const cursor6 = cursor5.trace
             .triggered()
-            .trace("test4", Immutable.List.of(3));
-
-        cursor6.trace.triggered();
-        cursor6.trace.error(new Error("hi"));
-
-        expect(cursor6.toJS()).to.eql({
-            _unit: {
-                action:      message.toJS(),
-                children:    {},
-                current:     0,
-                description: {},
-                diffs:       [],
-                errors:      [],
-                history:     [],
-                id:          null,
-                name:        "Unit",
-                revision:    0,
-                traces:      [{
-                    end:      null,
-                    error:    null,
-                    guards:   0,
-                    name:     "Unit::test3",
-                    params:   [2],
-                    start:    0,
-                    triggers: true,
-                    traces:   [{
-                        end:      0,
-                        error:    new Error("hi"),
-                        guards:   0,
-                        name:     "Unit::test4",
-                        params:   [3],
-                        start:    0,
-                        triggers: true,
-                        traces:   []
-                    }]
-                }]
-            }
-        });
-
-        cursor6.trace("test5", Immutable.List.of(4));
-        cursor6.trace.triggered();
-        cursor6.trace.end();
+            .trace("test4", Immutable.List.of(3))
+            .trace.triggered()
+            .trace.error(new Error("hi"));
 
         expect(cursor6.toJS()).to.eql({
             _unit: {
@@ -278,77 +341,165 @@ describe("CursorTest", function() { // eslint-disable-line
                 name:        "Unit",
                 revision:    0,
                 traces:      [{
+                    id:       1,
+                    parent:   null,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::Message</test>",
+                    params:   [1],
+                    start:    1,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       2,
+                    parent:   1,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test",
+                    params:   [false],
+                    start:    2,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       3,
+                    parent:   2,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test2",
+                    params:   [1],
+                    start:    3,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       4,
+                    parent:   3,
                     end:      null,
                     error:    null,
                     guards:   0,
                     name:     "Unit::test3",
                     params:   [2],
-                    start:    0,
+                    start:    4,
+                    traces:   [],
                     triggers: true,
-                    traces:   [{
-                        end:      0,
-                        error:    new Error("hi"),
-                        guards:   0,
-                        name:     "Unit::test4",
-                        params:   [3],
-                        start:    0,
-                        triggers: true,
-                        traces:   []
-                    }, {
-                        end:      0,
-                        error:    null,
-                        guards:   0,
-                        name:     "Unit::test5",
-                        params:   [4],
-                        start:    0,
-                        triggers: true,
-                        traces:   []
-                    }]
-                }]
-            }
-        });
-
-        cursor6.trace.end();
-
-        const compare1 = {
-            end:      null,
-            error:    null,
-            guards:   0,
-            name:     "Unit::test2",
-            params:   [1],
-            start:    0,
-            triggers: true,
-            traces:   [{
-                end:      0,
-                error:    null,
-                guards:   0,
-                name:     "Unit::test3",
-                params:   [2],
-                start:    0,
-                triggers: true,
-                traces:   [{
-                    end:      0,
+                    locked:   false
+                }, {
+                    id:       5,
+                    parent:   4,
+                    end:      6,
                     error:    new Error("hi"),
                     guards:   0,
                     name:     "Unit::test4",
                     params:   [3],
-                    start:    0,
+                    start:    5,
+                    traces:   [],
                     triggers: true,
-                    traces:   []
+                    locked:   false
+                }]
+            }
+        });
+
+        const cursor7 = cursor6
+            .trace("test5", Immutable.List.of(4))
+            .trace.triggered()
+            .trace.end();
+
+        expect(cursor7.toJS()).to.eql({
+            _unit: {
+                action:      message.toJS(),
+                children:    {},
+                current:     0,
+                description: {},
+                diffs:       [],
+                errors:      [],
+                history:     [],
+                id:          null,
+                name:        "Unit",
+                revision:    0,
+                traces:      [{
+                    id:       1,
+                    parent:   null,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::Message</test>",
+                    params:   [1],
+                    start:    1,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
                 }, {
-                    end:      0,
+                    id:       2,
+                    parent:   1,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test",
+                    params:   [false],
+                    start:    2,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       3,
+                    parent:   2,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test2",
+                    params:   [1],
+                    start:    3,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       4,
+                    parent:   3,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test3",
+                    params:   [2],
+                    start:    4,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       5,
+                    parent:   4,
+                    end:      6,
+                    error:    new Error("hi"),
+                    guards:   0,
+                    name:     "Unit::test4",
+                    params:   [3],
+                    start:    5,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       6,
+                    parent:   4,
+                    end:      8,
                     error:    null,
                     guards:   0,
                     name:     "Unit::test5",
                     params:   [4],
-                    start:    0,
+                    start:    7,
+                    traces:   [],
                     triggers: true,
-                    traces:   []
+                    locked:   false
                 }]
-            }]
-        };
+            }
+        });
 
-        expect(cursor6.toJS()).to.eql({
+        const cursor8 = cursor7.trace.end();
+
+        expect(cursor8.toJS()).to.eql({
             _unit: {
                 action:      message.toJS(),
                 children:    {},
@@ -360,27 +511,85 @@ describe("CursorTest", function() { // eslint-disable-line
                 id:          null,
                 name:        "Unit",
                 revision:    0,
-                traces:      [compare1]
+                traces:      [{
+                    id:       1,
+                    parent:   null,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::Message</test>",
+                    params:   [1],
+                    start:    1,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       2,
+                    parent:   1,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test",
+                    params:   [false],
+                    start:    2,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       3,
+                    parent:   2,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test2",
+                    params:   [1],
+                    start:    3,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       4,
+                    parent:   3,
+                    end:      9,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test3",
+                    params:   [2],
+                    start:    4,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       5,
+                    parent:   4,
+                    end:      6,
+                    error:    new Error("hi"),
+                    guards:   0,
+                    name:     "Unit::test4",
+                    params:   [3],
+                    start:    5,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       6,
+                    parent:   4,
+                    end:      8,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test5",
+                    params:   [4],
+                    start:    7,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }]
             }
         });
 
-        cursor6.trace.error(new Error("lulu"));
+        const cursor9 = cursor8.trace.error(new Error("lulu"));
 
-        const compare2 = {
-            end:      null,
-            error:    null,
-            guards:   0,
-            name:     "Unit::test",
-            params:   [false],
-            start:    0,
-            triggers: true,
-            traces:   [Object.assign(compare1, {
-                end:   0,
-                error: new Error("lulu")
-            })]
-        };
-
-        expect(cursor6.toJS()).to.eql({
+        expect(cursor9.toJS()).to.eql({
             _unit: {
                 action:      message.toJS(),
                 children:    {},
@@ -392,28 +601,89 @@ describe("CursorTest", function() { // eslint-disable-line
                 id:          null,
                 name:        "Unit",
                 revision:    0,
-                traces:      [compare2]
+                traces:      [{
+                    id:       1,
+                    parent:   null,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::Message</test>",
+                    params:   [1],
+                    start:    1,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       2,
+                    parent:   1,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test",
+                    params:   [false],
+                    start:    2,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       3,
+                    parent:   2,
+                    end:      10,
+                    error:    new Error("huhu"),
+                    guards:   0,
+                    name:     "Unit::test2",
+                    params:   [1],
+                    start:    3,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       4,
+                    parent:   3,
+                    end:      9,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test3",
+                    params:   [2],
+                    start:    4,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       5,
+                    parent:   4,
+                    end:      6,
+                    error:    new Error("hi"),
+                    guards:   0,
+                    name:     "Unit::test4",
+                    params:   [3],
+                    start:    5,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }, {
+                    id:       6,
+                    parent:   4,
+                    end:      8,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::test5",
+                    params:   [4],
+                    start:    7,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false
+                }]
             }
         });
 
-        cursor6.trace.end().trace.end();
+        const cursor10 = cursor9
+            .trace.end()
+            .messageProcessed();
 
-        const compare3 = {
-            end:      0,
-            error:    null,
-            guards:   0,
-            name:     "Unit::Message</test>",
-            params:   [1],
-            start:    0,
-            triggers: true,
-            traces:   [Object.assign(compare2, {
-                end: 0
-            })]
-        };
-
-        expect(cursor6.toJS()).to.eql({
+        expect(cursor10.toJS()).to.eql({
             _unit: {
-                action:      message.toJS(),
+                action:      null,
                 children:    {},
                 current:     0,
                 description: {},
@@ -423,12 +693,83 @@ describe("CursorTest", function() { // eslint-disable-line
                 id:          null,
                 name:        "Unit",
                 revision:    0,
-                traces:      [compare3]
+                traces:      [{
+                    id:       1,
+                    parent:   null,
+                    end:      12,
+                    error:    null,
+                    guards:   0,
+                    name:     "Unit::Message</test>",
+                    params:   [1],
+                    start:    1,
+                    locked:   true,
+                    triggers: true,
+                    traces:   [{
+                        id:       2,
+                        parent:   1,
+                        locked:   true,
+                        triggers: true,
+                        end:      11,
+                        error:    null,
+                        guards:   0,
+                        name:     "Unit::test",
+                        params:   [false],
+                        start:    2,
+                        traces:   [{
+                            id:       3,
+                            parent:   2,
+                            end:      10,
+                            error:    new Error("lulu"),
+                            guards:   0,
+                            name:     "Unit::test2",
+                            params:   [1],
+                            start:    3,
+                            triggers: true,
+                            locked:   true,
+                            traces:   [{
+                                id:       4,
+                                parent:   3,
+                                end:      9,
+                                error:    null,
+                                guards:   0,
+                                name:     "Unit::test3",
+                                params:   [2],
+                                start:    4,
+                                triggers: true,
+                                locked:   true,
+                                traces:   [{
+                                    id:       5,
+                                    parent:   4,
+                                    end:      6,
+                                    error:    new Error("hi"),
+                                    guards:   0,
+                                    name:     "Unit::test4",
+                                    params:   [3],
+                                    start:    5,
+                                    triggers: true,
+                                    traces:   [],
+                                    locked:   true
+                                }, {
+                                    id:       6,
+                                    parent:   4,
+                                    end:      8,
+                                    error:    null,
+                                    guards:   0,
+                                    name:     "Unit::test5",
+                                    params:   [4],
+                                    start:    7,
+                                    triggers: true,
+                                    traces:   [],
+                                    locked:   true
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
             }
         });
 
-        expect(cursor6.get("_unit").get("traces").first().toString()).to.equal("             Unit::Message</test>(1) - 0ms\n                           |\n                Unit::test(false) - 0ms\n                           |\n             #ERROR Unit::test2(1) - 0ms #\n                           |\n                 Unit::test3(2) - 0ms_____\n                /                         \\\n  #ERROR Unit::test4(3) - 0ms #  Unit::test5(4) - 0ms");
-        expect(() => cursor6.trace.end()).to.throw("AssertionError: Can\'t stop a trace, that is already finished.");
+        expect(cursor10.get("_unit").get("traces").first().toString()).to.equal("            Unit::Message</test>(1) - 11ms\n                           |\n                Unit::test(false) - 9ms\n                           |\n             #ERROR Unit::test2(1) - 7ms #\n                           |\n                 Unit::test3(2) - 5ms_____\n                /                         \\\n  #ERROR Unit::test4(3) - 1ms #  Unit::test5(4) - 1ms");
     });
 
     it("creates some cursors", function() {

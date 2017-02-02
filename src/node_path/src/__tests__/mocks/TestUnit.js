@@ -22,13 +22,5 @@ export default class TestUnit extends Runtime {
 
         props: triggered.by("message.done")
     };
-
-    children() {}
-
-    diffs() {}
-
-    props() {}
-
-    action() {}
 }
 

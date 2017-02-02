@@ -6,34 +6,34 @@ import diff from "immutablediff";
 
 class Cursor {
     static assertTraceStarted(cursor, caller) {
-        assert(cursor.__data.x.get("_unit").isTracing(), `You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
+        assert(cursor.isTracing, `You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
     }
 
     static triggered() {
         Cursor.assertTraceStarted(this, "triggered");
 
-        this.__data.x = this.__data.x
-            .update("_unit", internals => internals.updateCurrentTrace(x => x.triggered()));
+        const data = this.__data.x
+            .update("_unit", internals => internals.updateCurrentTrace(trace => trace.triggered()));
 
-        return this;
+        return new this.constructor(data);
     }
 
     static error(e) {
         Cursor.assertTraceStarted(this, "errored");
 
-        this.__data.x = this.__data.x
-            .update("_unit", internals => internals.updateCurrentTrace(x => x.errored(e)));
+        const data = this.__data.x
+            .update("_unit", internals => internals.updateCurrentTrace(trace => trace.errored(e)));
 
-        return this;
+        return new this.constructor(data);
     }
 
     static end() {
         Cursor.assertTraceStarted(this, "ended");
 
-        this.__data.x = this.__data.x
-            .update("_unit", internals => internals.updateCurrentTrace(x => x.ended()));
+        const data = this.__data.x
+            .update("_unit", internals => internals.updateCurrentTrace(trace => trace.ended()));
 
-        return this;
+        return new this.constructor(data);
     }
 
     static for(instance, description) {
@@ -80,7 +80,7 @@ class Cursor {
         return inherited;
     }
 
-    constructor(data, prev) { // eslint-disable-line
+    constructor(data) { // eslint-disable-line
         if(!(data instanceof Object) || data instanceof Cursor) return data;
 
         assert(this.__inherited, "Cursor can only be used, when inherited");
@@ -89,11 +89,17 @@ class Cursor {
             x: Immutable.fromJS(data)
         };
 
+        // needs to be copied, since we are mutating the Function
+        // object otherwise
+        this.trace           = Cursor.prototype.trace.bind(this);
         this.trace.triggered = Cursor.triggered.bind(this);
         this.trace.error     = Cursor.error.bind(this);
-        this.trace.end       = Cursor.end.bind(this, prev);
+        this.trace.end       = Cursor.end.bind(this);
 
-        return Object.freeze(this);
+        Object.freeze(this);
+        Object.freeze(this.trace);
+
+        return this;
     }
 
     generic(mapper) {
@@ -108,6 +114,14 @@ class Cursor {
         const message = this.__data.x.get("_unit").action;
 
         return message;
+    }
+
+    get currentTrace() {
+        return this.__data.x.get("_unit").currentTrace();
+    }
+
+    get traces() {
+        return this.__data.x.get("_unit").traces;
     }
 
     get currentError() {
@@ -130,28 +144,44 @@ class Cursor {
         return this.__data.x.get("_unit").hasErrored();
     }
 
-    trace(...args) {
-        assert(this.__data.x.get("_unit").isTracing(), "You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
-
-        this.__data.x = this.__data.x.update("_unit", internals => internals.trace(...args));
-
-        return this;
+    get isRecoverable() {
+        return this.__data.x.get("_unit").isRecoverable();
     }
 
-    patch(diffs) {
+    get isTracing() {
+        return this.__data.x.get("_unit") && this.__data.x.get("_unit").isTracing();
+    }
+
+    trace(...args) {
+        assert(this.isTracing, "You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
+
+        const data = this.__data.x.update("_unit", internals => internals.trace(...args));
+
+        return new this.constructor(data);
+    }
+
+    patch(diffs, traces = Immutable.List()) {
         assert(diffs instanceof Immutable.List, `Diffs need to be of type Immutable.List or Immutable.Set, got '${typeof diffs === "object" ? diffs.constructor.name : JSON.stringify(diffs)}'.`);
 
         const first = diffs.first();
 
         assert(!first || (first instanceof Immutable.Map && first.get("op") && first.get("path")), `a diff needs to have the keys 'op' and 'path', got '${typeof first === "object" ? first.constructor.name : JSON.stringify(first)}'.`);
 
-        return new this.constructor(patch(this.__data.x, diffs), this.__data.x);
+        const patched = patch(this.__data.x, diffs);
+        const updated = patched.get("_unit").traces
+            .concat(traces.filter(x => !x.locked))
+            .groupBy(x => x.name)
+            .map(x => x.first())
+            .toList();
+
+        const next = patched
+            .update("_unit", internals => internals.set("traces", updated));
+
+        return new this.constructor(next);
     }
 
     diff(cursor) {
-        assert(cursor instanceof this.constructor, `You can only diff two cursors of the same type ('${this.constructor.name}'), got '${typeof cursor === "object" ? cursor.constructor.name : JSON.stringify(cursor)}'.`);
-
-        return diff(this.__data.x.update("_unit", x => x.update("traces", traces => traces.clear())), cursor.__data.x.update("_unit", x => x.update("traces", traces => traces.clear())));
+        return diff(this.__data.x, cursor.__data.x);
     }
 
     equals(cursor) {
@@ -166,6 +196,14 @@ class Cursor {
         assert(false, "Cursor.progress: implement!");
 
         // hier soll der progress wert hochgesetzt werden um den gegebenen param
+    }
+
+    messageReceived(message) {
+        return this.update("_unit", internals => internals.messageReceived(message));
+    }
+
+    messageProcessed() {
+        return this.update("_unit", internals => internals.messageProcessed());
     }
 
     cancel() {

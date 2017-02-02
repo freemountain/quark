@@ -25,26 +25,26 @@ export default class TriggerDescription {
     shouldTrigger(cursor, message) {
         const params = message.get("payload").toJS();
 
-        let result = true;
+        let result  = true;
+        let tracing = cursor;
 
         // for loop to be able to return instantly
         // if some guard does not trigger or errors
         for(let i = 0; i < this.guards.size; i++) { // eslint-disable-line
-            cursor.trace(`${this.emits}<Guard${i + 1}>`, message.get("payload"));
+            tracing = tracing
+                .trace(`${this.emits}<Guard${i + 1}>`, message.get("payload"))
+                .trace.triggered();
 
             try {
                 const guard = this.guards.get(i);
 
-                cursor.trace.triggered();
+                result  = guard(...params, tracing);
+                tracing = tracing.trace.end();
 
-                result = guard(...params, cursor);
-
-                cursor.trace.end();
-
-                if(!result) return { cursor, result };
+                if(!result) return { cursor: tracing, result };
             } catch(e) {
                 return {
-                    cursor: cursor.error(new GuardError(cursor.currentContext, this.emits, i + 1, e)),
+                    cursor: tracing.error(new GuardError(tracing.currentContext, this.emits, i + 1, e)),
                     result: false
                 };
             }
@@ -57,24 +57,26 @@ export default class TriggerDescription {
     }
 
     apply(data, message) {
-        Message.assert(message);
-        assert(data instanceof Cursor, `Expected a Cursor, got ${data}`);
+        try {
+            Message.assert(message);
+            assert(data instanceof Cursor, `Expected a Cursor, got ${data}`);
 
-        const enhanced = message.update("payload", payload => payload.concat(this.params));
-        const cursor   = data;
-        const op       = cursor[this.emits];
+            const enhanced = message.update("payload", payload => payload.concat(this.params));
+            const cursor   = data;
+            const op       = cursor[this.emits];
+            const tracing  = cursor.trace(this.emits, enhanced.payload, this.guards.size);
 
-        if(!(op instanceof Function)) return schedule(() => cursor);
+            if(!(op instanceof Function)) return schedule(() => cursor);
 
-        cursor.trace(this.emits, enhanced.payload, this.guards.size);
+            const x = this.shouldTrigger(tracing, enhanced);
 
-        const x = this.shouldTrigger(cursor, enhanced);
+            if(!x.result) return schedule(() => x.cursor.trace.end());
 
-        if(!x.result) return schedule(() => x.cursor.trace.end());
-
-        x.cursor.trace.triggered();
-        return schedule(() => op.call(x.cursor, enhanced), this.delay)
-            .then(y => y.trace.end())
-            .catch(e => x.cursor.error(e));
+            return schedule(() => op.call(x.cursor.trace.triggered(), enhanced), this.delay)
+                .then(y => y.trace.end())
+                .catch(e => x.cursor.error(e));
+        } catch(e) {
+            return schedule(() => data.error(e));
+        }
     }
 }

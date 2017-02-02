@@ -4,16 +4,23 @@ import { Map } from "immutable";
 import Message from "../../Message";
 import Immutable from "immutable";
 import Trace from "../../telemetry/Trace";
+import sinon from "sinon";
+import Uuid from "../../util/Uuid";
 
 describe("InternalsTest", function() {
-    before(function() {
-        this.now = global.Date.now;
+    beforeEach(function() {
+        let counter = 0;
+        let id      = 0;
 
-        global.Date.now = () => 0;
+        this.now  = global.Date.now;
+        this.uuid = sinon.stub(Uuid, "uuid", () => ++id);
+
+        global.Date.now = () => ++counter;
     });
 
-    after(function() {
+    afterEach(function() {
         global.Date.now = this.now;
+        this.uuid.restore();
     });
 
     it("creates internals", function() {
@@ -60,10 +67,13 @@ describe("InternalsTest", function() {
         expect(internals.trace("func", Immutable.List.of(1)).traces.toJS()).to.eql([new Trace({
             name:   "func",
             params: Immutable.List.of(1)
-        }, "blub").toJS()]);
+        }, "blub").set("id", 1).set("start", 1).toJS()]);
 
         expect(() => internals.updateCurrentTrace(x => x)).to.throw("AssertionError: Can\'t update a trace before receiving a message.");
-        const internals2 = internals.messageReceived(message);
+        const internals2 = internals
+            .messageReceived(message)
+            .trace("lulu", Immutable.List(), 1)
+            .updateCurrentTrace(x => x.triggered());
 
         expect(internals2.isTracing()).to.equal(true);
         expect(internals2.toJS()).to.eql({
@@ -82,14 +92,29 @@ describe("InternalsTest", function() {
             name:        "blub",
             revision:    0,
             traces:      [{
+                id:       3,
+                parent:   null,
                 end:      null,
                 error:    null,
                 guards:   0,
                 name:     "blub::Message</blub>",
                 params:   [],
-                start:    0,
+                start:    3,
                 traces:   [],
-                triggers: true
+                triggers: true,
+                locked:   false
+            }, {
+                id:       4,
+                parent:   3,
+                end:      null,
+                error:    null,
+                guards:   1,
+                name:     "blub::lulu",
+                params:   [],
+                start:    4,
+                traces:   [],
+                triggers: true,
+                locked:   false
             }]
         });
 
@@ -111,20 +136,35 @@ describe("InternalsTest", function() {
             name:        "blub",
             revision:    0,
             traces:      [{
-                end:      0,
-                error:    new Error("blub"),
+                id:       3,
+                parent:   null,
+                end:      null,
+                error:    null,
                 guards:   0,
                 name:     "blub::Message</blub>",
                 params:   [],
-                start:    0,
+                start:    3,
                 traces:   [],
-                triggers: true
+                triggers: true,
+                locked:   false
+            }, {
+                id:       4,
+                parent:   3,
+                end:      5,
+                error:    new Error("blub"),
+                guards:   1,
+                name:     "blub::lulu",
+                params:   [],
+                start:    4,
+                traces:   [],
+                triggers: true,
+                locked:   false
             }]
         });
 
         expect(internals3.isTracing()).to.equal(true);
-        expect(internals2.messageProcessed().isTracing()).to.equal(false);
-        expect(() => internals2.trace("g", Immutable.List()).messageProcessed().toJS()).to.throw("AssertionError: You can only lock consistent traces. Some end calls are probably missing.");
+        expect(internals3.messageProcessed().isTracing()).to.equal(false);
+        expect(() => internals3.trace("g", Immutable.List()).messageProcessed().toJS()).to.throw("AssertionError: You can only lock consistent traces. Some end calls are probably missing.");
     });
 
     it("works with the error functions", function() {

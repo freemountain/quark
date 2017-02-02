@@ -7,16 +7,21 @@ import sinon from "sinon";
 import Cursor from "../Cursor";
 import Internals from "../Internals";
 import Message from "../../Message";
+import Uuid from "../../util/Uuid";
 
 describe("TriggerDescriptionTest", function() {
-    before(function() {
-        this.now = global.Date.now;
+    beforeEach(function() {
+        let id      = 0;
+
+        this.now  = global.Date.now;
+        this.uuid = sinon.stub(Uuid, "uuid", () => ++id);
 
         global.Date.now = () => 0;
     });
 
-    after(function() {
+    afterEach(function() {
         global.Date.now = this.now;
+        this.uuid.restore();
     });
 
     it("creates a TriggerDescription", function() {
@@ -55,13 +60,14 @@ describe("TriggerDescriptionTest", function() {
         expect(action.func.call(new cursor(data), new Message("/blub", Immutable.List([1, "huhu"]))).get("value")).to.equal(9);
 
         return description.apply(new cursor(data), new Message("/blub", Immutable.List([1]))).then(x => {
+            const result  = x.messageProcessed();
             const updated = data
                 .set("value", 9)
                 .set("_unit", Immutable.fromJS({
                     description: {
                         blub: action
                     },
-                    action:   message,
+                    action:   null,
                     current:  0,
                     children: {},
                     diffs:    [],
@@ -71,22 +77,30 @@ describe("TriggerDescriptionTest", function() {
                     name:     "Default",
                     revision: 0,
                     traces:   [{
+                        id:       1,
+                        parent:   null,
                         start:    0,
-                        end:      null,
+                        end:      0,
                         error:    null,
                         guards:   0,
                         name:     "Default::Message</test>",
                         params:   [],
                         triggers: true,
+                        locked:   true,
                         traces:   [{
+                            id:       2,
+                            parent:   1,
                             name:     "Default::blub",
                             start:    0,
                             end:      0,
                             guards:   2,
                             triggers: true,
+                            locked:   true,
                             params:   [1, "huhu"],
                             error:    null,
                             traces:   [{
+                                id:       3,
+                                parent:   2,
                                 name:     "Default::blub<Guard1>",
                                 start:    0,
                                 end:      0,
@@ -94,8 +108,11 @@ describe("TriggerDescriptionTest", function() {
                                 triggers: true,
                                 params:   [1, "huhu"],
                                 error:    null,
-                                traces:   []
+                                traces:   [],
+                                locked:   true
                             }, {
+                                id:       4,
+                                parent:   2,
                                 name:     "Default::blub<Guard2>",
                                 start:    0,
                                 end:      0,
@@ -103,15 +120,16 @@ describe("TriggerDescriptionTest", function() {
                                 triggers: true,
                                 params:   [1, "huhu"],
                                 error:    null,
-                                traces:   []
+                                traces:   [],
+                                locked:   true
                             }]
                         }]
                     }]
                 }));
 
-            expect(x.get("_unit").currentTrace().ended().isConsistent()).to.eql(true);
-            expect(x.toJS()).to.eql(updated.toJS());
-            expect(x.hasErrored).to.eql(false);
+            expect(result.get("_unit").traces.first().isConsistent()).to.equal(true);
+            expect(x.hasErrored).to.equal(false);
+            expect(result.toJS()).to.eql(updated.toJS());
         });
     });
 
@@ -139,30 +157,34 @@ describe("TriggerDescriptionTest", function() {
         };
 
         return description.apply(new cursor(data), message).then(x => {
+            const result  = x.messageProcessed();
             const updated = data.set("_unit", Immutable.fromJS({
                 description: {
                     blub: action
                 },
-                action:   message,
+                action:   null,
                 current:  0,
                 children: {},
                 diffs:    [],
-                errors:   [{
-                    e: new TypeError("Cannot read property 'name' of undefined")
-                }],
+                errors:   [],
                 history:  [],
                 id:       null,
                 name:     "Default",
                 revision: 0,
                 traces:   [{
+                    id:       1,
+                    parent:   null,
                     start:    0,
-                    end:      null,
+                    end:      0,
                     error:    null,
                     guards:   0,
                     name:     "Default::Message</test>",
                     params:   [1],
                     triggers: true,
+                    locked:   true,
                     traces:   [{
+                        id:       2,
+                        parent:   1,
                         name:     "Default::blub",
                         start:    0,
                         end:      0,
@@ -170,7 +192,10 @@ describe("TriggerDescriptionTest", function() {
                         triggers: false,
                         params:   [1],
                         error:    null,
+                        locked:   true,
                         traces:   [{
+                            id:       3,
+                            parent:   2,
                             name:     "Default::blub<Guard1>",
                             start:    0,
                             end:      0,
@@ -180,15 +205,16 @@ describe("TriggerDescriptionTest", function() {
                             error:    {
                                 e: new TypeError("Cannot read property 'name' of undefined")
                             },
-                            traces: []
+                            traces: [],
+                            locked: true
                         }]
                     }]
                 }]
             }));
 
-            expect(x.get("_unit").currentTrace().ended().isConsistent()).to.eql(true);
+            expect(result.get("_unit").traces.first().isConsistent()).to.equal(true);
             expect(x.hasErrored).to.eql(true);
-            expect(x.toJS()).to.eql(updated.toJS());
+            expect(result.toJS()).to.eql(updated.toJS());
         });
     });
 });

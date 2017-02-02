@@ -16,49 +16,80 @@ class ActionDescription {
     static ERROR    = x => x.action.indexOf(".error") !== -1;    // eslint-disable-line
 
     static applyTriggers(triggers, cursor, message) {
-        const promise = Promise.all(triggers.map(x => x.apply(cursor, message)));
+        assert(cursor instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for ''.`);
+
+        const promise = Promise.all(triggers.map(x => x.apply(cursor, message)).toJS());
 
         return promise
-            .then(x => x.reduce((dest, y) => Object.assign(dest, {
-                diffs:  dest.diffs.concat(cursor.diff(y)),
-                traces: dest.traces.concat(y.get("_unit").get("traces"))
-            }), { diffs: Immutable.Set(), traces: Immutable.Stack() }))
+            .then(x => x.reduce((dest, y, key) => {
+                console.log("applyTriggers after ", triggers.get(key).emits, y.traces.map(({ name, start, end }) => [name, start, end]).toJS());
+
+                return Object.assign(dest, {
+                    diffs:  dest.diffs.concat(cursor.diff(y)),
+                    traces: dest.traces.concat(y.get("_unit").get("traces"))
+                });
+            }, { diffs: Immutable.Set(), traces: Immutable.List() }))
             .then(({ diffs, traces }) => cursor
-                .patch(diffs.toList())
-                .update("_unit", internals => internals.set("traces", traces)));
+                .patch(diffs.toList(), traces));
+    }
+
+    static awaitResult(cursor, result) { // eslint-disable-line
+        if(!result)                  return Promise.resolve(cursor.trace.end());
+        if(result instanceof Error)  return Promise.resolve(cursor.error(result));
+        if(result instanceof Cursor) return Promise.resolve(result.trace.end());
+
+        return result
+            .then(ActionDescription.awaitResult.bind(null, cursor))
+            .catch(ActionDescription.awaitResult.bind(null, cursor));
+    }
+
+    static applyAction(description, message, cursor, resolve) { // eslint-disable-line
+        console.log("huhu", cursor.traces.map(({ name, start, end }) => [name, start, end]));
+        try {
+            assert(cursor.isTracing, "cursor not tracing (before)");
+
+            console.log("huhu2");
+            if(cursor.hasErrored) return resolve(cursor);
+
+            console.log("huhu3");
+            const result = description.op ? description.op.call(cursor, ...message.payload.toJS()) : cursor;
+
+            assert((
+                !result ||
+                result instanceof Promise ||
+                result instanceof Cursor ||
+                result instanceof Error
+            ), `Actions have to always return a cursor or undefined, got ${result && result instanceof Object ? result.constructor.name : result}`);
+
+            return ActionDescription.awaitResult(cursor, result)
+                .then(resolve);
+        } catch(e) {
+            return resolve(cursor.error(e));
+        }
     }
 
     static Handler(description) {
         return function(message) {
-            return new Promise((resolve, reject) => {
+            return new Promise(resolve => {
                 try {
+                    const tracing = this.trace(description.name, message ? message.payload : Immutable.List());
+
                     Message.assert(message);
                     assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
+                    assert(this.isTracing, "cursor not tracing (before)");
 
-                    // TODO: ab hier fängt dann an schief zu gehen, sobald die
-                    // triggers ins spiel kommen:
-                    // - beim ActionDescriptionTest ansetzen
+                    if(this.trigger && !this.trigger.shouldTrigger(tracing, message)) return resolve(tracing.trace.end());
+
+                    const triggered = this.trace.triggered();
 
                     return ActionDescription
-                        // hier muss die ganze message runtergegeben werden
-                        .applyTriggers(description.before, this, message)
-                        .then(cursor => {
-                            if(cursor.hasErrored) return resolve(cursor);
-
-                            assert(false, "ab hier weiter");
-                            // check guards
-                            // trigger op and merge, wenn keine op, einfach weiterleiten
-                            // --> hierzu muss im konstruktor noch die eigentliche op gefiltert werden
-
-                            // trigger done stuff oder error stuff
-                            // assert(cursor instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.done]'.`);
-                            // return resolve(cursor);
-
-                            return resolve(this);
-                        })
-                        .catch(reject);
+                        .applyTriggers(description.before, triggered, message)
+                        .then(cursor => ActionDescription.applyAction(description, message, cursor, resolve))
+                        .then(cursor => ActionDescription.applyTriggers(description.done, cursor, message))
+                        .then(resolve)
+                        .catch(e => resolve(triggered.error(e)));
                 } catch(e) {
-                    return reject(e);
+                    return resolve(this.error(e));
                 }
             });
         };
@@ -83,15 +114,23 @@ class ActionDescription {
     }
 
     constructor(unit, name, delarativeTriggers, op = null) {
-        const triggers = delarativeTriggers
-            .filter(trigger => trigger.action.indexOf(name) !== -1)
+        const filtered = delarativeTriggers
+            .filter(trigger => trigger.action.indexOf(name) !== -1);
+
+        const triggers = filtered
             .filter(trigger => trigger.emits !== name);
 
-        const func = ActionDescription.Handler(this);
+        const ownTrigger = delarativeTriggers
+            .find(trigger => trigger.emits === name);
+
+        const func = op && op.__Action ? op : ActionDescription.Handler(this);
+
+        func.__Action = this;
 
         this.unit     = unit;
         this.name     = name;
         this.op       = op;
+        this.trigger  = ownTrigger;
         this.before   = triggers.filter(ActionDescription.BEFORE);
         this.progress = triggers.filter(ActionDescription.PROGRESS);
         this.cancel   = triggers.filter(ActionDescription.CANCEL);
@@ -102,6 +141,7 @@ class ActionDescription {
 
     toJS() {
         return {
+            trigger:  this.trigger ? this.trigger.toJS() : null,
             unit:     this.unit,
             name:     this.name,
             before:   this.guardsToJS(this.before.toJS()),
