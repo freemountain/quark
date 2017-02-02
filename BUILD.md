@@ -1,4 +1,4 @@
-#Build
+# Build
 - add qt to path
 - build qbs: `./configure`
 - config qbs

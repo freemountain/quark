@@ -4,7 +4,9 @@
 Quark is the easiest way to write and ship cross-platform desktop applications using JavaScript and QML. It uses Node.js 7.0 and Qt 5.7 under the hood.
 
 ## How does it work
-A Quark application consists of a Node.js host process and a QML-based rendering process.
+A Quark application consists of a JavaScript host process and a QML-based rendering process.
+
+The host process can be powered by Node.js or the Qt JavaScript engine V4 with an Node.js like api (currently wip, see src/libqnode).
 
 This architecture is used to make it possible to script the whole application logic in JavaScript, while leveraging QT's declarative, cross-platform view-layer (QML).
 Both processes are always being aware of the whole application state (think Elm or Redux), using stdin and stdout to exchange updates and or actions in a unidirectional way.
@@ -84,63 +86,6 @@ ApplicationWindow {
     }
 }
 ```
-### Running the Example
-
-This example can either be run by using the GUI app or by invoking the terminal.
-
-#### GUI
-- run the prebuilt quark app
-- drag&drop the package.json on the __run__ button
-
-#### Terminal
-```
-./path/to/quark ./path/to/package.json
-```
 
 ## Downloads
-Prebuilt binaries can be found on the [releases page](https://github.com/freemountain/quark/releases)
-
-## Development
-## Building
-### Requirements
-- Qt 5.7
-
-### OSX
-```bash
-export PATH=$PATH:/path/to/Qt/5.7/clang_64/bin
-make bootstrap
-mkdir build
-cd build
-qmake ..
-make
-# on osx you can call the run target which will build, test and run quark
-make run APP=example/default
-#if you want to deploy:
-./../tools/deploy_mac.sh quark.app
-```
-
-### WIN (using mingw)
-```bash
-export PATH=$PATH:/c/Qt/5.7/mingw53_32/bin
-export PATH=$PATH:/c/Qt/Tools/mingw530_32/bin
-mingw32-make bootstrap
-mkdir build
-cd build
-qmake ..
-mingw32-make
-#if you want to deploy:
-./../tools/deploy_win.sh quark.exe /path/to/node.exe
-```
-
-### Linux (Ubuntu 16.04)
-```bash
-export PATH=/path/to/Qt/5.7/clang_64/bin:/path/to/linuxdeployqt:$PATH
-sudo apt-get install mesa-common-dev libglu1-mesa-dev patchelf
-make bootstrap
-mkdir build
-cd build
-qmake ..
-make
-#if you want to deploy:
-./../tools/deploy_linux.sh quark
-```
+Prebuilt binaries can be found on the [releases page](https://github.com/freemountain/quark/releases).
