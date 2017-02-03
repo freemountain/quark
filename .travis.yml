@@ -13,12 +13,12 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get update; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get -y install qt58declarative qt58quickcontrols qt58quickcontrols2 qt58graphicaleffects qt58tools qt58svg mesa-common-dev libglu1-mesa-dev qt58qbs gcc-5 g++-5; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export PATH=/opt/qt58/bin:$PATH; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5
+  - qbs setup-toolchains qbs setup-toolchains --detect
 
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then qbs setup-toolchains /usr/bin/g++-5 gcc; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then qbs setup-qt /opt/qt58/bin/qmake qt5; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then qbs config profiles.qt5.baseProfile gcc; fi
 
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then qbs setup-toolchains qbs setup-toolchains --detect; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then qbs setup-qt /usr/local/opt/qt5/bin/qmake qt5; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then qbs config profiles.qt5.baseProfile xcode-macosx-x86_64; fi
   - qbs config defaultProfile qt5
