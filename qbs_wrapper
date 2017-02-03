@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+use_system_qbs=false
+if qbs_loc="$(type -p "qbs")" || [ -z "$qbs_loc" ]; then
+  version="$(qbs --version)"
+  a=( ${version//./ } )
+  major=${a[0]}
+  minor=${a[1]}
+  if [ "$major" -ge "1" ] && [ "$minor" -ge "6" ]; then
+    use_system_qbs=true
+  fi
+fi
+
+if $use_system_qbs; then
+  qbs "$@"
+else
+  "$PROJECT_PATH/build/tools/qbs/bin/qbs" "$@"
+fi

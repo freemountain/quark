@@ -3,16 +3,34 @@ set -e
 set -o xtrace
 
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-OS="linux"
+
 pushd . > /dev/null
 
 cd "$PROJECT_PATH"
 git submodule update --init --recursive
 
-mkdir -p "$PROJECT_PATH/build/tools/qbs"
-cd "$PROJECT_PATH/build/tools/qbs"
-qmake -r "$PROJECT_PATH/tools/qbs/qbs.pro"
-make
+
+
+build_qbs=true
+if qbs_loc="$(type -p "qbs")" || [ -z "$qbs_loc" ]; then
+  version="$(qbs --version)"
+  echo "found qbs version: $version"
+  a=( ${version//./ } )
+  major=${a[0]}
+  minor=${a[1]}
+  echo "qbs major: $major and minor: $minor"
+  if [ "$major" -ge "1" ] && [ "$minor" -ge "6" ]; then
+    build_qbs=false
+  fi
+fi
+
+if $build_qbs; then
+  echo "build qbs..."
+  mkdir -p "$PROJECT_PATH/build/tools/qbs"
+  cd "$PROJECT_PATH/build/tools/qbs"
+  qmake -r "$PROJECT_PATH/tools/qbs/qbs.pro"
+  make
+fi
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
   BIN_PATH="$PROJECT_PATH/build/tools/"

@@ -166,7 +166,8 @@ Rule {
         };
 
         var commands = [cmd];
-        if(input.fileName === "package.json")  commands.push(npmInstall)
+        var basePath = FileInfo.path(input.filePath);
+        if(input.fileName === "package.json" && basePath === product.sourceDirectory)  commands.push(npmInstall)
 
         return commands;
       }
