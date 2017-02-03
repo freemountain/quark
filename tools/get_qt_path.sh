@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../"
-DEFAULT_PROFILE="$($PROJECT_PATH/build/tools/qbs/bin/qbs config --list defaultProfile| cut -d \" -f2)"
+DEFAULT_PROFILE="$($PROJECT_PATH/qbs_wrapper config --list defaultProfile| cut -d \" -f2)"
 
 PROFILE=$1
 if [ -z "$PROFILE" ]
@@ -10,6 +10,6 @@ if [ -z "$PROFILE" ]
 fi
 
 QUERY="profiles.$PROFILE.Qt.core.binPath"
-QT_PATH="$($PROJECT_PATH/build/tools/qbs/bin/qbs config --list $QUERY| cut -d \" -f2)"
+QT_PATH="$($PROJECT_PATH/qbs_wrapper config --list $QUERY| cut -d \" -f2)"
 
 echo $QT_PATH
