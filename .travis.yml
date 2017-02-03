@@ -15,6 +15,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get update; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get -y install qt58declarative qt58quickcontrols qt58quickcontrols2 qt58graphicaleffects qt58tools qt58svg mesa-common-dev libglu1-mesa-dev qt58qbs gcc-5 g++-5 nodejs; fi
 
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys D43A795B73B16ABE9643FE1AFD8FFF16DB45C6AB; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then MXE_PREFIX="mxe-i686-w64-mingw32.static"; sudo apt-get -y install $MXE_PREFIX-qtdeclarative $MXE_PREFIX-qtquickcontrols $MXE_PREFIX-qtquickcontrols2 $MXE_PREFIX-qtgraphicaleffects $MXE_PREFIX-qttools $MXE_PREFIX-qtsvg; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then qbs setup-toolchains --type mingw /usr/lib/mxe/usr/bin/i686-w64-mingw32.static-gcc i686-w64-mingw32-static; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then qbs setup-qt /usr/lib/mxe/usr/i686-w64-mingw32.static/qt5/bin/qmake qt5-mxe; fi
