@@ -1,6 +1,6 @@
 build
 dist
-default
+/default
 node_modules
 /.qmake.cache
 /.qmake.stash
