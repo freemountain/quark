@@ -13,7 +13,6 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then echo "deb http://pkg.mxe.cc/repos/apt/debian wheezy main" |sudo tee --append /etc/apt/sources.list; fi
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get update; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then MXE_PREFIX="mxe-i686-w64-mingw32.static"; sudo apt-get -y --force-yes install $MXE_PREFIX-qtdeclarative $MXE_PREFIX-qtquickcontrols $MXE_PREFIX-qtquickcontrols2 $MXE_PREFIX-qtgraphicaleffects $MXE_PREFIX-qttools $MXE_PREFIX-qtsvg; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get -y install qt58declarative qt58quickcontrols qt58quickcontrols2 qt58graphicaleffects qt58tools qt58svg mesa-common-dev libglu1-mesa-dev qt58qbs gcc-5 g++-5 nodejs; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export PATH=/opt/qt58/bin:$PATH; fi
 
@@ -36,16 +35,24 @@ before_install:
 
 script:
   - ./configure
-  - qbs build
-  - qbs build profile:qt5-mxe
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./tools/deploy_linux.sh QuarkGui; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./tools/deploy_win.sh QuarkGui qt5-mxe; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./tools/deploy_linux.sh QuarkGui qt5; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./tools/deploy_mac.sh QuarkGui && cd dist && 7z a quark-osx-x64.7z QuarkGui.app; fi
   - ls .
 deploy:
   - provider: releases
     api_key:
       secure: IckXTW+tOTID4xV9tc1arkNlJPNA7gUfziDbWyjuqxgmIdrMJthpT6BSzhaCb3+yFqXDDuNn73li4SJz0Xy6jvQXLK+Jgsl3iyOButiyq7X61bxeA0fd9Kc5Y3P7lVQbYPvaczIRT0NOBPwmRjPZr1bvIESS/jnVvBF0uM+jIilJAMDYVBcSr0jZz0JJLs9eBTBZiH6lH1FD1NWhBpYpYA0P39O39nofZOGvZRdRgZ97pxBRGhVhjy5LwysDnza78ik92lQSBb1PcItM4wm9gt6eEBjgvP/rfl5JHn0ST5226Me98Ppq88hJ5sCZRXdmWg30CJ4WrTg/NCEp/bZXx8m2iKSA0QCei9Et8nnlSSYzrMGfTCvGbFLKWb027rcNsbohkfUTV8BKooPPSx/24t3lN6J3baYLD4ilDwkBAGouKti4+qLkT5BipxTOeBIW6Ot/SW7kv7ivnqrLsCzNHrtlqawURmaOSot4Noz0j4ZyuH1jbML3NsqNBCWZDsTsnLCkXYz05zPF+xtXxIUR8X6SKILWMp531aIhU/hhOcl8ajBp4ri+JQwTIqqXfkBidzfTI+d94EWukDclEa4YDqAO8FLLVv1cIwZH3PrqWH8dRrOxdUZTB+dTohJkkwufoMAvy83AoE1T3gpdd8JNdRJP+h6jC3HTCQLFw3gmkpA=
-    file: /home/travis/build/freemountain/quark/dist/Quark-x86_64.AppImage
+    file: /home/travis/build/freemountain/quark/dist/win/quark-win.zip
+    skip_cleanup: true
+    on:
+      tags: true
+      repo: freemountain/quark
+      condition: $TRAVIS_OS_NAME = linux
+  - provider: releases
+    api_key:
+      secure: IckXTW+tOTID4xV9tc1arkNlJPNA7gUfziDbWyjuqxgmIdrMJthpT6BSzhaCb3+yFqXDDuNn73li4SJz0Xy6jvQXLK+Jgsl3iyOButiyq7X61bxeA0fd9Kc5Y3P7lVQbYPvaczIRT0NOBPwmRjPZr1bvIESS/jnVvBF0uM+jIilJAMDYVBcSr0jZz0JJLs9eBTBZiH6lH1FD1NWhBpYpYA0P39O39nofZOGvZRdRgZ97pxBRGhVhjy5LwysDnza78ik92lQSBb1PcItM4wm9gt6eEBjgvP/rfl5JHn0ST5226Me98Ppq88hJ5sCZRXdmWg30CJ4WrTg/NCEp/bZXx8m2iKSA0QCei9Et8nnlSSYzrMGfTCvGbFLKWb027rcNsbohkfUTV8BKooPPSx/24t3lN6J3baYLD4ilDwkBAGouKti4+qLkT5BipxTOeBIW6Ot/SW7kv7ivnqrLsCzNHrtlqawURmaOSot4Noz0j4ZyuH1jbML3NsqNBCWZDsTsnLCkXYz05zPF+xtXxIUR8X6SKILWMp531aIhU/hhOcl8ajBp4ri+JQwTIqqXfkBidzfTI+d94EWukDclEa4YDqAO8FLLVv1cIwZH3PrqWH8dRrOxdUZTB+dTohJkkwufoMAvy83AoE1T3gpdd8JNdRJP+h6jC3HTCQLFw3gmkpA=
+    file: /home/travis/build/freemountain/quark/dist/linux/Quark-x86_64.AppImage
     skip_cleanup: true
     on:
       tags: true
