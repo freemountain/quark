@@ -21,7 +21,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then qbs setup-toolchains qbs setup-toolchains --detect; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then qbs setup-qt /usr/local/opt/qt5/bin/qmake qt5; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then qbs config profiles.qt5.baseProfile xcode-macosx-x86_64; fi
-  - qbs config defaultProfile qt5; fi
+  - qbs config defaultProfile qt5
 
 script:
   - ./configure
