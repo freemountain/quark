@@ -15,6 +15,7 @@ echo "QT: $QT_PATH"
 DEPLOY_CMD="$PROJECT_PATH/build/tools/linuxdeployqt $TARGET_BIN -no-strip -qmldir=$PROJECT_PATH/src/libquark/qml"
 
 pushd . > /dev/null
+rm -rf "$DIST_PATH"
 
 "$PROJECT_PATH/qbs_wrapper" install --install-root $DIST_PATH -p $TARGET_APP profile:$PROFILE
 
