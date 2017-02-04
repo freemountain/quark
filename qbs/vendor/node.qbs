@@ -41,6 +41,7 @@ Product {
     throw new Error('ohhhhh');
   }
 
+
   Rule {
     condition: qbs.targetOS.contains('windows')
     multiplex: true
@@ -53,6 +54,10 @@ Product {
       var url = product.baseUrl + product.targetArchive;
       var dl = new Command(product.wgetBin, [url]);
       dl.workingDirectory = FileInfo.path(output.filePath)
+      dl.silent = false;
+      dl.description = "downloading " + url;
+      dl.stdoutFilterFunction = function() {return false;};
+      dl.stderrFilterFunction = function() {return false;};
 
       return [dl];
     }
@@ -69,8 +74,11 @@ Product {
     prepare: {
       var url = product.baseUrl + product.targetArchive;
       var dl = new Command(product.wgetBin, [url]);
+      dl.silent = false;
+      dl.description = "downloading " + url;
       dl.workingDirectory = FileInfo.path(output.filePath)
-
+      dl.stdoutFilterFunction = function() {return false;};
+      dl.stderrFilterFunction = function() {return false;};
       return [dl];
     }
   }
@@ -92,7 +100,11 @@ Product {
         var args = [ 'xpvf', product.targetArchive, '-C', '.' ]
         var extract = new Command(product.tarBin, args);
         extract.workingDirectory = FileInfo.path(input.filePath)
-        extract.silent = true;
+        extract.silent = false;
+        extract.stdoutFilterFunction = function() {return false;};
+        extract.stderrFilterFunction = function() {return false;};
+
+        extract.description = "extracting " + FileInfo.fileName(input.filePath);
 
         return [extract];
     }

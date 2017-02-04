@@ -42,6 +42,13 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
       mv "linuxdeployqt-continuous-x86_64.AppImage" "linuxdeployqt"
       chmod +x "linuxdeployqt"
   fi
+
+  if [ ! -f "$BIN_PATH/appimagetool" ] ; then
+      cd "$BIN_PATH"
+      wget "https://github.com/probonopd/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+      mv "appimagetool-x86_64.AppImage" "appimagetool"
+      chmod +x "appimagetool"
+  fi
 fi
 
 popd > /dev/null

@@ -144,10 +144,14 @@ Rule {
         var npmInstall = new Command(product.npmPath, ["install", "--only=production"]);
         npmInstall.workingDirectory = outPath
         npmInstall.description = "npm install " + outPath;
-        npmInstall.highlight = "linker";
+        npmInstall.silent = false;
+        npmInstall.stdoutFilterFunction = function() {return false;};
+        npmInstall.stderrFilterFunction = function() {return false;};
 
         var cmd = new JavaScriptCommand();
         cmd.silent = true;
+        cmd.stdoutFilterFunction = function() {return false;};
+        cmd.stderrFilterFunction = function() {return false;};
 
         cmd.sourceCode = function() {
           var outPath;
