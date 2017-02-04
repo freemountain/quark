@@ -9,6 +9,7 @@ PROFILE=$2
 DIST_PATH="$PROJECT_PATH/dist/linux"
 TARGET_PATH="$DIST_PATH/$TARGET_APP"
 TARGET_BIN="$TARGET_PATH/$TARGET_APP"
+dashed_target="$($PROJECT_PATH/tools/to_dashed.sh $TARGET_APP)"
 
 QT_PATH="$($PROJECT_PATH/tools/get_qt_path.sh $PROFILE)"
 echo "QT: $QT_PATH"
@@ -35,6 +36,6 @@ PATH="$QT_PATH:$PATH"
 cd "$DIST_PATH"
 $DEPLOY_CMD
 $DEPLOY_CMD -appimage
-zip -r quark-linux-x86_64.zip QuarkGui
+zip -r "$dashed_target-linux-x86_64.zip" $TARGET_APP
 
 popd > /dev/null
