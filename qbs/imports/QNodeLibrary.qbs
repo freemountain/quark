@@ -13,8 +13,8 @@ QNodeProduct {
       var libPrefix = bundle.isBundle ? "@executable_path/../Frameworks" :  "@executable_path/../lib"
 
       return [ Qt.core.libPath, "@executable_path/../Frameworks",  "@executable_path/../lib" ];
-    }
+    }/*
     cpp.sonamePrefix: qbs.targetOS.contains("darwin")
       ? "@rpath"
-      : undefined
+      : undefined*/
 }

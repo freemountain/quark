@@ -5,7 +5,7 @@ import qbs.Probes
 import qbs.ModUtils
 
 QNodeApplication {
-  name: "QuarkGui"
+  name: "QuarkShell"
 
   Depends { name: "Qt"; submodules: ["quick", "qml"] }
   Depends { name: "quark" }
