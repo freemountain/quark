@@ -23,7 +23,7 @@ rm -rf "$DIST_PATH"
 cat << EOF > "$TARGET_PATH/quark.desktop"
 [Desktop Entry]
 Type=Application
-Name=Quark
+Name=$dashed_target
 Exec=AppRun %F
 Icon=quark
 Comment=Edit this default file
