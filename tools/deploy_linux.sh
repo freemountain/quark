@@ -20,17 +20,18 @@ rm -rf "$DIST_PATH"
 
 "$PROJECT_PATH/qbs_wrapper" install --install-root $DIST_PATH -p $TARGET_APP profile:$PROFILE
 
-cat << EOF > "$TARGET_PATH/quark.desktop"
+cat << EOF > "$TARGET_PATH/$TARGET_APP.desktop"
 [Desktop Entry]
 Type=Application
-Name=$dashed_target
-Exec=AppRun %F
-Icon=quark
+Name=$TARGET_APP
+Exec=./AppRun %F
+Icon=icon
 Comment=Edit this default file
 Terminal=true
 EOF
 
-cp quark.svg "$TARGET_PATH/quark.svg"
+chmod +x "$TARGET_PATH/$TARGET_APP.desktop"
+cp quark.svg "$TARGET_PATH/icon.svg"
 
 PATH="$QT_PATH:$PATH"
 cd "$DIST_PATH"
