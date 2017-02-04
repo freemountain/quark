@@ -35,5 +35,6 @@ PATH="$QT_PATH:$PATH"
 cd "$DIST_PATH"
 $DEPLOY_CMD
 $DEPLOY_CMD -appimage
+zip -r quark-linux-x86_64.zip QuarkGui
 
 popd > /dev/null

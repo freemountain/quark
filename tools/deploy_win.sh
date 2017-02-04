@@ -10,5 +10,5 @@ rm -rf "$PROJECT_PATH/dist/win"
 
 "$PROJECT_PATH/qbs_wrapper" install --install-root "$PROJECT_PATH/dist/win" -p $TARGET_APP profile:$PROFILE
 cd "$PROJECT_PATH/dist/win"
-zip -r quark-win.zip QuarkGui
+zip -r quark-win-x86.zip QuarkGui
 popd > /dev/null
