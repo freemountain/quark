@@ -30,9 +30,7 @@ export default class Trigger {
         };
     }
 
-    shouldTrigger(cursor, message) { // eslint-disable-line
-        const params = message.get("payload").toJS();
-
+    shouldTrigger(cursor, params) { // eslint-disable-line
         let result  = true;
         let tracing = cursor;
 
@@ -40,13 +38,13 @@ export default class Trigger {
         // if some guard does not trigger or errors
         for(let i = 0; i < this.guards.size; i++) { // eslint-disable-line
             tracing = tracing
-                .trace(`${this.emits}<Guard${i + 1}>`, message.get("payload"))
+                .trace(`${this.emits}<Guard${i + 1}>`, params)
                 .trace.triggered();
 
             try {
                 const guard = this.guards.get(i);
 
-                result  = guard(...params, tracing);
+                result  = guard(...(params.toJS()), tracing);
                 tracing = tracing.trace.end();
 
                 if(!result) return { cursor: tracing, result };

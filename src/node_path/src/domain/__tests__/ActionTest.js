@@ -26,7 +26,7 @@ class Test2 extends Runtime {
     static triggers = {
         message: triggered
             .if(() => true)
-            .if(name => name.indexOf("test") !== -1)
+            .if(name => typeof name === "string" && name.indexOf("test") !== -1)
             .with(5)
             .after(10)
     }
@@ -116,7 +116,7 @@ describe("ActionTest", function() {
         });
     });
 
-    it("applies an action", function(done) {
+    it("applies an action", function() {
         const unit = new Test();
         const data = Immutable.Map({
             name:  "jupp",
@@ -137,8 +137,8 @@ describe("ActionTest", function() {
             return this.set("name", name);
         });
 
-        Action
-            .applyAction(descr, message.setCursor(cursor), cursor, descr.triggers.first())
+        return unit.ready()
+            .then(() => Action.applyAction(descr, message.setCursor(cursor), cursor, descr.triggers.first())
             .then(x => { // eslint-disable-line
                 try {
                     const result  = x
@@ -155,10 +155,10 @@ describe("ActionTest", function() {
 
                     expect(filtered.toJS()).to.eql(cursor2.toJS());
                     expect(result.traces.toJS()).to.eql([{
-                        id:       3,
+                        id:       4,
                         parent:   null,
-                        start:    1,
-                        end:      4,
+                        start:    2,
+                        end:      9,
                         guards:   0,
                         locked:   true,
                         name:     "Test::Message</actions/test>",
@@ -166,10 +166,10 @@ describe("ActionTest", function() {
                         triggers: true,
                         error:    null,
                         traces:   [{
-                            id:       4,
-                            parent:   3,
-                            start:    2,
-                            end:      3,
+                            id:       5,
+                            parent:   4,
+                            start:    3,
+                            end:      8,
                             guards:   0,
                             locked:   true,
                             name:     "Test::message",
@@ -179,15 +179,13 @@ describe("ActionTest", function() {
                             traces:   []
                         }]
                     }]);
-
-                    done();
                 } catch(e) {
-                    done(e);
+                    Promise.reject(e);
                 }
-            });
+            }));
     });
 
-    it("calls an action handler", function(done) {
+    it("calls an action handler", function() {
         const unit = new Test2();
         const data = Immutable.Map({
             name:  "jupp",
@@ -202,7 +200,7 @@ describe("ActionTest", function() {
         const cursor   = (new unit.__Cursor(data))
             .update("_unit", internals => internals.messageReceived(message));
 
-        unit.message.call(cursor, message.setCursor(cursor))
+        return unit.ready().then(() => unit.message.call(cursor, message.setCursor(cursor))
             .then(x => { // eslint-disable-line
                 try {
                     const result  = x.messageProcessed();
@@ -220,10 +218,10 @@ describe("ActionTest", function() {
 
                     expect(filtered.toJS()).to.eql(cursor2.toJS());
                     expect(result.traces.toJS()).to.eql([{
-                        id:       3,
+                        id:       4,
                         parent:   null,
-                        start:    1,
-                        end:      12,
+                        start:    2,
+                        end:      20,
                         guards:   0,
                         locked:   true,
                         name:     "Test::Message</actions/test>",
@@ -231,10 +229,10 @@ describe("ActionTest", function() {
                         triggers: true,
                         error:    null,
                         traces:   [{
-                            id:       4,
-                            parent:   3,
-                            start:    2,
-                            end:      11,
+                            id:       8,
+                            parent:   4,
+                            start:    10,
+                            end:      19,
                             guards:   2,
                             locked:   true,
                             name:     "Test::message",
@@ -242,10 +240,10 @@ describe("ActionTest", function() {
                             triggers: true,
                             error:    null,
                             traces:   [{
-                                id:       5,
-                                parent:   4,
-                                start:    3,
-                                end:      4,
+                                id:       9,
+                                parent:   8,
+                                start:    11,
+                                end:      12,
                                 guards:   0,
                                 locked:   true,
                                 name:     "Test::message<Guard1>",
@@ -254,10 +252,10 @@ describe("ActionTest", function() {
                                 error:    null,
                                 traces:   []
                             }, {
-                                id:       6,
-                                parent:   4,
-                                start:    5,
-                                end:      6,
+                                id:       10,
+                                parent:   8,
+                                start:    13,
+                                end:      14,
                                 guards:   0,
                                 locked:   true,
                                 name:     "Test::message<Guard2>",
@@ -266,10 +264,10 @@ describe("ActionTest", function() {
                                 error:    null,
                                 traces:   []
                             }, {
-                                id:       7,
-                                parent:   4,
-                                start:    7,
-                                end:      10,
+                                id:       11,
+                                parent:   8,
+                                start:    15,
+                                end:      18,
                                 guards:   1,
                                 locked:   true,
                                 name:     "Test::init",
@@ -277,10 +275,10 @@ describe("ActionTest", function() {
                                 triggers: false,
                                 error:    null,
                                 traces:   [{
-                                    id:       8,
-                                    parent:   7,
-                                    start:    8,
-                                    end:      9,
+                                    id:       12,
+                                    parent:   11,
+                                    start:    16,
+                                    end:      17,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::init<Guard1>",
@@ -292,12 +290,10 @@ describe("ActionTest", function() {
                             }]
                         }]
                     }]);
-
-                    done();
                 } catch(e) {
-                    done(e);
+                    return Promise.reject(e);
                 }
-            });
+            }));
     });
 
     it("applies triggers", function() {
@@ -319,8 +315,8 @@ describe("ActionTest", function() {
 
         const descr = new Action("Test", "message", unit.__triggers, Test.prototype.message);
 
-        return Action
-            .applyTriggers(descr.before, cursor, message.setCursor(cursor))
+        return unit.ready()
+            .then(() => Action.applyTriggers(descr.before, cursor, message.setCursor(cursor))
             .then(x => {
                 const result = x
                     .trace.end()
@@ -339,10 +335,10 @@ describe("ActionTest", function() {
 
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
                 expect(result.traces.toJS()).to.eql([{
-                    id:       3,
-                    start:    1,
+                    id:       4,
+                    start:    2,
                     parent:   null,
-                    end:      14,
+                    end:      28,
                     guards:   0,
                     locked:   true,
                     name:     "Test::Message</actions/message>",
@@ -350,10 +346,10 @@ describe("ActionTest", function() {
                     triggers: true,
                     error:    null,
                     traces:   [{
-                        id:       4,
-                        parent:   3,
-                        start:    2,
-                        end:      13,
+                        id:       5,
+                        parent:   4,
+                        start:    3,
+                        end:      27,
                         guards:   0,
                         locked:   true,
                         name:     "Test::message",
@@ -361,10 +357,10 @@ describe("ActionTest", function() {
                         triggers: true,
                         error:    null,
                         traces:   [{
-                            id:       5,
-                            parent:   4,
-                            start:    3,
-                            end:      6,
+                            id:       12,
+                            parent:   5,
+                            start:    17,
+                            end:      20,
                             guards:   1,
                             locked:   true,
                             name:     "Test::init",
@@ -372,10 +368,10 @@ describe("ActionTest", function() {
                             triggers: false,
                             error:    null,
                             traces:   [{
-                                id:       6,
-                                parent:   5,
-                                start:    4,
-                                end:      5,
+                                id:       13,
+                                parent:   12,
+                                start:    18,
+                                end:      19,
                                 guards:   0,
                                 locked:   true,
                                 name:     "Test::init<Guard1>",
@@ -385,10 +381,10 @@ describe("ActionTest", function() {
                                 traces:   []
                             }]
                         }, {
-                            id:       7,
-                            parent:   4,
-                            start:    7,
-                            end:      12,
+                            id:       14,
+                            parent:   5,
+                            start:    21,
+                            end:      26,
                             guards:   0,
                             locked:   true,
                             name:     "Test::test",
@@ -397,10 +393,10 @@ describe("ActionTest", function() {
                             traces:   [],
                             error:    null
                         }, {
-                            id:       9,
-                            parent:   4,
-                            start:    9,
-                            end:      11,
+                            id:       16,
+                            parent:   5,
+                            start:    23,
+                            end:      25,
                             guards:   0,
                             locked:   true,
                             name:     "Test::test2",
@@ -411,7 +407,7 @@ describe("ActionTest", function() {
                         }]
                     }]
                 }]);
-            });
+            }));
     });
 
     /* it("creates an Action", function() {

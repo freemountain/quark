@@ -82,9 +82,10 @@ class Action {
                     assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
                     assert(this.isTracing, "cursor not tracing (before)");
 
-                    const x = trigger.shouldTrigger(tracing, message);
+                    const x = trigger.shouldTrigger(tracing, message.payload);
 
-                    if(!x.result) return resolve(x.cursor.trace.end());
+                    if(x.cursor.hasErrored) return resolve(x.cursor.trace.end());
+                    if(!x.result)           return resolve(x.cursor.trace.end());
 
                     const triggered = x.cursor.trace.triggered();
 

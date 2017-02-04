@@ -201,10 +201,8 @@ export default class Runtime extends Duplex {
         this.buffers      = [];
         this.cursor       = null;
 
-        initialProps.bllalal = "test";
-
-        /* this.readyPromise = unit
-         .trigger(new Message("/actions/init", [initialProps]));*/
+        this.readyPromise = unit
+            .trigger(new Message("/actions/init", [initialProps]));
 
         return unit;
     }
