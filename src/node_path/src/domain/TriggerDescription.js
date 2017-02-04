@@ -1,8 +1,6 @@
-import { schedule } from "../Runloop";
 import GuardError from "./error/GuardError";
+import Trigger from "./Trigger";
 import assert from "assert";
-import Cursor from "./Cursor";
-import Message from "../Message";
 
 export default class TriggerDescription {
     constructor(action, trigger) {
@@ -13,16 +11,26 @@ export default class TriggerDescription {
         this.action = trigger.name;
     }
 
+    merge(trigger) {
+        assert(this.emits === trigger.emits && this.action === trigger.action, "can only merge triggers with the same action n emits value");
+
+        const guards = trigger.guards.concat(this.guards);
+        const params = trigger.params.concat(this.params);
+
+        return new TriggerDescription(this.emits, new Trigger(this.action, guards, params, this.delay));
+    }
+
     toJS() {
         return {
             emits:  this.emits,
             delay:  this.delay,
             guards: this.guards.toJS(),
-            params: this.params.toJS()
+            params: this.params.toJS(),
+            action: this.action
         };
     }
 
-    shouldTrigger(cursor, message) {
+    shouldTrigger(cursor, message) { // eslint-disable-line
         const params = message.get("payload").toJS();
 
         let result  = true;
@@ -52,31 +60,7 @@ export default class TriggerDescription {
 
         return {
             result,
-            cursor
+            cursor: tracing
         };
-    }
-
-    apply(data, message) {
-        try {
-            Message.assert(message);
-            assert(data instanceof Cursor, `Expected a Cursor, got ${data}`);
-
-            const enhanced = message.update("payload", payload => payload.concat(this.params));
-            const cursor   = data;
-            const op       = cursor[this.emits];
-            const tracing  = cursor.trace(this.emits, enhanced.payload, this.guards.size);
-
-            if(!(op instanceof Function)) return schedule(() => cursor);
-
-            const x = this.shouldTrigger(tracing, enhanced);
-
-            if(!x.result) return schedule(() => x.cursor.trace.end());
-
-            return schedule(() => op.call(x.cursor.trace.triggered(), enhanced), this.delay)
-                .then(y => y.trace.end())
-                .catch(e => x.cursor.error(e));
-        } catch(e) {
-            return schedule(() => data.error(e));
-        }
     }
 }

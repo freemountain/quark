@@ -127,7 +127,10 @@ export default class Runtime extends Duplex {
 
     static declToImpTriggers(triggers) {
         return Immutable.Map(triggers)
-            .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new TriggerDescription(key, y))), Immutable.List());
+            .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new TriggerDescription(key, y))), Immutable.List())
+            .groupBy(x => `${x.action}-${x.emits}`)
+            .map(x => x.shift().reduce((dest, y) => dest.merge(y), x.first()))
+            .toList();
     }
 
     static toUnit(instance, proto) {

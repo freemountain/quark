@@ -39,7 +39,7 @@ export default class Trace extends Record({
     }
 
     ended() {
-        assert(this.end === null, "A trace can only be ended once.");
+        if(this.end !== null) return assert(false, `A trace can only be ended once, but got \n\n\t${this}.`);
 
         const now     = Date.now();
         const ended   = this.set("end", now);
