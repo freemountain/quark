@@ -48,7 +48,7 @@ class Test3 extends Runtime {
     static triggers = {
         test:  triggered.by("message"),
         test2: triggered.by("message")
-        // test3: triggered.by("message.done"),
+        // test3: triggered.by("message.done")
         // test4: triggered.by("message.done"),
         // test5: triggered.by("message.error"),
         // test6: triggered.by("message.error")

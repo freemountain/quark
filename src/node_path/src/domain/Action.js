@@ -91,7 +91,7 @@ class Action {
                     return Action
                         .applyTriggers(description.before, triggered, y)
                         .then(cursor => Action.applyAction(description, message, cursor, trigger))
-                        .then(cursor => Action.applyTriggers(description.done, cursor, message))
+                        .then(cursor => Action.applyTriggers(cursor.hasErrored ? description.done : description.error, cursor, message))
                         .then(cursor => resolve(cursor.trace.end()))
                         .catch(e => resolve(triggered.error(e)));
                 } catch(e) {
