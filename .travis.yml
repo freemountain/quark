@@ -35,9 +35,9 @@ before_install:
 
 script:
   - ./configure
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./tools/deploy_win.sh QuarkGui qt5-mxe; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./tools/deploy_linux.sh QuarkGui qt5; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./tools/deploy_mac.sh QuarkGui qt5; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./tools/deploy_win.sh QuarShell qt5-mxe; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./tools/deploy_linux.sh QuarShell qt5; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./tools/deploy_mac.sh QuarShell qt5; fi
   - ls .
 deploy:
   - provider: releases
