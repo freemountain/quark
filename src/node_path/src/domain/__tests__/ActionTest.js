@@ -140,48 +140,45 @@ describe("ActionTest", function() {
         return unit.ready()
             .then(() => Action.applyAction(descr, message.setCursor(cursor), cursor, descr.triggers.first())
             .then(x => { // eslint-disable-line
-                try {
-                    const result  = x
-                        .trace.end()
-                        .messageProcessed();
-                    const cursor2 = cursor
+                const result  = x
+                    .trace.end()
+                    .messageProcessed();
+
+                const cursor2 = cursor
                         .trace.end()
                         .messageProcessed()
                         .set("name", "test")
                         .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
-                    const filtered = result
-                        .filter((_, key) => key !== "_unit"); // eslint-disable-line
+                const filtered = result
+                    .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
-                    expect(filtered.toJS()).to.eql(cursor2.toJS());
-                    expect(result.traces.toJS()).to.eql([{
-                        id:       4,
-                        parent:   null,
-                        start:    2,
-                        end:      9,
+                expect(filtered.toJS()).to.eql(cursor2.toJS());
+                expect(result.traces.toJS()).to.eql([{
+                    id:       4,
+                    parent:   null,
+                    start:    2,
+                    end:      12,
+                    guards:   0,
+                    locked:   true,
+                    name:     "Test::Message</actions/test>",
+                    params:   ["test"],
+                    triggers: true,
+                    error:    null,
+                    traces:   [{
+                        id:       5,
+                        parent:   4,
+                        start:    3,
+                        end:      11,
                         guards:   0,
                         locked:   true,
-                        name:     "Test::Message</actions/test>",
+                        name:     "Test::message",
                         params:   ["test"],
                         triggers: true,
                         error:    null,
-                        traces:   [{
-                            id:       5,
-                            parent:   4,
-                            start:    3,
-                            end:      8,
-                            guards:   0,
-                            locked:   true,
-                            name:     "Test::message",
-                            params:   ["test"],
-                            triggers: true,
-                            error:    null,
-                            traces:   []
-                        }]
-                    }]);
-                } catch(e) {
-                    Promise.reject(e);
-                }
+                        traces:   []
+                    }]
+                }]);
             }));
     });
 
@@ -201,98 +198,94 @@ describe("ActionTest", function() {
             .update("_unit", internals => internals.messageReceived(message));
 
         return unit.ready().then(() => unit.message.call(cursor, message.setCursor(cursor))
-            .then(x => { // eslint-disable-line
-                try {
-                    const result  = x.messageProcessed();
-                    const cursor2 = cursor
-                        .trace("message", message.get("payload"))
-                        .trace.triggered()
-                        .trace.end()
-                        .messageProcessed()
-                        .set("name", "test")
-                        .set("value", 5)
-                        .filter((_, key) => key !== "_unit"); // eslint-disable-line
+            .then(x => {
+                const result  = x.messageProcessed();
+                const cursor2 = cursor
+                    .trace("message", message.get("payload"))
+                    .trace.triggered()
+                    .trace.end()
+                    .messageProcessed()
+                    .set("name", "test")
+                    .set("value", 5)
+                    .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
-                    const filtered = result
-                        .filter((_, key) => key !== "_unit"); // eslint-disable-line
+                const filtered = result
+                    .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
-                    expect(filtered.toJS()).to.eql(cursor2.toJS());
-                    expect(result.traces.toJS()).to.eql([{
-                        id:       4,
-                        parent:   null,
-                        start:    2,
-                        end:      20,
-                        guards:   0,
+                expect(filtered.toJS()).to.eql(cursor2.toJS());
+                expect(result.traces.toJS()).to.eql([{
+                    id:       4,
+                    parent:   null,
+                    start:    2,
+                    end:      20,
+                    guards:   0,
+                    locked:   true,
+                    name:     "Test::Message</actions/test>",
+                    params:   ["test"],
+                    triggers: true,
+                    error:    null,
+                    traces:   [{
+                        id:       8,
+                        parent:   4,
+                        start:    10,
+                        end:      19,
+                        guards:   2,
                         locked:   true,
-                        name:     "Test::Message</actions/test>",
-                        params:   ["test"],
+                        name:     "Test::message",
+                        params:   ["test", 5],
                         triggers: true,
                         error:    null,
                         traces:   [{
-                            id:       8,
-                            parent:   4,
-                            start:    10,
-                            end:      19,
-                            guards:   2,
+                            id:       9,
+                            parent:   8,
+                            start:    11,
+                            end:      12,
+                            guards:   0,
                             locked:   true,
-                            name:     "Test::message",
+                            name:     "Test::message<Guard1>",
                             params:   ["test", 5],
                             triggers: true,
                             error:    null,
+                            traces:   []
+                        }, {
+                            id:       10,
+                            parent:   8,
+                            start:    13,
+                            end:      14,
+                            guards:   0,
+                            locked:   true,
+                            name:     "Test::message<Guard2>",
+                            params:   ["test", 5],
+                            triggers: true,
+                            error:    null,
+                            traces:   []
+                        }, {
+                            id:       11,
+                            parent:   8,
+                            start:    15,
+                            end:      18,
+                            guards:   1,
+                            locked:   true,
+                            name:     "Test::init",
+                            params:   ["test"],
+                            triggers: false,
+                            error:    null,
                             traces:   [{
-                                id:       9,
-                                parent:   8,
-                                start:    11,
-                                end:      12,
+                                id:       12,
+                                parent:   11,
+                                start:    16,
+                                end:      17,
                                 guards:   0,
                                 locked:   true,
-                                name:     "Test::message<Guard1>",
-                                params:   ["test", 5],
-                                triggers: true,
-                                error:    null,
-                                traces:   []
-                            }, {
-                                id:       10,
-                                parent:   8,
-                                start:    13,
-                                end:      14,
-                                guards:   0,
-                                locked:   true,
-                                name:     "Test::message<Guard2>",
-                                params:   ["test", 5],
-                                triggers: true,
-                                error:    null,
-                                traces:   []
-                            }, {
-                                id:       11,
-                                parent:   8,
-                                start:    15,
-                                end:      18,
-                                guards:   1,
-                                locked:   true,
-                                name:     "Test::init",
+                                name:     "Test::init<Guard1>",
                                 params:   ["test"],
-                                triggers: false,
+                                triggers: true,
                                 error:    null,
-                                traces:   [{
-                                    id:       12,
-                                    parent:   11,
-                                    start:    16,
-                                    end:      17,
-                                    guards:   0,
-                                    locked:   true,
-                                    name:     "Test::init<Guard1>",
-                                    params:   ["test"],
-                                    triggers: true,
-                                    error:    null,
-                                    traces:   []
-                                }]
+                                traces:   []
                             }]
                         }]
-                    }]);
-                } catch(e) {
-                    return Promise.reject(e);
-                }
+                    }]
+                }]);
             }));
     });
 

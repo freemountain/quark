@@ -35,14 +35,6 @@ class Action {
                 .patch(diffs.toList(), traces));
     }
 
-    static awaitResult(cursor, result) { // eslint-disable-line
-        if(!result)                  return Promise.resolve(cursor);
-        if(result instanceof Error)  return Promise.resolve(result);
-        if(result instanceof Cursor) return Promise.resolve(result);
-
-        return result;
-    }
-
     static applyAction(description, message, cursor, trigger) { // eslint-disable-line
         try {
             assert(cursor.isTracing, "cursor not tracing (before)");
@@ -92,7 +84,8 @@ class Action {
                     return Action
                         .applyTriggers(description.before, triggered, y)
                         .then(cursor => Action.applyAction(description, message, cursor, trigger))
-                        .then(cursor => Action.applyTriggers(cursor.hasErrored ? description.done : description.error, cursor, message))
+                        // hier weiter mit done/error
+                        // .then(cursor => Action.applyTriggers(cursor.hasErrored ? description.done : description.error, cursor, message))
                         .then(cursor => resolve(cursor.trace.end()))
                         .catch(e => resolve(triggered.error(e)));
                 } catch(e) {
