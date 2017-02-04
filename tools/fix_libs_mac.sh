@@ -2,7 +2,7 @@
 
 PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../"
 TARGET_APP_NAME=$1
-QT_LIB_PATH=$2
+QT_LIB_PATH="$(realpath "$2")"
 
 TARGET_APP_PATH="$PROJECT_PATH/dist/mac/$TARGET_APP_NAME.app"
 
