@@ -6,10 +6,10 @@ import Immutable from "immutable";
 // import uuid from "uuid";
 // import Cursor from "./domain/Cursor";
 import curry from "lodash.curry";
-import TriggerDescription from "./domain/TriggerDescription";
-import ActionDescription from "./domain/ActionDescription";
-import Action from "./domain/Action";
 import Trigger from "./domain/Trigger";
+import Action from "./domain/Action";
+import DeclaredAction from "./domain/DeclaredAction";
+import DeclaredTrigger from "./domain/DeclaredTrigger";
 import Cursor from "./domain/Cursor";
 import defaults from "set-default-value";
 import Uuid from "./util/Uuid";
@@ -29,7 +29,7 @@ export default class Runtime extends Duplex {
     static ValueFilter(x) {
         return (
             !Runtime.is(x) &&
-            !(x instanceof Trigger)
+            !(x instanceof DeclaredTrigger)
         );
     }
 
@@ -127,7 +127,7 @@ export default class Runtime extends Duplex {
 
     static declToImpTriggers(triggers) {
         return Immutable.Map(triggers)
-            .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new TriggerDescription(key, y))), Immutable.List())
+            .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new Trigger(key, y))), Immutable.List())
             .groupBy(x => `${x.action}-${x.emits}`)
             .map(x => x.shift().reduce((dest, y) => dest.merge(y), x.first()))
             .toList();
@@ -141,12 +141,12 @@ export default class Runtime extends Duplex {
 
         const actions0 = Runtime
             .allActions(instance)
-            .map((x, key) => instance[key] && instance[key].__Action ? instance[key].__Action : new ActionDescription(name, key, triggers, instance[key] === Runtime.prototype.message ? null : instance[key]));
+            .map((x, key) => instance[key] && instance[key].__Action ? instance[key].__Action : new Action(name, key, triggers, instance[key] === Runtime.prototype.message ? null : instance[key]));
 
         const actions = actions0
             .concat(triggers
                 .filter(x => !actions0.find(y => y.name === x.emits))
-                .reduce((dest, x) => dest.set(x.emits, new ActionDescription(name, x.emits, triggers)), Immutable.Map()));
+                .reduce((dest, x) => dest.set(x.emits, new Action(name, x.emits, triggers)), Immutable.Map()));
 
         proto.__triggers = triggers;
         proto.__actions  = actions;
@@ -165,7 +165,7 @@ export default class Runtime extends Duplex {
     }
 
     static triggers = {
-        init: Action.triggered
+        init: DeclaredAction.triggered
             .by("message")
             .if((_, unit) => (
                 unit.currentMessage.isAction() &&

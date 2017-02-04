@@ -2,7 +2,7 @@ import Cursor from "../Cursor";
 import { expect } from "chai";
 import Immutable from "immutable";
 import sinon from "sinon";
-import ActionDescription from "../ActionDescription";
+import Action from "../Action";
 import Internals from "../Internals";
 import Message from "../../Message";
 import Uuid from "../../util/Uuid";
@@ -27,7 +27,7 @@ describe("CursorTest", function() { // eslint-disable-line
         const func = function(a) {
             return this.get("test").length + 2 + a;
         };
-        const action = new ActionDescription("Test", "blub", Immutable.List(), func);
+        const action = new Action("Test", "blub", Immutable.List(), func);
 
         action.func = func;
 
@@ -773,7 +773,7 @@ describe("CursorTest", function() { // eslint-disable-line
     });
 
     it("creates some cursors", function() {
-        const action = new ActionDescription("Test", "blub", Immutable.List(), () => 4);
+        const action = new Action("Test", "blub", Immutable.List(), () => 4);
         const map    = Immutable.fromJS({
             _unit: new Internals({
                 description: Immutable.Map({
@@ -806,7 +806,7 @@ describe("CursorTest", function() { // eslint-disable-line
         const func = function(a) {
             return this.get("test").length + 2 + a;
         };
-        const action = new ActionDescription("Test", "blub", Immutable.List(), func);
+        const action = new Action("Test", "blub", Immutable.List(), func);
 
         action.func = func;
 

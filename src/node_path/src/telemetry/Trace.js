@@ -69,7 +69,7 @@ export default class Trace extends Record({
 
         return this
             .set("locked", true)
-            .update("traces", traces => traces.map(x => x.lockRec()));
+            .update("traces", traces => traces.map(x => x.lockRec()).sort((x, y) => x.start - y.start));
     }
 
     lock() {

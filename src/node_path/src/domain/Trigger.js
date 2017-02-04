@@ -1,42 +1,66 @@
-import Immutable from "immutable";
+import GuardError from "./error/GuardError";
+import DeclaredTrigger from "./DeclaredTrigger";
+import assert from "assert";
 
 export default class Trigger {
-    constructor(name, guards = Immutable.List(), params = Immutable.List(), delay = 0, destination) {
-        this.name        = name;
-        this.guards      = guards;
-        this.params      = params;
-        this.delay       = delay;
-        this.destination = destination;
+    constructor(action, trigger) {
+        this.emits  = action;
+        this.guards = trigger.guards;
+        this.delay  = trigger.delay;
+        this.params = trigger.params;
+        this.action = trigger.name;
     }
 
-    setDelay(delay) {
-        return new Trigger(this.name, this.guards, this.params, delay);
-    }
+    merge(trigger) {
+        assert(this.emits === trigger.emits && this.action === trigger.action, "can only merge triggers with the same action n emits value");
 
-    addGuard(guard) {
-        return new Trigger(this.name, this.guards.push(guard), this.params, this.delay);
-    }
+        const guards = trigger.guards.concat(this.guards);
+        const params = trigger.params.concat(this.params);
 
-    addArguments(args) {
-        return new Trigger(this.name, this.guards, this.params.concat(args), this.delay);
-    }
-
-    setName(name) {
-        return new Trigger(name, this.guards, this.params, this.delay);
-    }
-
-    setDestination(destination) {
-        return new Trigger(this.name, this.guards, this.params, this.delay, destination);
+        return new Trigger(this.emits, new DeclaredTrigger(this.action, guards, params, this.delay));
     }
 
     toJS() {
-        const obj = Object.assign({}, this, {
-            guards: this.guards.size,
-            params: this.params.toJS()
-        });
+        return {
+            emits:  this.emits,
+            delay:  this.delay,
+            guards: this.guards.toJS(),
+            params: this.params.toJS(),
+            action: this.action
+        };
+    }
 
-        if(!this.destination) delete obj.destination;
+    shouldTrigger(cursor, message) { // eslint-disable-line
+        const params = message.get("payload").toJS();
 
-        return obj;
+        let result  = true;
+        let tracing = cursor;
+
+        // for loop to be able to return instantly
+        // if some guard does not trigger or errors
+        for(let i = 0; i < this.guards.size; i++) { // eslint-disable-line
+            tracing = tracing
+                .trace(`${this.emits}<Guard${i + 1}>`, message.get("payload"))
+                .trace.triggered();
+
+            try {
+                const guard = this.guards.get(i);
+
+                result  = guard(...params, tracing);
+                tracing = tracing.trace.end();
+
+                if(!result) return { cursor: tracing, result };
+            } catch(e) {
+                return {
+                    cursor: tracing.error(new GuardError(tracing.currentContext, this.emits, i + 1, e)),
+                    result: false
+                };
+            }
+        }
+
+        return {
+            result,
+            cursor: tracing
+        };
     }
 }
