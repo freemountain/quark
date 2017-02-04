@@ -12,5 +12,5 @@ rm -rf "$PROJECT_PATH/dist/win"
 
 "$PROJECT_PATH/qbs_wrapper" install --install-root "$PROJECT_PATH/dist/win" -p $TARGET_APP profile:$PROFILE
 cd "$PROJECT_PATH/dist/win"
-zip -r "$dashed_target-win-x86.zip" $TARGET_APP
+zip -rq "$dashed_target-win-x86.zip" $TARGET_APP
 popd > /dev/null

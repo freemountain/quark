@@ -36,6 +36,6 @@ PATH="$QT_PATH:$PATH"
 cd "$DIST_PATH"
 $DEPLOY_CMD
 $DEPLOY_CMD -appimage
-zip -r "$dashed_target-linux-x86_64.zip" $TARGET_APP
+zip -rq "$dashed_target-linux-x86_64.zip" $TARGET_APP
 
 popd > /dev/null
