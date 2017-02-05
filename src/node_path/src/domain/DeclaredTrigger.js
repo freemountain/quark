@@ -17,6 +17,10 @@ export default class DeclaredTrigger {
         return new DeclaredTrigger(this.name, this.guards.push(guard), this.params, this.delay);
     }
 
+    updateCurrentGuard(op) {
+        return new DeclaredTrigger(this.name, this.guards.pop().push(op(this.guards.last())), this.params, this.delay);
+    }
+
     addArguments(args) {
         return new DeclaredTrigger(this.name, this.guards, this.params.concat(args), this.delay);
     }

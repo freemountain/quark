@@ -26,6 +26,7 @@ class Test2 extends Runtime {
     static triggers = {
         message: triggered
             .if(() => true)
+            .or(() => false)
             .if(name => typeof name === "string" && name.indexOf("test") !== -1)
             .with(5)
             .after(10)

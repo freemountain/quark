@@ -83,6 +83,10 @@ export default class DeclaredAction {
         return this.updateCurrent(x => x.addGuard(guard));
     }
 
+    or(guard) {
+        return this.updateCurrent(x => x.updateCurrentGuard(y => (...args) => y(...args) || guard(...args)));
+    }
+
     with(...args) {
         return this.updateCurrent(x => x.addArguments(args));
     }
