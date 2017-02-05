@@ -168,7 +168,7 @@ class Cursor {
         assert(!first || (first instanceof Immutable.Map && first.get("op") && first.get("path")), `a diff needs to have the keys 'op' and 'path', got '${typeof first === "object" ? first.constructor.name : JSON.stringify(first)}'.`);
 
         const patched = patch(this.__data.x, diffs);
-        const updated = patched.get("_unit").traces
+        const updated = this.__data.x.get("_unit").traces
             .concat(traces.filter(x => !x.locked))
             .groupBy(x => x.name)
             .map(x => x.first())
@@ -207,7 +207,7 @@ class Cursor {
     }
 
     cancel() {
-        assert(false, "Cursor.cancel: implement!");
+        assert(false, "Cursor.cancel: implement (use Action.cancel)!");
 
         // hiermit soll die aktuelle action gecanceled, werden + state revert
     }

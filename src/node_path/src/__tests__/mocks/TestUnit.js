@@ -1,7 +1,7 @@
-import Action from "../../domain/Action";
+import DeclaredAction from "../../domain/DeclaredAction";
 import Runtime from "../../Runtime";
 
-const triggered = Action.triggered;
+const triggered = DeclaredAction.triggered;
 
 export default class TestUnit extends Runtime {
     static triggers = {

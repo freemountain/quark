@@ -73,8 +73,9 @@ export default class Runtime extends Duplex {
 
     static update(instance, cursor) {
         instance.cursor = cursor;
+        instance.locked = false;
 
-        return cursor.get("_unit", "diffs");
+        return instance;
     }
 
     static diff(instance, updated) {
@@ -200,9 +201,16 @@ export default class Runtime extends Duplex {
         this.description  = proto.__actions;
         this.buffers      = [];
         this.cursor       = null;
+        this.locked       = false;
+        this.isReady      = false;
 
         this.readyPromise = unit
             .trigger(new Message("/actions/init", [initialProps]));
+
+        this.ready()
+            .then(() => {
+                this.isReady = true;
+            });
 
         return unit;
     }
@@ -228,6 +236,10 @@ export default class Runtime extends Duplex {
     }
 
     trigger(data) {
+        if(this.locked || (!this.isReady && data.resource !== "/actions/init")) return schedule(() => this.trigger(data));
+
+        this.locked = true;
+
         const message = new Message(data);
         const cursor  = defaults(this.cursor).to(new this.__Cursor(message.payload.first(), this));
 
@@ -283,8 +295,7 @@ export default class Runtime extends Duplex {
     }
 
     _write(message, enc, cb) {
-        this.ready()
-            .then(() => this.trigger(message))
+        return this.trigger(message)
             .then(() => cb())
             .catch(e => this.emit("error", e));
     }
