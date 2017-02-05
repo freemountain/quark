@@ -143,7 +143,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    1,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       2,
                     parent:   1,
@@ -155,7 +156,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    2,
                     traces:   [],
                     triggers: false,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }]
             }
         });
@@ -185,7 +187,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    1,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       2,
                     parent:   1,
@@ -197,7 +200,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    2,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }]
             }
         });
@@ -227,7 +231,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    1,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       2,
                     parent:   1,
@@ -239,7 +244,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    2,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       3,
                     parent:   2,
@@ -251,7 +257,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    3,
                     traces:   [],
                     triggers: false,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }]
             }
         });
@@ -281,7 +288,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    1,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       2,
                     parent:   1,
@@ -293,7 +301,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    2,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       3,
                     parent:   2,
@@ -305,7 +314,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    3,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       4,
                     parent:   3,
@@ -317,7 +327,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    4,
                     traces:   [],
                     triggers: false,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }]
             }
         });
@@ -351,7 +362,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    1,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       2,
                     parent:   1,
@@ -363,7 +375,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    2,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       3,
                     parent:   2,
@@ -375,7 +388,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    3,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       4,
                     parent:   3,
@@ -387,7 +401,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    4,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       5,
                     parent:   4,
@@ -399,7 +414,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    5,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }]
             }
         });
@@ -432,7 +448,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    1,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       2,
                     parent:   1,
@@ -444,7 +461,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    2,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       3,
                     parent:   2,
@@ -456,7 +474,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    3,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       4,
                     parent:   3,
@@ -468,7 +487,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    4,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       5,
                     parent:   4,
@@ -480,7 +500,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    5,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       6,
                     parent:   4,
@@ -492,7 +513,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    7,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }]
             }
         });
@@ -522,7 +544,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    1,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       2,
                     parent:   1,
@@ -534,7 +557,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    2,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       3,
                     parent:   2,
@@ -546,7 +570,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    3,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       4,
                     parent:   3,
@@ -558,7 +583,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    4,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       5,
                     parent:   4,
@@ -570,7 +596,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    5,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       6,
                     parent:   4,
@@ -582,7 +609,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    7,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }]
             }
         });
@@ -612,7 +640,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    1,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       2,
                     parent:   1,
@@ -624,7 +653,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    2,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       3,
                     parent:   2,
@@ -636,7 +666,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    3,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       4,
                     parent:   3,
@@ -648,7 +679,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    4,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       5,
                     parent:   4,
@@ -660,7 +692,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    5,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }, {
                     id:       6,
                     parent:   4,
@@ -672,7 +705,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    7,
                     traces:   [],
                     triggers: true,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }]
             }
         });
@@ -704,6 +738,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     start:    1,
                     locked:   true,
                     triggers: true,
+                    trigger:  null,
                     traces:   [{
                         id:       2,
                         parent:   1,
@@ -715,6 +750,7 @@ describe("CursorTest", function() { // eslint-disable-line
                         name:     "Unit::test",
                         params:   [false],
                         start:    2,
+                        trigger:  null,
                         traces:   [{
                             id:       3,
                             parent:   2,
@@ -726,6 +762,7 @@ describe("CursorTest", function() { // eslint-disable-line
                             start:    3,
                             triggers: true,
                             locked:   true,
+                            trigger:  null,
                             traces:   [{
                                 id:       4,
                                 parent:   3,
@@ -737,6 +774,7 @@ describe("CursorTest", function() { // eslint-disable-line
                                 start:    4,
                                 triggers: true,
                                 locked:   true,
+                                trigger:  null,
                                 traces:   [{
                                     id:       5,
                                     parent:   4,
@@ -748,7 +786,8 @@ describe("CursorTest", function() { // eslint-disable-line
                                     start:    5,
                                     triggers: true,
                                     traces:   [],
-                                    locked:   true
+                                    locked:   true,
+                                    trigger:  null
                                 }, {
                                     id:       6,
                                     parent:   4,
@@ -760,7 +799,8 @@ describe("CursorTest", function() { // eslint-disable-line
                                     start:    7,
                                     triggers: true,
                                     traces:   [],
-                                    locked:   true
+                                    locked:   true,
+                                    trigger:  null
                                 }]
                             }]
                         }]
@@ -769,7 +809,7 @@ describe("CursorTest", function() { // eslint-disable-line
             }
         });
 
-        expect(cursor10.get("_unit").get("traces").first().toString()).to.equal("            Unit::Message</test>(1) - 11ms\n                           |\n                Unit::test(false) - 9ms\n                           |\n             #ERROR Unit::test2(1) - 7ms #\n                           |\n                 Unit::test3(2) - 5ms_____\n                /                         \\\n  #ERROR Unit::test4(3) - 1ms #  Unit::test5(4) - 1ms");
+        expect(cursor10.get("_unit").get("traces").first().toString()).to.equal("                                          \u001b[7m\u001b[32m Unit::Message</test>(1) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m11ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m\n                                                                                      |\n                                             \u001b[7m\u001b[32m Unit::test(false) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m9ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m\n                                                                                      |\n                                          \u001b[7m\u001b[31m #ERROR Unit::test2(1) - \u001b[39m\u001b[27m\u001b[7m\u001b[31m7ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m\n                                                                                      |\n                                               \u001b[7m\u001b[32m Unit::test3(2) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m5ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m____\n                                              /                                                                                   \\\n  \u001b[7m\u001b[31m #ERROR Unit::test4(3) - \u001b[39m\u001b[27m\u001b[7m\u001b[31m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m  \u001b[7m\u001b[32m Unit::test5(4) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m");
     });
 
     it("creates some cursors", function() {

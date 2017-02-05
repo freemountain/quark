@@ -20,8 +20,8 @@ class Action {
     static ERROR    = x => x.action.indexOf(".error") !== -1;    // eslint-disable-line
 
     static Handler(description) {
-        return function(y, prev = description.name) {
-            const trigger = description.triggers.find(x => x.action === prev);
+        return function(y, prev = description.name) { // eslint-disable-line
+            const trigger = description.triggers.find(x => x.action === prev.replace(".before", ""));
 
             try {
                 if(!Message.is(y)) return Promise.resolve(this
@@ -29,7 +29,7 @@ class Action {
                     .error(new UnknownMessageError(y)));
 
                 const message = y.update("payload", payload => payload.concat(trigger.params));
-                const tracing = this.trace(description.name, message.payload, trigger.guards.size);
+                const tracing = this.trace(description.name, message.payload, prev === description.name ? null : prev.split(".").pop(), trigger.guards.size);
 
                 assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
                 assert(this.isTracing, "cursor not tracing (before)");
@@ -60,7 +60,7 @@ class Action {
                     .applyBefore(triggered, y)
                     .then(cursor => description.applyAction(trigger, cursor, message))
                     .then(cursor => cursor.hasErrored ? description.applyError(cursor, message) : description.applyDone(cursor, message))
-                    .then(cursor => cursor.hasErrored ? cursor.trace.end() : cursor.trace.error(cursor.currentError))
+                    .then(cursor => cursor.hasErrored ? cursor.trace.error(cursor.currentError) : cursor.trace.end())
                     .catch(e => triggered.error(e));
             } catch(e) {
                 return Promise.resolve(this.error(e));
@@ -151,7 +151,7 @@ class Action {
     applyTriggers(kind, cursor, message) {
         assert(cursor instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for ''.`);
 
-        const prev = this.name.concat(kind === "before" ? "" : `.${kind}`);
+        const prev = `${this.name}.${kind}`;
 
         const promise = Promise.all(this[kind]
             .map(x => cursor[x.emits] instanceof Function ? cursor[x.emits](message, prev) : cursor).toJS());

@@ -172,6 +172,7 @@ describe("ActionTest", function() {
                     params:   ["test"],
                     triggers: true,
                     error:    null,
+                    trigger:  null,
                     traces:   [{
                         id:       5,
                         parent:   4,
@@ -183,7 +184,8 @@ describe("ActionTest", function() {
                         params:   ["test"],
                         triggers: true,
                         error:    null,
-                        traces:   []
+                        traces:   [],
+                        trigger:  null
                     }]
                 }]);
             });
@@ -231,6 +233,7 @@ describe("ActionTest", function() {
                     params:   ["test"],
                     triggers: true,
                     error:    null,
+                    trigger:  null,
                     traces:   [{
                         id:       8,
                         parent:   4,
@@ -242,6 +245,7 @@ describe("ActionTest", function() {
                         params:   ["test", 5],
                         triggers: true,
                         error:    null,
+                        trigger:  null,
                         traces:   [{
                             id:       9,
                             parent:   8,
@@ -253,6 +257,7 @@ describe("ActionTest", function() {
                             params:   ["test", 5],
                             triggers: true,
                             error:    null,
+                            trigger:  null,
                             traces:   []
                         }, {
                             id:       10,
@@ -265,6 +270,7 @@ describe("ActionTest", function() {
                             params:   ["test", 5],
                             triggers: true,
                             error:    null,
+                            trigger:  null,
                             traces:   []
                         }, {
                             id:       11,
@@ -277,6 +283,7 @@ describe("ActionTest", function() {
                             params:   ["test"],
                             triggers: false,
                             error:    null,
+                            trigger:  "before",
                             traces:   [{
                                 id:       12,
                                 parent:   11,
@@ -288,6 +295,7 @@ describe("ActionTest", function() {
                                 params:   ["test"],
                                 triggers: true,
                                 error:    null,
+                                trigger:  null,
                                 traces:   []
                             }]
                         }]
@@ -622,6 +630,7 @@ describe("ActionTest", function() {
                             params:   ["test"],
                             triggers: true,
                             error:    null,
+                            trigger:  null,
                             traces:   [{
                                 id:       12,
                                 parent:   11,
@@ -633,6 +642,7 @@ describe("ActionTest", function() {
                                 params:   ["test"],
                                 triggers: true,
                                 error:    null,
+                                trigger:  null,
                                 traces:   [{
                                     id:       13,
                                     parent:   12,
@@ -644,6 +654,7 @@ describe("ActionTest", function() {
                                     params:   ["test"],
                                     triggers: false,
                                     error:    null,
+                                    trigger:  "before",
                                     traces:   [{
                                         id:       14,
                                         parent:   13,
@@ -655,6 +666,7 @@ describe("ActionTest", function() {
                                         params:   ["test"],
                                         triggers: true,
                                         error:    null,
+                                        trigger:  null,
                                         traces:   []
                                     }]
                                 }, {
@@ -668,6 +680,7 @@ describe("ActionTest", function() {
                                     params:   ["test"],
                                     triggers: true,
                                     traces:   [],
+                                    trigger:  "before",
                                     error:    null
                                 }, {
                                     id:       16,
@@ -680,6 +693,7 @@ describe("ActionTest", function() {
                                     params:   ["test"],
                                     triggers: true,
                                     traces:   [],
+                                    trigger:  "before",
                                     error:    null
                                 }]
                             }]
@@ -736,6 +750,7 @@ describe("ActionTest", function() {
                             params:   ["test"],
                             triggers: true,
                             error:    null,
+                            trigger:  null,
                             traces:   [{
                                 id:       12,
                                 parent:   11,
@@ -747,6 +762,7 @@ describe("ActionTest", function() {
                                 params:   ["test"],
                                 triggers: true,
                                 error:    null,
+                                trigger:  null,
                                 traces:   [{
                                     id:       13,
                                     parent:   12,
@@ -758,6 +774,7 @@ describe("ActionTest", function() {
                                     params:   ["test"],
                                     triggers: false,
                                     error:    null,
+                                    trigger:  "before",
                                     traces:   [{
                                         id:       14,
                                         parent:   13,
@@ -769,6 +786,7 @@ describe("ActionTest", function() {
                                         params:   ["test"],
                                         triggers: true,
                                         error:    null,
+                                        trigger:  null,
                                         traces:   []
                                     }]
                                 }, {
@@ -782,6 +800,7 @@ describe("ActionTest", function() {
                                     params:   ["test"],
                                     triggers: true,
                                     traces:   [],
+                                    trigger:  "before",
                                     error:    null
                                 }, {
                                     id:       16,
@@ -794,6 +813,7 @@ describe("ActionTest", function() {
                                     params:   ["test"],
                                     triggers: true,
                                     traces:   [],
+                                    trigger:  "before",
                                     error:    null
                                 }, {
                                     id:       17,
@@ -806,6 +826,7 @@ describe("ActionTest", function() {
                                     params:   ["test"],
                                     triggers: true,
                                     traces:   [],
+                                    trigger:  "done",
                                     error:    null
                                 }, {
                                     id:       18,
@@ -818,6 +839,7 @@ describe("ActionTest", function() {
                                     params:   ["test"],
                                     triggers: true,
                                     traces:   [],
+                                    trigger:  "done",
                                     error:    null
                                 }]
                             }]

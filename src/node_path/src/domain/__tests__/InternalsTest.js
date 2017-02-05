@@ -72,7 +72,7 @@ describe("InternalsTest", function() {
         expect(() => internals.updateCurrentTrace(x => x)).to.throw("AssertionError: Can\'t update a trace before receiving a message.");
         const internals2 = internals
             .messageReceived(message)
-            .trace("lulu", Immutable.List(), 1)
+            .trace("lulu", Immutable.List(), "lala.done", 1)
             .updateCurrentTrace(x => x.triggered());
 
         expect(internals2.isTracing()).to.equal(true);
@@ -102,7 +102,8 @@ describe("InternalsTest", function() {
                 start:    3,
                 traces:   [],
                 triggers: true,
-                locked:   false
+                locked:   false,
+                trigger:  null
             }, {
                 id:       4,
                 parent:   3,
@@ -114,7 +115,8 @@ describe("InternalsTest", function() {
                 start:    4,
                 traces:   [],
                 triggers: true,
-                locked:   false
+                locked:   false,
+                trigger:  "lala.done"
             }]
         });
 
@@ -146,7 +148,8 @@ describe("InternalsTest", function() {
                 start:    3,
                 traces:   [],
                 triggers: true,
-                locked:   false
+                locked:   false,
+                trigger:  null
             }, {
                 id:       4,
                 parent:   3,
@@ -158,7 +161,8 @@ describe("InternalsTest", function() {
                 start:    4,
                 traces:   [],
                 triggers: true,
-                locked:   false
+                locked:   false,
+                trigger:  "lala.done"
             }]
         });
 

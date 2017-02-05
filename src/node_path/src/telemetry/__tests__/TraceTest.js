@@ -23,7 +23,7 @@ describe("TraceTest", function() {
     it("creates a trace with subtraces", function() { // eslint-disable-line
         const trace = new Trace({
             name: "test"
-        }, "Unit");
+        }, "Unit", "done");
 
         expect(trace.toJS()).to.eql({
             id:       1,
@@ -36,11 +36,12 @@ describe("TraceTest", function() {
             traces:   [],
             params:   [],
             guards:   0,
-            locked:   false
+            locked:   false,
+            trigger:  "done"
         });
 
         expect(trace.isConsistent()).to.equal(false);
-        expect(trace.toString()).to.equal("!Unit::test() - 01:00:00");
+        expect(trace.toString()).to.equal("\u001b[7m\u001b[33m !Unit::test() - done@\u001b[39m\u001b[27m\u001b[7m\u001b[33m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[33m \u001b[39m\u001b[27m");
 
         const trace2  = trace.trace({
             name:   "sub1",
@@ -51,7 +52,7 @@ describe("TraceTest", function() {
         expect(trace2.toJS()).to.eql({
             id:       2,
             parent:   1,
-            start:    2,
+            start:    3,
             name:     "Blub::sub1",
             triggers: false,
             error:    null,
@@ -59,7 +60,8 @@ describe("TraceTest", function() {
             traces:   [],
             params:   [1, 2],
             guards:   1,
-            locked:   false
+            locked:   false,
+            trigger:  null
         });
 
         expect(trace2.isConsistent()).to.equal(false);
@@ -70,7 +72,7 @@ describe("TraceTest", function() {
         expect(trace3.toJS()).to.eql({
             id:       2,
             parent:   1,
-            start:    2,
+            start:    3,
             name:     "Blub::sub1",
             triggers: true,
             error:    null,
@@ -78,7 +80,8 @@ describe("TraceTest", function() {
             traces:   [],
             params:   [1, 2],
             guards:   1,
-            locked:   false
+            locked:   false,
+            trigger:  null
         });
 
         const trace4 = trace3.ended();
@@ -87,15 +90,16 @@ describe("TraceTest", function() {
         expect(trace4.toJS()).to.eql({
             id:       2,
             parent:   1,
-            start:    2,
+            start:    3,
             name:     "Blub::sub1",
             triggers: true,
             error:    null,
-            end:      3,
+            end:      4,
             traces:   [],
             params:   [1, 2],
             guards:   1,
-            locked:   false
+            locked:   false,
+            trigger:  null
         });
 
         const trace5 = trace4.trace({
@@ -108,7 +112,7 @@ describe("TraceTest", function() {
         expect(trace5.toJS()).to.eql({
             id:       3,
             parent:   1,
-            start:    4,
+            start:    5,
             name:     "Bla::sub2",
             triggers: false,
             error:    null,
@@ -116,7 +120,8 @@ describe("TraceTest", function() {
             traces:   [],
             params:   ["huhu"],
             guards:   2,
-            locked:   false
+            locked:   false,
+            trigger:  null
         });
 
         const trace6 = trace5.trace({
@@ -129,7 +134,7 @@ describe("TraceTest", function() {
         expect(trace6.toJS()).to.eql({
             id:       4,
             parent:   3,
-            start:    5,
+            start:    6,
             name:     "Bli::sub3",
             triggers: false,
             error:    null,
@@ -137,7 +142,8 @@ describe("TraceTest", function() {
             traces:   [],
             params:   [true],
             guards:   3,
-            locked:   false
+            locked:   false,
+            trigger:  null
         });
 
         const trace7 = trace6.triggered();
@@ -146,7 +152,7 @@ describe("TraceTest", function() {
         expect(trace7.toJS()).to.eql({
             id:       4,
             parent:   3,
-            start:    5,
+            start:    6,
             name:     "Bli::sub3",
             triggers: true,
             error:    null,
@@ -154,7 +160,8 @@ describe("TraceTest", function() {
             traces:   [],
             params:   [true],
             guards:   3,
-            locked:   false
+            locked:   false,
+            trigger:  null
         });
 
         const trace8 = trace7.ended();
@@ -163,15 +170,16 @@ describe("TraceTest", function() {
         expect(trace8.toJS()).to.eql({
             id:       4,
             parent:   3,
-            start:    5,
+            start:    6,
             name:     "Bli::sub3",
             triggers: true,
             error:    null,
-            end:      6,
+            end:      7,
             traces:   [],
             params:   [true],
             guards:   3,
-            locked:   false
+            locked:   false,
+            trigger:  null
         });
 
         const trace9 = trace5
@@ -181,28 +189,30 @@ describe("TraceTest", function() {
         expect(trace9.isConsistent()).to.equal(true);
         expect(trace9.toJS()).to.eql({
             id:       3,
-            start:    4,
+            start:    5,
             name:     "Bla::sub2",
             triggers: false,
             error:    new Error("huhu"),
-            end:      7,
+            end:      8,
             parent:   1,
             traces:   [{
                 id:       4,
                 parent:   3,
-                start:    5,
+                start:    6,
                 name:     "Bli::sub3",
                 triggers: true,
                 error:    null,
-                end:      6,
+                end:      7,
                 traces:   [],
                 params:   [true],
                 guards:   3,
-                locked:   false
+                locked:   false,
+                trigger:  null
             }],
-            params: ["huhu"],
-            guards: 2,
-            locked: false
+            params:  ["huhu"],
+            guards:  2,
+            locked:  false,
+            trigger: null
         });
 
         const trace10 = trace
@@ -221,38 +231,42 @@ describe("TraceTest", function() {
             parent:   null,
             params:   [],
             locked:   false,
+            trigger:  "done",
             traces:   [{
                 id:       2,
                 parent:   1,
-                start:    2,
+                start:    3,
                 name:     "Blub::sub1",
                 triggers: true,
                 error:    null,
-                end:      3,
+                end:      4,
                 traces:   [],
                 params:   [1, 2],
                 guards:   1,
-                locked:   false
+                locked:   false,
+                trigger:  null
             }, {
                 id:       3,
                 parent:   1,
-                start:    4,
+                start:    5,
                 name:     "Bla::sub2",
                 triggers: false,
                 error:    new Error("huhu"),
-                end:      7,
+                end:      8,
+                trigger:  null,
                 traces:   [{
                     id:       4,
                     parent:   3,
-                    start:    5,
+                    start:    6,
                     name:     "Bli::sub3",
                     triggers: true,
                     error:    null,
-                    end:      6,
+                    end:      7,
                     traces:   [],
                     params:   [true],
                     guards:   3,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }],
                 params: ["huhu"],
                 guards: 2,
@@ -271,41 +285,45 @@ describe("TraceTest", function() {
             name:     "Unit::test",
             triggers: true,
             error:    null,
-            end:      8,
+            end:      9,
             params:   [],
             locked:   false,
+            trigger:  "done",
             traces:   [{
                 id:       2,
                 parent:   1,
-                start:    2,
+                start:    3,
                 name:     "Blub::sub1",
                 triggers: true,
                 error:    null,
-                end:      3,
+                end:      4,
                 traces:   [],
                 params:   [1, 2],
                 guards:   1,
-                locked:   false
+                locked:   false,
+                trigger:  null
             }, {
                 id:       3,
                 parent:   1,
-                start:    4,
+                start:    5,
                 name:     "Bla::sub2",
                 triggers: false,
                 error:    new Error("huhu"),
-                end:      7,
+                end:      8,
+                trigger:  null,
                 traces:   [{
                     id:       4,
                     parent:   3,
-                    start:    5,
+                    start:    6,
                     name:     "Bli::sub3",
                     triggers: true,
                     error:    null,
-                    end:      6,
+                    end:      7,
                     traces:   [],
                     params:   [true],
                     guards:   3,
-                    locked:   false
+                    locked:   false,
+                    trigger:  null
                 }],
                 params: ["huhu"],
                 guards: 2,
@@ -314,7 +332,7 @@ describe("TraceTest", function() {
             guards: 0
         });
 
-        expect(trace11.toString()).to.equal("              Unit::test() - 7ms_________\n             /                           \\\n  Blub::sub1(1, 2) - 1ms  #ERROR !Bla::sub2(\"huhu\") - 3ms #\n                                          |\n                                Bli::sub3(true) - 1ms");
+        expect(trace11.toString()).to.equal("                                           \u001b[7m\u001b[32m Unit::test() - done@\u001b[39m\u001b[27m\u001b[7m\u001b[32m8ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m_____\n                                          /                                                                                       \\\n  \u001b[7m\u001b[32m Blub::sub1(1, 2) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m  \u001b[7m\u001b[33m #ERROR !Bla::sub2(\"huhu\") - \u001b[39m\u001b[27m\u001b[7m\u001b[33m3ms\u001b[39m\u001b[27m\u001b[7m\u001b[33m # \u001b[39m\u001b[27m\n                                                                                                                                   |\n                                                                                           \u001b[7m\u001b[32m Bli::sub3(true) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m");
         expect(trace11.isConsistent()).to.equal(true);
     });
 });
