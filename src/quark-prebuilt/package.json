@@ -3,6 +3,9 @@
   "version": "0.0.1-v20170402",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "quark-downloader": "./cli.js"
+  },
   "scripts": {
     "test": "./node_modules/.bin/eslint *.js --fix",
     "postinstall": "quark-downloader -o ./lib -v v20170402"

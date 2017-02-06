@@ -16,9 +16,9 @@ const getBin = (osName = os.type()) => {
 
 const start = (pkgJson, appArguments = []) => {
   const currentTag = downloader.currentTag();
-  const quarkBin = path.join('lib', currentTag, getBin());
+  const quarkBin = path.join(__dirname, 'lib', currentTag, getBin());
 
-  const args = ['--pkgJson', pkgJson, '--'].concat(appArguments);
+  const args = [pkgJson, '--'].concat(appArguments);
 
   return spawn(quarkBin, args);
 };
