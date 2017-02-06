@@ -9,6 +9,10 @@
   "scripts": {
     "test": "eslint *.js --fix"
   },
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/freemountain/quark.git"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
