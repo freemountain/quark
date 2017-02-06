@@ -38,7 +38,7 @@ export default class Trigger {
         // if some guard does not trigger or errors
         for(let i = 0; i < this.guards.size; i++) { // eslint-disable-line
             tracing = tracing
-                .trace(`${this.emits}<Guard${i + 1}>`, params)
+                .trace(`${this.emits}<Guard${i + 1}>`, params, "guard")
                 .trace.triggered();
 
             try {

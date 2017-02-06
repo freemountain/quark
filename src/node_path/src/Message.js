@@ -66,6 +66,13 @@ export default class Message extends Immutable.Record({
         //          sichergestellt werden, dass das da ist.
     }
 
+    preparePayload(trigger) {
+        const x       = this.get("_cursor");
+        const payload = trigger.action.indexOf(".error") !== -1 ? this.payload.unshift(x.currentError) : this.payload;
+
+        return this.set("payload", payload.concat(trigger.params));
+    }
+
     setCursor(cursor) {
         return new Message(this.resource, this.payload, this.headers, cursor);
     }

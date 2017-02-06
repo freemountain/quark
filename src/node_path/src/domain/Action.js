@@ -28,7 +28,7 @@ class Action {
                     .trace(description.name, Immutable.List(), trigger.guards.size)
                     .error(new UnknownMessageError(y)));
 
-                const message = y.update("payload", payload => payload.concat(trigger.params));
+                const message = y.setCursor(this).preparePayload(trigger);
                 const tracing = this.trace(description.name, message.payload, prev === description.name ? null : prev.split(".").pop(), trigger.guards.size);
 
                 assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
@@ -36,31 +36,34 @@ class Action {
 
                 const x = trigger.shouldTrigger(tracing, message.payload);
 
-                if(x.cursor.hasErrored) return Promise.resolve(x.cursor.trace.end());
-                if(!x.result)           return Promise.resolve(x.cursor.trace.end());
+                // TODO: use undo here
+                if(x.cursor.currentError !== tracing.currentError) return Promise.resolve(x.cursor.trace.end());
+                if(!x.result)                                      return Promise.resolve(x.cursor.trace.end());
 
                 const triggered = x.cursor.trace.triggered();
 
                 // TODO to test:
-                //  - undefined return in action (sideeffect)
-                //  - asynchronous action
-                //  - error in action (return)
-                //  - error in action (throw)
-                //  - adync error in action (catch)
+                // - before und done semantisch tauschen
+                //  (depends: message oder message.before
+                //  - error in action (return) + error in before
+                //
+                //  - async error in action (catch / return) + error in done
+                //
                 //  - error in action guard
                 //  - error in before guard
-                //  - error in before
-                //  - error in done
                 //  - error in done guard
+                //
                 //  - error in error guard
                 //  - error in error handler
                 //
                 //  - more complex triggers (line in constr)
                 return description
                     .applyBefore(triggered, y)
-                    .then(cursor => description.applyAction(trigger, cursor, message))
-                    .then(cursor => cursor.hasErrored ? description.applyError(cursor, message) : description.applyDone(cursor, message))
-                    .then(cursor => cursor.hasErrored ? cursor.trace.error(cursor.currentError) : cursor.trace.end())
+                    .then(cursor => Promise.all([description.applyAction(trigger, cursor, message), cursor]))
+                    // TODO: use undo here
+                    .then(([cursor, previous]) => Promise.all([cursor.currentError !== previous.currentError ? description.applyError(cursor, message) : description.applyDone(cursor, message), previous]))
+                    // TODO: use undo here
+                    .then(([cursor, previous]) => cursor.currentError !== previous.currentError ? cursor.trace.error(cursor.currentError) : cursor.trace.end())
                     .catch(e => triggered.error(e));
             } catch(e) {
                 return Promise.resolve(this.error(e));
@@ -85,6 +88,8 @@ class Action {
 
         // hier müssen bei den ganzen triggern noch dopplungen gefiltert werden:
         // this.before.filter(x => //hat keiner der anderen den auch in before?)
+        //
+        // außerdem müssen zyklen erkannt werden (mit hilfe traces?)
         //
         // dadurch würde:
         //
@@ -151,10 +156,10 @@ class Action {
     applyTriggers(kind, cursor, message) {
         assert(cursor instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for ''.`);
 
-        const prev = `${this.name}.${kind}`;
-
+        const updated = message.setCursor(cursor);
+        const prev    = `${this.name}.${kind}`;
         const promise = Promise.all(this[kind]
-            .map(x => cursor[x.emits] instanceof Function ? cursor[x.emits](message, prev) : cursor).toJS());
+            .map(x => cursor[x.emits] instanceof Function ? cursor[x.emits](updated, prev) : cursor).toJS());
 
         return promise
             .then(x => x.reduce((dest, y) => {
@@ -167,7 +172,7 @@ class Action {
                 .patch(diffs.toList(), traces));
     }
 
-    applyAction(trigger, cursor, message) { // eslint-disable-line
+    applyAction(trigger, cursor, message) {
         try {
             assert(cursor.isTracing, "cursor not tracing (before)");
 
@@ -175,6 +180,16 @@ class Action {
 
             const result = schedule(this.op.bind(cursor, ...message.payload.toJS()), trigger.delay);
 
+            return result
+                .then(this.onResult.bind(this, cursor))
+                .catch(this.onResult.bind(this, cursor));
+        } catch(e) {
+            return Promise.resolve(cursor.update("_unit", internals => internals.error(e)));
+        }
+    }
+
+    onResult(cursor, result) { // eslint-disable-line
+        try {
             assert((
                 !result ||
                 result instanceof Promise ||
@@ -182,11 +197,11 @@ class Action {
                 result instanceof Error
             ), `Actions have to always return a cursor or undefined, got ${result && result instanceof Object ? result.constructor.name : result}`);
 
-            if(result instanceof Error) return Promise.resolve(cursor.update("_unit", internals => internals.error(result)));
+            if(result instanceof Error) return cursor.update("_unit", internals => internals.error(result));
 
-            return result instanceof Promise ? result : Promise.resolve(result || cursor);
+            return result || cursor;
         } catch(e) {
-            return Promise.resolve(cursor.update("_unit", internals => internals.error(e)));
+            return cursor.update("_unit", internals => internals.error(e));
         }
     }
 

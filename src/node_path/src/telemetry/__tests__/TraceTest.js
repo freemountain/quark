@@ -41,7 +41,7 @@ describe("TraceTest", function() {
         });
 
         expect(trace.isConsistent()).to.equal(false);
-        expect(trace.toString()).to.equal("\u001b[7m\u001b[33m !Unit::test() - done@\u001b[39m\u001b[27m\u001b[7m\u001b[33m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[33m \u001b[39m\u001b[27m");
+        expect(trace.toString()).to.equal("\u001b[7m\u001b[90m !Unit::test() - done@\u001b[39m\u001b[27m\u001b[7m\u001b[90m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[90m \u001b[39m\u001b[27m");
 
         const trace2  = trace.trace({
             name:   "sub1",
@@ -332,7 +332,7 @@ describe("TraceTest", function() {
             guards: 0
         });
 
-        expect(trace11.toString()).to.equal("                                           \u001b[7m\u001b[32m Unit::test() - done@\u001b[39m\u001b[27m\u001b[7m\u001b[32m8ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m_____\n                                          /                                                                                       \\\n  \u001b[7m\u001b[32m Blub::sub1(1, 2) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m  \u001b[7m\u001b[33m #ERROR !Bla::sub2(\"huhu\") - \u001b[39m\u001b[27m\u001b[7m\u001b[33m3ms\u001b[39m\u001b[27m\u001b[7m\u001b[33m # \u001b[39m\u001b[27m\n                                                                                                                                   |\n                                                                                           \u001b[7m\u001b[32m Bli::sub3(true) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m");
+        expect(trace11.toString()).to.equal("                                           \u001b[7m\u001b[32m Unit::test() - done@\u001b[39m\u001b[27m\u001b[7m\u001b[32m8ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m_____\n                                          /                                                                                       \\\n  \u001b[7m\u001b[32m Blub::sub1(1, 2) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m  \u001b[7m\u001b[31m #ERROR !Bla::sub2(\"huhu\") - \u001b[39m\u001b[27m\u001b[7m\u001b[31m3ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m\n                                                                                                                                   |\n                                                                                           \u001b[7m\u001b[32m Bli::sub3(true) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m");
         expect(trace11.isConsistent()).to.equal(true);
     });
 });

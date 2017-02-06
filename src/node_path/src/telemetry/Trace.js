@@ -108,7 +108,7 @@ export default class Trace extends Record({
         const trigger     = this.trigger === null ? "" : this.trigger.concat("@");
         const delta       = this.end !== null ? this.end - this.start : Date.now() - this.start;
         const color       = this.error !== null || this.end === null ? "red" : "green";
-        const color2      = this.triggers ? color : "yellow";
+        const color2      = this.triggers || this.error !== null ? color : "grey";
         const stringified = chalk.inverse[color2](` ${this.error ? "#ERROR " : ""}${name} - ${trigger}`)
             .concat(chalk.inverse[color2](`${delta}ms`))
             .concat(chalk.inverse[color2](`${this.error ? " #" : ""} `));
