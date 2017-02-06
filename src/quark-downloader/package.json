@@ -7,7 +7,7 @@
     "quark-downloader": "./cli.js"
   },
   "scripts": {
-    "test": "./node_modules/.bin/eslint *.js --fix"
+    "test": "eslint *.js --fix"
   },
   "author": "",
   "license": "ISC",

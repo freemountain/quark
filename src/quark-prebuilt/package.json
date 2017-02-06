@@ -1,14 +1,14 @@
 {
   "name": "quark-prebuilt",
-  "version": "0.0.1-v20170402",
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "bin": {
     "quark-downloader": "./cli.js"
   },
   "scripts": {
-    "test": "./node_modules/.bin/eslint *.js --fix",
-    "postinstall": "quark-downloader -o ./lib -v v20170402"
+    "test": "eslint *.js --fix",
+    "postinstall": "quark-downloader -o ./lib -v v0.0.1"
   },
   "author": "",
   "license": "ISC",
