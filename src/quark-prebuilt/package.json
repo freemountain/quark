@@ -1,0 +1,22 @@
+{
+  "name": "quark-prebuilt",
+  "version": "0.0.1-v20170402",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/eslint *.js --fix",
+    "postinstall": "quark-downloader -o ./lib -v v20170402"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^3.15.0",
+    "eslint-config-airbnb": "^14.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^4.0.0",
+    "eslint-plugin-react": "^6.9.0"
+  },
+  "dependencies": {
+    "quark-downloader": "0.0.1"
+  }
+}
