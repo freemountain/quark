@@ -26,7 +26,13 @@ So let's implement a very primitive counter as a basic example of how to use thi
 {
   "name"    : "counter",
   "version" : "0.1.0",
-  "main"    : "main.js"
+  "main"    : "main.js",
+  "scripts": {
+    "run": "quark-prebuilt ./package.json",
+  },
+  "dev-dependencies": {
+    "quark-prebuilt": "0.0.1"
+  }
 }
 ```
 
@@ -85,6 +91,12 @@ ApplicationWindow {
         }
     }
 }
+```
+
+### Running
+```bash
+npm install
+npm run
 ```
 
 ## Downloads
