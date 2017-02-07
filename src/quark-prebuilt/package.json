@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "bin": {
-    "quark-downloader": "./cli.js"
+    "quark-prebuilt": "./cli.js"
   },
   "scripts": {
     "test": "eslint *.js --fix",
