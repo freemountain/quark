@@ -1,6 +1,6 @@
 {
   "name": "quark-prebuilt",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "",
   "main": "index.js",
   "bin": {
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "eslint *.js --fix",
-    "postinstall": "quark-downloader -o ./lib -v v0.0.2"
+    "postinstall": "quark-downloader -o ./lib -v v0.0.3"
   },
   "repository" : {
     "type" : "git",

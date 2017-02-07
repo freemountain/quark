@@ -32,7 +32,7 @@ So let's implement a very primitive counter as a basic example of how to use thi
     "run": "quark-prebuilt ./package.json",
   },
   "dev-dependencies": {
-    "quark-prebuilt": "0.0.2"
+    "quark-prebuilt": "0.0.3"
   }
 }
 ```
