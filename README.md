@@ -1,4 +1,5 @@
-# Quark [![Build Status](https://travis-ci.org/freemountain/quark.svg?branch=master)](https://travis-ci.org/freemountain/quark)[![Build status](https://ci.appveyor.com/api/projects/status/0o42xa30rxmhvdl6/branch/master?svg=true)](https://ci.appveyor.com/project/freemountain/quark/branch/master)
+
+# Quark [![Build Status](https://travis-ci.org/freemountain/quark.svg?branch=master)](https://travis-ci.org/freemountain/quark)
 ## :arrow_right: electron :heavy_minus_sign: chromium :heavy_plus_sign: Qt quick
 
 Quark is the easiest way to write and ship cross-platform desktop applications using JavaScript and QML. It uses Node.js 7.0 and Qt 5.7 under the hood.
