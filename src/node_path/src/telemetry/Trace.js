@@ -19,16 +19,15 @@ export default class Trace extends Record({
     trigger:  null,
     locked:   false
 }) {
-    constructor(data, context, trigger = null, parent = null) { // eslint-disable-line
+    constructor(data, context) { // eslint-disable-line
         assert(data && typeof data.name === "string", "a trace needs a name");
-        assert(trigger === null || typeof trigger === "string", "previous needs to be a string");
 
         super(Object.assign(data, {
             id:      !data.id || data.id === null ? Uuid.uuid() : data.id,
             name:    context ? `${context}::${data.name}` : data.name,
-            parent:  parent ? parent : (data.parent || null),
+            parent:  data.parent || null,
             start:   Date.now(),
-            trigger: !data.trigger || data.trigger === null ? trigger : data.trigger,
+            trigger: !data.trigger || data.trigger === null || data.trigger === data.name ? null : data.trigger.split(".").pop(),
             params:  data.params && data.params instanceof List ? data.params.map(x => x instanceof Map ? x.delete("_unit") : x).toJS() : []
         }));
     }

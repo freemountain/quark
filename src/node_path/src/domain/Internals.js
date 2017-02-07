@@ -43,11 +43,17 @@ export default class Internals extends Record({
         return this.update("traces", traces => traces.set(this.traces.findLastKey(x => x.end === null && !x.locked), op(current)));
     }
 
-    trace(name, params, previous, guards = 0) {
+    trace(name, params, trigger, guards = 0) {
         const current = this.currentTrace();
-        const args    = [{ name, params, guards }, this.name, previous, current ? current.id : current];
+        const parent  = current ? current.id : current;
 
-        return this.update("traces", traces => traces.push(new Trace(...args)));
+        return this.update("traces", traces => traces.push(new Trace({
+            name,
+            params,
+            guards,
+            trigger,
+            parent
+        }, this.name)));
     }
 
     messageReceived(message) {

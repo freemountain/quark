@@ -22,8 +22,9 @@ describe("TraceTest", function() {
 
     it("creates a trace with subtraces", function() { // eslint-disable-line
         const trace = new Trace({
-            name: "test"
-        }, "Unit", "done");
+            name:    "test",
+            trigger: "message.done"
+        }, "Unit");
 
         expect(trace.toJS()).to.eql({
             id:       1,
@@ -46,7 +47,8 @@ describe("TraceTest", function() {
         const trace2  = trace.trace({
             name:   "sub1",
             params: Immutable.List([1, 2]),
-            guards: 1
+            guards: 1,
+            parent: 1
         }, "Blub");
 
         expect(trace2.toJS()).to.eql({
@@ -105,7 +107,8 @@ describe("TraceTest", function() {
         const trace5 = trace4.trace({
             name:   "sub2",
             params: Immutable.List(["huhu"]),
-            guards: 2
+            guards: 2,
+            parent: 1
         }, "Bla");
 
         expect(trace5.isConsistent()).to.equal(false);
@@ -127,7 +130,8 @@ describe("TraceTest", function() {
         const trace6 = trace5.trace({
             name:   "sub3",
             params: Immutable.List([true]),
-            guards: 3
+            guards: 3,
+            parent: 3
         }, "Bli");
 
         expect(trace6.isConsistent()).to.equal(false);

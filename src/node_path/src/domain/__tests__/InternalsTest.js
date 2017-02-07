@@ -116,7 +116,7 @@ describe("InternalsTest", function() {
                 traces:   [],
                 triggers: true,
                 locked:   false,
-                trigger:  "lala.done"
+                trigger:  "done"
             }]
         });
 
@@ -162,7 +162,7 @@ describe("InternalsTest", function() {
                 traces:   [],
                 triggers: true,
                 locked:   false,
-                trigger:  "lala.done"
+                trigger:  "done"
             }]
         });
 

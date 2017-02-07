@@ -20,22 +20,22 @@ class Action {
     static ERROR    = x => x.action.indexOf(".error") !== -1;    // eslint-disable-line
 
     static Handler(description) {
+        // Todo: prev in den cursor mit undo/redo
         return function(y, prev = description.name) { // eslint-disable-line
             const trigger = description.triggers.find(x => x.action === prev.replace(".before", ""));
 
             try {
                 if(!Message.is(y)) return Promise.resolve(this
-                    .trace(description.name, Immutable.List(), trigger.guards.size)
+                    .trace(description.name, Immutable.List(), prev, trigger.guards.size)
                     .error(new UnknownMessageError(y)));
 
                 assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
-                assert(this.isTracing, "cursor not tracing (before)");
+                assert(this.isTracing, "cursor not tracing");
 
                 const message = y.setCursor(this).preparePayload(trigger);
                 const updated = this.update("_unit", internals => internals.update("action", z => z.setCursor(this)));
-                const tracing = updated.trace(description.name, message.payload, prev === description.name ? null : prev.split(".").pop(), trigger.guards.size);
-
-                const x = trigger.shouldTrigger(tracing, message.payload);
+                const tracing = updated.trace(description.name, message.payload, prev, trigger.guards.size);
+                const x       = trigger.shouldTrigger(tracing, message.payload);
 
                 // TODO: use undo here
                 if(x.cursor.currentError !== tracing.currentError) return Promise.resolve(x.cursor.trace.end());
