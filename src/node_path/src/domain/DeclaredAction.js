@@ -4,10 +4,6 @@ import defaults from "set-default-value";
 import assert from "assert";
 
 export default class DeclaredAction {
-    static DEFAULT_OPERATION = function() {
-        return this;
-    }
-
     static triggered = {
         by(action) {
             return (new DeclaredAction()).by(action);
@@ -69,10 +65,6 @@ export default class DeclaredAction {
         return this.set("triggers", this.triggers
             .filter(x => !action.triggers.find(y => y.name === x.name))
             .concat(action.triggers));
-    }
-
-    setOperation(operation) {
-        return this.set("operation", operation);
     }
 
     by(action) {

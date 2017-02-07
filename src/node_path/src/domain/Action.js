@@ -99,6 +99,8 @@ class Action {
         //
         // test: message
         // test2: test, sons würde das doppelt getriggert
+        //
+        const own = ownTriggers.find(x => x.action === name && x.emits === name);
 
         this.unit      = unit;
         this.name      = name;
@@ -109,7 +111,8 @@ class Action {
         this.done      = triggers.filter(Action.DONE);
         this.error     = triggers.filter(Action.ERROR);
         this.func      = func;
-        this.triggers  = ownTriggers.concat(ownTriggers.filter(x => x.action === name && x.emits === name).size === 1 ? [] : [new Trigger(name, new DeclaredTrigger(name))]);
+        this.triggers  = ownTriggers
+            .concat(own ? [] : [new Trigger(name, new DeclaredTrigger(name))]);
     }
 
     willTrigger(cursor, ...messages) {
