@@ -28,11 +28,12 @@ class Action {
                     .trace(description.name, Immutable.List(), trigger.guards.size)
                     .error(new UnknownMessageError(y)));
 
-                const message = y.setCursor(this).preparePayload(trigger);
-                const tracing = this.trace(description.name, message.payload, prev === description.name ? null : prev.split(".").pop(), trigger.guards.size);
-
                 assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
                 assert(this.isTracing, "cursor not tracing (before)");
+
+                const message = y.setCursor(this).preparePayload(trigger);
+                const updated = this.update("_unit", internals => internals.update("action", z => z.setCursor(this)));
+                const tracing = updated.trace(description.name, message.payload, prev === description.name ? null : prev.split(".").pop(), trigger.guards.size);
 
                 const x = trigger.shouldTrigger(tracing, message.payload);
 
@@ -43,18 +44,17 @@ class Action {
                 const triggered = x.cursor.trace.triggered();
 
                 // TODO to test:
-                // - before und done semantisch tauschen
-                //  (depends: message oder message.before
-                //  - error in action (return) + error in before
                 //
-                //  - async error in action (catch / return) + error in done
-                //
+                //  - error in done
+                //  - error in error handler
                 //  - error in action guard
                 //  - error in before guard
                 //  - error in done guard
                 //
-                //  - error in error guard
-                //  - error in error handler
+                //  - error in error guards
+                //
+                //  - before und done semantisch tauschen
+                //  (depends: message oder message.before
                 //
                 //  - more complex triggers (line in constr)
                 return description
@@ -64,6 +64,7 @@ class Action {
                     .then(([cursor, previous]) => Promise.all([cursor.currentError !== previous.currentError ? description.applyError(cursor, message) : description.applyDone(cursor, message), previous]))
                     // TODO: use undo here
                     .then(([cursor, previous]) => cursor.currentError !== previous.currentError ? cursor.trace.error(cursor.currentError) : cursor.trace.end())
+                    .then(cursor => cursor.update("_unit", internals => internals.update("action", z => z.unsetCursor())))
                     .catch(e => triggered.error(e));
             } catch(e) {
                 return Promise.resolve(this.error(e));
@@ -161,15 +162,17 @@ class Action {
         const promise = Promise.all(this[kind]
             .map(x => cursor[x.emits] instanceof Function ? cursor[x.emits](updated, prev) : cursor).toJS());
 
+        // TODO: hier die logik bei den thens in cursor.patch packen
         return promise
             .then(x => x.reduce((dest, y) => {
                 return Object.assign(dest, {
                     diffs:  dest.diffs.concat(cursor.diff(y)),
-                    traces: dest.traces.concat(y.traces)
+                    traces: dest.traces.concat(y.traces),
+                    errors: dest.errors.concat(y.errors)
                 });
-            }, { diffs: Immutable.Set(), traces: Immutable.List() }))
-            .then(({ diffs, traces }) => cursor
-                .patch(diffs.toList(), traces));
+            }, { diffs: Immutable.Set(), traces: Immutable.List(), errors: Immutable.List() }))
+            .then(({ diffs, traces, errors }) => cursor
+                .patch(diffs.toList(), traces, errors));
     }
 
     applyAction(trigger, cursor, message) {
@@ -197,7 +200,8 @@ class Action {
                 result instanceof Error
             ), `Actions have to always return a cursor or undefined, got ${result && result instanceof Object ? result.constructor.name : result}`);
 
-            if(result instanceof Error) return cursor.update("_unit", internals => internals.error(result));
+            if(result instanceof Error)   return cursor.update("_unit", internals => internals.error(result));
+            if(result instanceof Promise) return result.then(this.onResult.bind(this, cursor));
 
             return result || cursor;
         } catch(e) {

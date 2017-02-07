@@ -2,7 +2,7 @@ import NonRecoverableError from "../../error/NonRecoverableError";
 
 export default class GuardError extends NonRecoverableError {
     constructor(context, trigger, position, e) {
-        super(`The ${position}${GuardError.addition(position)} guard for '${context}::${trigger}' threw an error:\n\n\t${e}\n`);
+        super(`The ${position}${GuardError.addition(position)} guard for '${context}::${trigger}' threw an error:\n\n\t${e}\n\n`);
 
         this.e = e;
     }

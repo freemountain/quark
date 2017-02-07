@@ -53,24 +53,25 @@ export default class Message extends Immutable.Record({
     }
 
     willTrigger(...actions) {
-        // assert(false, "Message.willTrigger: implement!");
+        assert(this.get("_cursor") instanceof Cursor, "Message::willTrigger - you need to set the cursor before using it");
 
         const description = this.get("_cursor").get("_unit").get("description");
         const messages    = actions.map(name => new Message(name, this.payload, this.headers));
 
         return description.some(handler => handler.willTrigger(this.get("_cursor"), messages));
-        // TODO:
-        //     - Message.willTrigger implementieren + testen
-        //          => hierfür muss message wahrscheinlich ne description
-        //          von ner unit gesetzt bekommen im cursor, hier muss dann
-        //          sichergestellt werden, dass das da ist.
     }
 
     preparePayload(trigger) {
+        assert(this.get("_cursor") instanceof Cursor, "Message::preparePayload - you need to set the cursor before using it");
+
         const x       = this.get("_cursor");
         const payload = trigger.action.indexOf(".error") !== -1 ? this.payload.unshift(x.currentError) : this.payload;
 
         return this.set("payload", payload.concat(trigger.params));
+    }
+
+    unsetCursor() {
+        return new Message(this.resource, this.payload, this.headers);
     }
 
     setCursor(cursor) {

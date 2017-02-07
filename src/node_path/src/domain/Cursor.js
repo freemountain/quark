@@ -125,7 +125,7 @@ class Cursor {
     }
 
     get currentError() {
-        return this.errors.first() || null;
+        return this.errors.last() || null;
     }
 
     get currentContext() {
@@ -160,7 +160,7 @@ class Cursor {
         return new this.constructor(data);
     }
 
-    patch(diffs, traces = Immutable.List()) {
+    patch(diffs, traces = Immutable.List(), errors = Immutable.List()) {
         assert(diffs instanceof Immutable.List, `Diffs need to be of type Immutable.List or Immutable.Set, got '${typeof diffs === "object" ? diffs.constructor.name : JSON.stringify(diffs)}'.`);
 
         const first = diffs.first();
@@ -175,7 +175,8 @@ class Cursor {
             .toList();
 
         const next = patched
-            .update("_unit", internals => internals.set("traces", updated));
+            .update("_unit", internals => internals.set("traces", updated))
+            .update("_unit", internals => internals.update("errors", x => x.concat(errors)));
 
         return new this.constructor(next);
     }
