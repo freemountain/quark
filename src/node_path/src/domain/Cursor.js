@@ -260,7 +260,7 @@ ImmutableMethods
         value:        function(...args) { // eslint-disable-line
             const op = this.__data.x[method];
 
-            assert(op instanceof Function, `Can't call ${method} on ${this.__data.x.constructor.name}`);
+            assert(op instanceof Function, `Method '${this.__data.x.constructor.name}::${method}' is undefined.`);
 
             const result = op.call(this.__data.x, ...args);
 

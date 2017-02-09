@@ -4,15 +4,14 @@ export default class CoreComponentError extends Error {
     constructor(message, e) {
         super(message);
 
+        this.recoverable = (
+            e instanceof Error &&
+            !(e instanceof TypeError)
+        ) || !e;
         this._e = e;
     }
 
     isRecoverable() {
-        return (
-            this._e instanceof Error &&
-            !(
-                this._e instanceof TypeError
-            )
-        );
+        return this.isRecoverable;
     }
 }
