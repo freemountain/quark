@@ -327,7 +327,7 @@ describe("RuntimeTest", function() {
         });
     });
 
-    it("creates an inherited runtime and checks the initial cursor", function() {
+/* it("creates an inherited runtime and checks the initial cursor", function() {
         const unit = new Inheritance();
 
         expect(unit.state()).to.eql(null);
@@ -535,5 +535,5 @@ describe("RuntimeTest", function() {
                     }]
                 }]);
             });
-    });
+    });*/
 });

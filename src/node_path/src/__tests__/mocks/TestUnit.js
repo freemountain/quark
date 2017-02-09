@@ -14,7 +14,7 @@ export default class TestUnit extends Runtime {
 
         children: triggered
             .by("message")
-            .if((_, unit) => unit.currentMessage.willTrigger("props", "action", "init")),
+            .if((_, unit) => unit.currentMessage.willTrigger("diffs", "action", "init")),
 
         diffs: triggered
             .by("message")

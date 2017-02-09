@@ -45,25 +45,25 @@ class Action {
 
                 // TODO to test:
                 //
-                //  - error in done
-                //  - error in error handler
                 //  - error in action guard
                 //  - error in before guard
                 //  - error in done guard
-                //
                 //  - error in error guards
                 //
                 //  - before und done semantisch tauschen
                 //  (depends: message oder message.before
                 //
                 //  - more complex triggers (line in constr)
+                //
+                //  MessageTest!
                 return description
                     .applyBefore(triggered, y)
-                    .then(cursor => Promise.all([description.applyAction(trigger, cursor, message), cursor]))
+                    .then(cursor => Promise.all([schedule(() => description.applyAction(cursor, message), trigger.delay), cursor]))
                     // TODO: use undo here
-                    .then(([cursor, previous]) => Promise.all([cursor.currentError !== previous.currentError ? description.applyError(cursor, message) : description.applyDone(cursor, message), previous]))
+                    .then(([cursor, previous]) => cursor.currentError !== previous.currentError ? [cursor, cursor.currentError] : [cursor])
+                    .then(([cursor, error]) => Promise.all([error ? description.applyError(cursor, message) : description.applyDone(cursor, message), error]))
                     // TODO: use undo here
-                    .then(([cursor, previous]) => cursor.currentError !== previous.currentError ? cursor.trace.error(cursor.currentError) : cursor.trace.end())
+                    .then(([cursor, error]) => error ? cursor.trace.error(error) : cursor.trace.end())
                     .then(cursor => cursor.update("_unit", internals => internals.update("action", z => z.unsetCursor())))
                     .catch(e => triggered.error(e));
             } catch(e) {
@@ -90,7 +90,7 @@ class Action {
         // hier müssen bei den ganzen triggern noch dopplungen gefiltert werden:
         // this.before.filter(x => //hat keiner der anderen den auch in before?)
         //
-        // außerdem müssen zyklen erkannt werden (mit hilfe traces?)
+        // außerdem müssen zyklen erkannt werden (mit hilfe traces dynamisch oder hier statisch?)
         //
         // dadurch würde:
         //
@@ -137,6 +137,7 @@ class Action {
         assert(false, "Action.cancel: implement!");
     }
 
+    // die hier werden dann alle diese actions im cursor
     applyBefore(cursor, message) {
         return this.applyTriggers("before", cursor, message);
     }
@@ -158,9 +159,14 @@ class Action {
     }
 
     applyTriggers(kind, cursor, message) {
-        assert(cursor instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for ''.`);
+        assert(cursor instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(cursor)} for ''.`);
 
+        // TODO: das muss hiermit funktionieren, damit das in runtime.before
+        // etc ausgelagert werden kann und dadurch bei inheritance überschreibbar
+        //
+        // const updated = cursor.currentMessage.setCursor(cursor);
         const updated = message.setCursor(cursor);
+        // hier das löst sich auch durch cursor.currentop
         const prev    = `${this.name}.${kind}`;
         const promise = Promise.all(this[kind]
             .map(x => cursor[x.emits] instanceof Function ? cursor[x.emits](updated, prev) : cursor).toJS());
@@ -178,17 +184,23 @@ class Action {
                 .patch(diffs.toList(), traces, errors));
     }
 
-    applyAction(trigger, cursor, message) {
+    applyAction(cursor, message) {
+        // TODO: das hier muss möglich sein, damit das in
+        // die message action ausgelagert werden kann, um den
+        // ganzen shit so überschreiben zu können - des weiteren
+        // muss der trigger hieraus (delay schon beim handler
+        // anwenden
+        // const message = cursor.currentMessage
         try {
             assert(cursor.isTracing, "cursor not tracing (before)");
 
+            // currentOp muss auf cursor sein
             if(!this.op) return Promise.resolve(cursor);
 
-            const result = schedule(this.op.bind(cursor, ...message.payload.toJS()), trigger.delay);
+            const result = this.op.call(cursor, ...message.payload.toJS());
 
-            return result
-                .then(this.onResult.bind(this, cursor))
-                .catch(this.onResult.bind(this, cursor));
+            // onResult muss dann oder geinlined werden
+            return this.onResult(cursor, result);
         } catch(e) {
             return Promise.resolve(cursor.update("_unit", internals => internals.error(e)));
         }
@@ -204,7 +216,9 @@ class Action {
             ), `Actions have to always return a cursor or undefined, got ${result && result instanceof Object ? result.constructor.name : result}`);
 
             if(result instanceof Error)   return cursor.update("_unit", internals => internals.error(result));
-            if(result instanceof Promise) return result.then(this.onResult.bind(this, cursor));
+            if(result instanceof Promise) return result
+                .then(this.onResult.bind(this, cursor))
+                .catch(this.onResult.bind(this, cursor));
 
             return result || cursor;
         } catch(e) {
