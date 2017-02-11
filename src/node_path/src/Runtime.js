@@ -259,7 +259,7 @@ export default class Runtime extends Duplex {
             // adde hier ne diff zeit zum trace
             .then(update => !update.cursor.hasErrored ? this.done.call(update.cursor, update.diffs) : this.error.call(update.cursor))
             // adde hier ne diff zeit zum trace
-            .then(x => Runtime.update(this, x));
+            .then(x => x.isRecoverable ? Runtime.update(this, x) : this.emit("error", x.currentError));
     }
 
     init(action) { // eslint-disable-line
@@ -289,8 +289,6 @@ export default class Runtime extends Duplex {
     }
 
     error() {
-        if(!this.isRecoverable) throw this.currentError;
-
         return this.messageProcessed();
     }
 

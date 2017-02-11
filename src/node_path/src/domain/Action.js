@@ -45,13 +45,8 @@ class Action {
 
                 // TODO to test:
                 //
-                //  - error in action guard
-                //  - error in before guard
-                //  - error in done guard
-                //  - error in error guards
-                //
                 //  - before und done semantisch tauschen
-                //  (depends: message oder message.before
+                //  (depends: message oder message.before)
                 //
                 //  - more complex triggers (line in constr)
                 //
@@ -115,28 +110,6 @@ class Action {
             .concat(own ? [] : [new Trigger(name, new DeclaredTrigger(name))]);
     }
 
-    willTrigger(cursor, ...messages) {
-        // Test!!
-        return Immutable.List(messages).every(message => ( // eslint-disable-line
-            (this.triggers.has(message.resource) && this.triggers.get(message.resource).shouldTrigger(cursor, message.payload)) ||
-            (this.before.has(message.resource) && this.before.get(message.resource).shouldTrigger(cursor, message.payload)) ||
-            (this.progress.has(message.resource) && this.progress.get(message.resource).shouldTrigger(cursor, message.payload)) ||
-            (this.cancel.has(message.resource) && this.cancel.get(message.resource).shouldTrigger(cursor, message.payload)) ||
-            (this.done.has(message.resource) && this.done.get(message.resource).shouldTrigger(cursor, message.payload)) ||
-            (this.error.has(message.resource) && this.error.get(message.resource).shouldTrigger(cursor, message.payload))
-        ));
-    }
-
-    guardsToJS(triggers) {
-        return triggers.map(x => Object.assign({}, x, {
-            guards: x.guards.length
-        }));
-    }
-
-    cancel() {
-        assert(false, "Action.cancel: implement!");
-    }
-
     // die hier werden dann alle diese actions im cursor
     applyBefore(cursor, message) {
         return this.applyTriggers("before", cursor, message);
@@ -168,8 +141,8 @@ class Action {
         const updated = message.setCursor(cursor);
         // hier das löst sich auch durch cursor.currentop
         const prev    = `${this.name}.${kind}`;
-        const promise = Promise.all(this[kind]
-            .map(x => cursor[x.emits] instanceof Function ? cursor[x.emits](updated, prev) : cursor).toJS());
+        const promise = Promise.all(this[kind].map(x => cursor[x.emits](updated, prev)).toJS());
+            // .map(x => cursor[x.emits] instanceof Function ? cursor[x.emits](updated, prev) : cursor).toJS());
 
         // TODO: hier die logik bei den thens in cursor.patch packen
         return promise
@@ -224,6 +197,28 @@ class Action {
         } catch(e) {
             return cursor.update("_unit", internals => internals.error(e));
         }
+    }
+
+    willTrigger(cursor, ...messages) {
+        // Test!!
+        return Immutable.List(messages).every(message => ( // eslint-disable-line
+            (this.triggers.has(message.resource) && this.triggers.get(message.resource).shouldTrigger(cursor, message.payload)) ||
+            (this.before.has(message.resource) && this.before.get(message.resource).shouldTrigger(cursor, message.payload)) ||
+            (this.progress.has(message.resource) && this.progress.get(message.resource).shouldTrigger(cursor, message.payload)) ||
+            (this.cancel.has(message.resource) && this.cancel.get(message.resource).shouldTrigger(cursor, message.payload)) ||
+            (this.done.has(message.resource) && this.done.get(message.resource).shouldTrigger(cursor, message.payload)) ||
+            (this.error.has(message.resource) && this.error.get(message.resource).shouldTrigger(cursor, message.payload))
+        ));
+    }
+
+    guardsToJS(triggers) {
+        return triggers.map(x => Object.assign({}, x, {
+            guards: x.guards.length
+        }));
+    }
+
+    cancel() {
+        assert(false, "Action.cancel: implement!");
     }
 
     toJS() {

@@ -4,7 +4,7 @@ export default class GuardError extends NonRecoverableError {
     constructor(context, trigger, position, e) {
         super(`The ${position}${GuardError.addition(position)} guard for '${context}::${trigger}' threw an error:\n\n\t${e}\n\n`);
 
-        this.e = e;
+        this._e = e;
     }
 
     static addition(position) {
