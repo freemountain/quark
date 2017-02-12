@@ -8,28 +8,28 @@ import Trigger from "./Trigger";
 import DeclaredTrigger from "./DeclaredTrigger";
 
 class Action {
-    static BEFORE = x => (
-        !Action.PROGRESS(x) &&
-        !Action.CANCEL(x) &&
-        !Action.DONE(x) &&
-        !Action.ERROR(x)
-    );
+    static BEFORE   = x => x.action.indexOf(".before") !== -1;   // eslint-disable-line
     static PROGRESS = x => x.action.indexOf(".progress") !== -1;
     static CANCEL   = x => x.action.indexOf(".cancel") !== -1;   // eslint-disable-line
-    static DONE     = x => x.action.indexOf(".done") !== -1;     // eslint-disable-line
+    static DONE     = x => (                                     // eslint-disable-line
+        !Action.PROGRESS(x) &&
+        !Action.CANCEL(x) &&
+        !Action.BEFORE(x) &&
+        !Action.ERROR(x)
+    );
     static ERROR    = x => x.action.indexOf(".error") !== -1;    // eslint-disable-line
 
     static Handler(description) {
         // Todo: prev in den cursor mit undo/redo
         return function(y, prev = description.name) { // eslint-disable-line
-            const trigger = description.triggers.find(x => x.action === prev.replace(".before", ""));
+            const trigger = description.triggers.find(x => x.action === prev.replace(".done", ""));
 
             try {
                 if(!Message.is(y)) return Promise.resolve(this
                     .trace(description.name, Immutable.List(), prev, trigger.guards.size)
                     .error(new UnknownMessageError(y)));
 
-                assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}.before]'.`);
+                assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}]'.`);
                 assert(this.isTracing, "cursor not tracing");
 
                 const message = y.setCursor(this).preparePayload(trigger);

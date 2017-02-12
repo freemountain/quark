@@ -48,15 +48,15 @@ class Test2 extends Runtime {
 
 class Test3 extends Runtime {
     static triggers = {
-        test:  triggered.by("message"),
-        test2: triggered.by("message"),
-        test3: triggered.by("message.done"),
-        test4: triggered.by("message.done"),
+        test:  triggered.by("message.before"),
+        test2: triggered.by("message.before"),
+        test3: triggered.by("message"),
+        test4: triggered.by("message"),
         test5: triggered.by("message.error"),
         test6: triggered.by("message.error"),
-        test7: triggered.by("message"),
-        test8: triggered.by("message"),
-        test9: triggered.by("message")
+        test7: triggered.by("message.before"),
+        test8: triggered.by("message.before"),
+        test9: triggered.by("message.before")
     };
 
     static props = {
@@ -97,14 +97,14 @@ class Test3 extends Runtime {
 class Test4 extends Runtime {
     static triggers = {
         test: triggered
-            .by("message")
+            .by("message.before")
             .if((name, x) => x.currentMessage.resource === "/actions/init" ? false : name.indexOf("lulu") === -1),
 
-        test2: triggered.by("test"),
-        test3: triggered.by("test"),
-        test4: triggered.by("testError.done"),
+        test2: triggered.by("test.before"),
+        test3: triggered.by("test.before"),
+        test4: triggered.by("testError"),
         test5: triggered
-            .by("test")
+            .by("test.before")
             .if(() => true)
             .if(() => {
                 throw new Error("an error6");
@@ -112,7 +112,7 @@ class Test4 extends Runtime {
             .if(() => true),
 
         test6: triggered
-            .by("testError.done")
+            .by("testError")
             .if(() => {
                 throw new Error("an error7");
             }),
@@ -425,37 +425,37 @@ describe("ActionTest", function() {
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message"
+                action: "message.before"
             }, {
                 emits:  "test7",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message"
+                action: "message.before"
             }, {
                 emits:  "test8",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message"
+                action: "message.before"
             }, {
                 emits:  "test9",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message"
+                action: "message.before"
             }, {
                 emits:  "init",
                 delay:  0,
                 guards: 1,
                 params: [],
-                action: "message"
+                action: "message.before"
             }, {
                 emits:  "test",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message"
+                action: "message.before"
             }],
             triggers: [{
                 emits:  "message",
@@ -471,13 +471,13 @@ describe("ActionTest", function() {
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message.done"
+                action: "message"
             }, {
                 emits:  "test4",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message.done"
+                action: "message"
             }],
             error: [{
                 emits:  "test5",
@@ -510,7 +510,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 1,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -525,37 +525,37 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }, {
                     emits:  "test7",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }, {
                     emits:  "test8",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }, {
                     emits:  "test9",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }, {
                     emits:  "init",
                     delay:  0,
                     guards: 1,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }, {
                     emits:  "test",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }],
                 triggers: [{
                     emits:  "message",
@@ -571,13 +571,13 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.done"
+                    action: "message"
                 }, {
                     emits:  "test4",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.done"
+                    action: "message"
                 }],
                 error: [{
                     emits:  "test5",
@@ -608,7 +608,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -630,7 +630,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -652,7 +652,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.done"
+                    action: "message"
                 }],
                 cancel:   [],
                 progress: [],
@@ -674,7 +674,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.done"
+                    action: "message"
                 }],
                 cancel:   [],
                 progress: [],
@@ -741,7 +741,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -764,7 +764,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -787,7 +787,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -1482,19 +1482,19 @@ describe("ActionTest", function() {
             unit:   "Test",
             name:   "message",
             before: [{
-                action: "message",
+                action: "message.before",
                 emits:  "action",
                 delay:  0,
                 guards: 1,
                 params: []
             }, {
-                action: "message",
+                action: "message.before",
                 emits:  "children",
                 delay:  0,
                 guards: 1,
                 params: []
             }, {
-                action: "message",
+                action: "message.before",
                 emits:  "diffs",
                 delay:  0,
                 guards: 1,
@@ -1510,7 +1510,7 @@ describe("ActionTest", function() {
             cancel:   [],
             progress: [],
             done:     [{
-                action: "message.done",
+                action: "message",
                 emits:  "props",
                 delay:  0,
                 guards: 0,

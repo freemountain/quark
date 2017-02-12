@@ -167,7 +167,7 @@ export default class Runtime extends Duplex {
 
     static triggers = {
         init: DeclaredAction.triggered
-            .by("message")
+            .by("message.before")
             .if((_, unit) => (
                 unit.currentMessage.isAction() &&
                 unit.currentMessage.resource.indexOf("/actions/init") === 0

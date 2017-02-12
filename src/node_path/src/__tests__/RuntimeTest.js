@@ -69,7 +69,7 @@ describe("RuntimeTest", function() {
                 name:     "action",
                 triggers: [
                     (new DeclaredTrigger("action")).toJS(),
-                    (new DeclaredTrigger("message", Immutable.List([() => true]))).toJS()
+                    (new DeclaredTrigger("message.before", Immutable.List([() => true]))).toJS()
                 ]
             },
 
@@ -77,7 +77,7 @@ describe("RuntimeTest", function() {
                 name:     "children",
                 triggers: [
                     (new DeclaredTrigger("children")).toJS(),
-                    (new DeclaredTrigger("message", Immutable.List([() => true]))).toJS()
+                    (new DeclaredTrigger("message.before", Immutable.List([() => true]))).toJS()
                 ]
             },
 
@@ -85,7 +85,7 @@ describe("RuntimeTest", function() {
                 name:     "diffs",
                 triggers: [
                     (new DeclaredTrigger("diffs")).toJS(),
-                    (new DeclaredTrigger("message", Immutable.List([() => true]))).toJS()
+                    (new DeclaredTrigger("message.before", Immutable.List([() => true]))).toJS()
                 ]
             },
 
@@ -93,14 +93,14 @@ describe("RuntimeTest", function() {
                 name:     "init",
                 triggers: [
                     (new DeclaredTrigger("init")).toJS(),
-                    (new DeclaredTrigger("message", Immutable.List([() => true]))).toJS()
+                    (new DeclaredTrigger("message.before", Immutable.List([() => true]))).toJS()
                 ]
             },
 
             props: {
                 name:     "props",
                 triggers: [
-                    (new DeclaredTrigger("message.done")).toJS(),
+                    (new DeclaredTrigger("message")).toJS(),
                     (new DeclaredTrigger("props")).toJS(),
                     (new DeclaredTrigger("test")).toJS()
                 ]
@@ -128,25 +128,25 @@ describe("RuntimeTest", function() {
                     guards: 1,
                     params: [],
                     delay:  0,
-                    action: "message"
+                    action: "message.before"
                 }, {
                     emits:  "action",
                     guards: 1,
                     params: [],
                     delay:  0,
-                    action: "message"
+                    action: "message.before"
                 }, {
                     emits:  "children",
                     guards: 1,
                     params: [],
                     delay:  0,
-                    action: "message"
+                    action: "message.before"
                 }, {
                     emits:  "diffs",
                     guards: 1,
                     params: [],
                     delay:  0,
-                    action: "message"
+                    action: "message.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -156,7 +156,7 @@ describe("RuntimeTest", function() {
                     guards: 0,
                     params: [],
                     delay:  0,
-                    action: "message.done"
+                    action: "message"
                 }],
                 triggers: [{
                     emits:  "message",
@@ -186,7 +186,7 @@ describe("RuntimeTest", function() {
                     emits:  "action",
                     guards: 1,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }]
             },
 
@@ -209,7 +209,7 @@ describe("RuntimeTest", function() {
                     emits:  "children",
                     guards: 1,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }]
             },
 
@@ -232,7 +232,7 @@ describe("RuntimeTest", function() {
                     emits:  "diffs",
                     guards: 1,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }]
             },
 
@@ -255,7 +255,7 @@ describe("RuntimeTest", function() {
                     emits:  "init",
                     guards: 1,
                     params: [],
-                    action: "message"
+                    action: "message.before"
                 }]
             },
 
@@ -278,7 +278,7 @@ describe("RuntimeTest", function() {
                     emits:  "props",
                     guards: 0,
                     params: [],
-                    action: "message.done"
+                    action: "message"
                 }]
             }
         });
