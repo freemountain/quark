@@ -1,8 +1,23 @@
+// @flow
+
 import { Record, List, Map } from "immutable";
 import assert from "assert";
 import asciiTree from "asciitree";
 import Uuid from "../util/Uuid";
 import chalk from "chalk";
+
+type TraceDescription = {
+    name:     string,             // eslint-disable-line
+    id?:      ?string,            // eslint-disable-line
+    parent?:  ?number,            // eslint-disable-line
+    trigger?: ?string,            // eslint-disable-line
+    params?:  List<*> | Array<*>, // eslint-disable-line
+    start?:   ?number             // eslint-disable-line
+}
+
+type Context = ?string
+
+type TraceList = Array<string | TraceList>
 
 export default class Trace extends Record({
     id:       null,
@@ -19,7 +34,7 @@ export default class Trace extends Record({
     trigger:  null,
     locked:   false
 }) {
-    constructor(data, context) { // eslint-disable-line
+    constructor(data: TraceDescription, context: Context) { // eslint-disable-line
         assert(data && typeof data.name === "string", "a trace needs a name");
 
         super(Object.assign(data, {
@@ -32,17 +47,21 @@ export default class Trace extends Record({
         }));
     }
 
-    addSubtrace(trace) {
+    addSubtrace(trace: Trace): Trace {
         return this
             .update("traces", traces => trace.parent === this.id ? traces.push(trace) : traces.map(x => x.addSubtrace(trace)));
     }
 
-    trace(data, context, trigger) {
+    trace(data: TraceDescription, context: Context, trigger: any): Trace {
         return new Trace(data, context, trigger, this.end === null ? this.id : this.parent);
     }
 
-    ended() {
-        if(this.end !== null) return assert(false, `A trace can only be ended once, but got \n\n\t${this}.`);
+    ended(): Trace {
+        if(this.end !== null) {
+            assert(false, `A trace can only be ended once, but got \n\n\t${this.toString()}.`);
+
+            return this;
+        }
 
         const now     = Date.now();
         const ended   = this.set("end", now);
@@ -50,38 +69,38 @@ export default class Trace extends Record({
         return ended;
     }
 
-    errored(e) {
+    errored(e: Error): Trace {
         const updated = this.set("error", e);
 
         return updated.ended();
     }
 
-    triggered() {
+    triggered(): Trace {
         return this.set("triggers", true);
     }
 
-    isConsistent() {
+    isConsistent(): boolean {
         return (
             this.end !== null &&
             this.traces.every(x => x.isConsistent())
         );
     }
 
-    lockRec() {
-        assert(this.isConsistent(), `You can only lock consistent traces. Some end calls are probably missing.\n\n${this}`);
+    lockRec(): Trace {
+        assert(this.isConsistent(), `You can only lock consistent traces. Some end calls are probably missing.\n\n${this.toString()}`);
 
         return this
             .set("locked", true)
             .update("traces", traces => traces.map(x => x.lockRec()).sort((x, y) => x.start - y.start));
     }
 
-    lock() {
+    lock(): Trace {
         assert(this.parent === null, "You can only lock the root of a trace");
 
         return this.lockRec();
     }
 
-    toJS() {
+    toJS(): Object {
         return {
             id:       this.id,
             locked:   this.locked,
@@ -98,7 +117,7 @@ export default class Trace extends Record({
         };
     }
 
-    toArray() { // eslint-disable-line
+    toArray(): TraceList { // eslint-disable-line
         const triggers = this.triggers ? "" : "!";
         const params   = this.params
             .map(x => typeof x === "object" ? x.constructor.name : JSON.stringify(x)).join(", ");
@@ -116,7 +135,7 @@ export default class Trace extends Record({
             .concat(this.traces.map(trace => trace.toArray()).toJS());
     }
 
-    toString() {
+    toString(): string {
         const result = this.toArray();
 
         return asciiTree(result);

@@ -1,11 +1,14 @@
+// @flow
+
 import Internals from "../Internals";
 import { expect } from "chai";
 import { Map } from "immutable";
 import Message from "../../Message";
-import Immutable from "immutable";
+import { List } from "immutable";
 import Trace from "../../telemetry/Trace";
 import sinon from "sinon";
 import Uuid from "../../util/Uuid";
+import CoreComponentError from "../../error/CoreComponentError";
 
 describe("InternalsTest", function() {
     beforeEach(function() {
@@ -46,7 +49,7 @@ describe("InternalsTest", function() {
     });
 
     it("checks the action functions", function() {
-        const message   = new Message("/blub", []);
+        const message   = new Message("/blub", List());
         const internals = new Internals({
             name: "blub"
         });
@@ -58,21 +61,21 @@ describe("InternalsTest", function() {
     });
 
     it("starts and updates a trace", function() {
-        const message   = new Message("/blub", []);
+        const message   = new Message("/blub", List());
         const internals = new Internals({
             name: "blub"
         });
 
         expect(internals.isTracing()).to.equal(false);
-        expect(internals.trace("func", Immutable.List.of(1)).traces.toJS()).to.eql([new Trace({
+        expect(internals.trace("func", List.of(1)).traces.toJS()).to.eql([new Trace({
             name:   "func",
-            params: Immutable.List.of(1)
+            params: List.of(1)
         }, "blub").set("id", 1).set("start", 1).toJS()]);
 
         expect(() => internals.updateCurrentTrace(x => x)).to.throw("AssertionError: Can\'t update a trace before receiving a message.");
         const internals2 = internals
             .messageReceived(message)
-            .trace("lulu", Immutable.List(), "lala.done", 1)
+            .trace("lulu", List(), "lala.done", 1)
             .updateCurrentTrace(x => x.triggered());
 
         expect(internals2.isTracing()).to.equal(true);
@@ -168,7 +171,7 @@ describe("InternalsTest", function() {
 
         expect(internals3.isTracing()).to.equal(true);
         expect(internals3.messageProcessed().isTracing()).to.equal(false);
-        expect(() => internals3.trace("g", Immutable.List()).messageProcessed().toJS()).to.throw("AssertionError: You can only lock consistent traces. Some end calls are probably missing.");
+        expect(() => internals3.trace("g", List()).messageProcessed().toJS()).to.throw("AssertionError: You can only lock consistent traces. Some end calls are probably missing.");
     });
 
     it("works with the error functions", function() {
@@ -183,7 +186,11 @@ describe("InternalsTest", function() {
         expect(internals.error(new Error("huhu")).hasErrored()).to.equal(true);
         expect(internals.error(new Error("huhu")).isRecoverable()).to.equal(false);
 
-        const e = new Error("huhu");
+        const e = class Rec extends CoreComponentError {
+            constructor() {
+                super("Rec");
+            }
+        };
 
         e.isRecoverable = () => true;
 

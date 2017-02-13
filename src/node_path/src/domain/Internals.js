@@ -1,3 +1,5 @@
+// @flow
+
 import { Record, List, Map, Set } from "immutable";
 import Trace from "../telemetry/Trace";
 import Message from "../Message";
@@ -16,47 +18,53 @@ export default class Internals extends Record({
     action:      null,
     name:        "Default"
 }) {
-    currentTrace() {
+    currentTrace(): ?Trace {
         return this.traces.findLast(x => x.end === null && !x.locked);
     }
 
-    isTracing() {
+    isTracing(): boolean {
         return (
             this.action !== null &&
             this.currentTrace() instanceof Trace
         );
     }
 
-    hasErrored() {
+    hasErrored(): boolean {
         return this.errors.size > 0;
     }
 
-    error(e) {
+    error(e: Error): Internals {
         return this.update("errors", errors => errors.add(e));
     }
 
-    updateCurrentTrace(op) {
+    updateCurrentTrace(op: Trace => Trace): Internals {
         assert(this.action !== null, "Can't update a trace before receiving a message.");
 
         const current = this.currentTrace();
 
+        if(!current) return this;
+
         return this.update("traces", traces => traces.set(this.traces.findLastKey(x => x.end === null && !x.locked), op(current)));
     }
 
-    trace(name, params, trigger, guards = 0) {
+    trace(name: string, params: List<*>, trigger: ?string, guards: ?number = 0) {
         const current = this.currentTrace();
         const parent  = current ? current.id : current;
+        const id      = null;
+        const start   = null;
 
         return this.update("traces", traces => traces.push(new Trace({
             name,
             params,
             guards,
             trigger,
-            parent
+            parent,
+            id,
+            start
         }, this.name)));
     }
 
-    messageReceived(message) {
+    messageReceived(message: Message): Internals {
         Message.assert(message);
         assert(this.action === null, "Can't start a message, if another message is currently processed.");
 
@@ -66,11 +74,11 @@ export default class Internals extends Record({
             .updateCurrentTrace(trace => trace.triggered());
     }
 
-    mergeTraces(traces) {
+    mergeTraces(traces: List<Trace>): Internals {
         return this.updateCurrentTrace(trace => traces.reduce((dest, x) => dest.merge(x), trace));
     }
 
-    messageProcessed() {
+    messageProcessed(): Internals {
         assert(this.action !== null, "Can't finish a message before starting.");
 
         const filtered = this.traces.filter(x => !x.locked);
@@ -84,7 +92,7 @@ export default class Internals extends Record({
             .set("action", null);
     }
 
-    isRecoverable() {
+    isRecoverable(): boolean {
         return this.errors.every(x => x.isRecoverable && x.isRecoverable());
     }
 }

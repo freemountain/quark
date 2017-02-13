@@ -1,3 +1,5 @@
+// @flow
+
 /**
  * this class represents a relation to some
  * other value in a domain. the enum represents
@@ -20,6 +22,11 @@
  * console.log(joined);    // prints Relation  { name: "test", tag: "JOINED", key: "key", cascades: [] }
  */
 export default class Relation {
+    name:     string;        // eslint-disable-line
+    cascades: Array<string>;
+    tag:      string;        // eslint-disable-line
+    key:      ?string;       // eslint-disable-line
+
     static JOINED = "JOINED";
     static SELF   = "SELF";   // eslint-disable-line
     static INDIE  = "INDIE";  // eslint-disable-line
@@ -40,7 +47,7 @@ export default class Relation {
      * @param {?string}  [key]         to merge into (only JOINED)
      * @param {string[]} [cascades=[]] to related values
      */
-    constructor(name, tag = Relation.SELF, key = null, cascades = []) {
+    constructor(name: string, tag?: string = Relation.SELF, key?: ?string = null, cascades?: Array<string> = []) {
         /** @type {string} */ // eslint-disable-line
         this.name = name;
 
@@ -60,7 +67,7 @@ export default class Relation {
      * @param  {string[]} cascades for relation
      * @return {Relation}
      */
-    setCascades(cascades) {
+    setCascades(cascades: Array<string>): Relation {
         const hasAll = cascades.filter(x => x === Relation.Cascades.ALL).length > 0;
         const mapped = hasAll ? Object.keys(Relation.Cascades).filter(x => x !== Relation.Cascades.ALL) : cascades;
 
@@ -73,7 +80,7 @@ export default class Relation {
      * @param  {string}  prefix for key
      * @return {Relation}
      */
-    setPrefix(prefix) {
+    setPrefix(prefix: string): Relation {
         return new Relation(`${prefix}.${this.name}`, this.tag, this.key, this.cascades);
     }
 }

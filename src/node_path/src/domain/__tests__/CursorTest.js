@@ -1,6 +1,8 @@
+// @flow
+
 import Cursor from "../Cursor";
 import { expect } from "chai";
-import Immutable from "immutable";
+import { fromJS, List, Map } from "immutable";
 import sinon from "sinon";
 import Action from "../Action";
 import Internals from "../Internals";
@@ -27,18 +29,18 @@ describe("CursorTest", function() { // eslint-disable-line
         const func = function(a) {
             return this.get("test").length + 2 + a;
         };
-        const action = new Action("Test", "blub", Immutable.List(), func);
+        const action = new Action("Test", "blub", List(), func);
 
         action.func = func;
 
-        const data = Immutable.fromJS({
+        const data = fromJS({
             _unit: new Internals({
                 name:        "Unit",
-                description: Immutable.Map({
+                description: Map({
                     blub: action
                 }),
-                children: Immutable.Map({
-                    test: Immutable.Map()
+                children: Map({
+                    test: Map()
                 })
             }),
             test: "test"
@@ -54,11 +56,11 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor.toJS()).to.eql({
             _unit: new Internals({
                 name:        "Unit",
-                description: Immutable.Map({
+                description: Map({
                     blub: action
                 }),
-                children: Immutable.Map({
-                    test: Immutable.Map()
+                children: Map({
+                    test: Map()
                 })
             }).toJS(),
             test: "test"
@@ -72,17 +74,17 @@ describe("CursorTest", function() { // eslint-disable-line
 
     it("checks some methods on a cursor", function() {
         const error    = new Error("huhu");
-        const message  = new Message("/test", []);
-        const children = Immutable.Map({
-            test: Immutable.Map()
+        const message  = new Message("/test", List());
+        const children = Map({
+            test: Map()
         });
 
-        const data    = Immutable.fromJS({
+        const data    = fromJS({
             _unit: new Internals({
                 name:        "Unit",
-                description: Immutable.Map(),
+                description: Map(),
                 action:      message,
-                errors:      Immutable.List.of(error),
+                errors:      List.of(error),
                 children:    children
             })
         });
@@ -99,11 +101,11 @@ describe("CursorTest", function() { // eslint-disable-line
     });
 
     it("does a trace", function() { // eslint-disable-line
-        const message = new Message("/test", [1]);
-        const data    = Immutable.fromJS({
+        const message = new Message("/test", List.of(1));
+        const data    = fromJS({
             _unit: new Internals({
                 name:        "Unit",
-                description: Immutable.Map(),
+                description: Map(),
                 action:      message
             })
         });
@@ -114,11 +116,11 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(() => cursor.trace.triggered()).to.throw("AssertionError: You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to 'triggered'.");
         expect(() => cursor.trace.error()).to.throw("AssertionError: You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to 'errored'.");
 
-        expect(() => cursor.trace("/test", Immutable.List.of(false))).to.throw("AssertionError: You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
+        expect(() => cursor.trace("/test", List.of(false))).to.throw("AssertionError: You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
 
         const cursor2 = cursor
             .update("_unit", internals => internals.set("action", null).messageReceived(message))
-            .trace("test", Immutable.List.of(false));
+            .trace("test", List.of(false));
 
         expect(cursor2.toJS()).to.eql({
             _unit: {
@@ -206,7 +208,7 @@ describe("CursorTest", function() { // eslint-disable-line
             }
         });
 
-        const cursor4 = cursor3.trace("test2", Immutable.List.of(1));
+        const cursor4 = cursor3.trace("test2", List.of(1));
 
         expect(cursor4.toJS()).to.eql({
             _unit: {
@@ -263,7 +265,7 @@ describe("CursorTest", function() { // eslint-disable-line
             }
         });
 
-        const cursor5 = cursor4.trace.triggered().trace("test3", Immutable.List.of(2));
+        const cursor5 = cursor4.trace.triggered().trace("test3", List.of(2));
 
         expect(cursor5.toJS()).to.eql({
             _unit: {
@@ -335,7 +337,7 @@ describe("CursorTest", function() { // eslint-disable-line
 
         const cursor6 = cursor5.trace
             .triggered()
-            .trace("test4", Immutable.List.of(3))
+            .trace("test4", List.of(3))
             .trace.triggered()
             .trace.error(new Error("hi"));
 
@@ -421,7 +423,7 @@ describe("CursorTest", function() { // eslint-disable-line
         });
 
         const cursor7 = cursor6
-            .trace("test5", Immutable.List.of(4))
+            .trace("test5", List.of(4))
             .trace.triggered()
             .trace.end();
 
@@ -813,10 +815,10 @@ describe("CursorTest", function() { // eslint-disable-line
     });
 
     it("creates some cursors", function() {
-        const action = new Action("Test", "blub", Immutable.List(), () => 4);
-        const map    = Immutable.fromJS({
+        const action = new Action("Test", "blub", List(), () => 4);
+        const map    = fromJS({
             _unit: new Internals({
-                description: Immutable.Map({
+                description: Map({
                     blub: action
                 })
             }),
@@ -842,25 +844,25 @@ describe("CursorTest", function() { // eslint-disable-line
     });
 
     it("errors with a cursor", function() {
-        const message = new Message("/test", [1]);
+        const message = new Message("/test", List.of(1));
         const func = function(a) {
             return this.get("test").length + 2 + a;
         };
-        const action = new Action("Test", "blub", Immutable.List(), func);
+        const action = new Action("Test", "blub", List(), func);
 
         action.func = func;
 
-        const data = Immutable.fromJS({
+        const data = fromJS({
             _unit: (new Internals({
                 name:        "Unit",
-                description: Immutable.Map()
+                description: Map()
             })).messageReceived(message),
             test: "test"
         });
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
         const cursor     = new UnitCursor(data);
 
-        cursor.trace("/error", Immutable.List());
+        cursor.trace("/error", List());
 
         const cursor2 = cursor.error(new Error("huhu"));
 
@@ -872,10 +874,10 @@ describe("CursorTest", function() { // eslint-disable-line
     });
 
     it("patches and diffs with a cursor", function() {
-        const data = Immutable.fromJS({
+        const data = fromJS({
             _unit: (new Internals({
                 name:        "Unit",
-                description: Immutable.Map()
+                description: Map()
             })),
             test: "test"
         });

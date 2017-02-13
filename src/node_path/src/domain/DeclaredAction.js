@@ -1,42 +1,59 @@
-import Immutable from "immutable";
+// @flow
+
+import { List } from "immutable";
 import DeclaredTrigger from "./DeclaredTrigger";
 import defaults from "set-default-value";
 import assert from "assert";
+import type { Guard } from "./DeclaredTrigger";
+
+type DeclaredTriggerDescription = {
+    name:      ?string,                // eslint-disable-line
+    triggers:  ?List<DeclaredTrigger>, // eslint-disable-line
+    operation: Function
+}
 
 export default class DeclaredAction {
+    triggers:  List<DeclaredTrigger>; // eslint-disable-line
+    operation: Function;
+    name:      string;                // eslint-disable-line
+
     static triggered = {
-        by(action) {
+        by(action: any): any {
             return (new DeclaredAction()).by(action);
         },
 
-        if(guard) {
+        if(guard: any): any {
             return (new DeclaredAction()).if(guard);
         },
 
-        with(argument) {
+        with(argument: any): any {
             return (new DeclaredAction()).with(argument);
         },
 
-        after(delay) {
+        after(delay: any): any {
             return (new DeclaredAction()).after(delay);
         }
     };
 
-    constructor(data = {}) {
-        assert(data instanceof Object, `Expected an action or an action description, but got ${data}`);
+    constructor(x: ?DeclaredTriggerDescription) {
+        const data = defaults(x).to({
+            name:      "anonymous",
+            operation: () => {},
+            triggers:  null
+        });
 
         if(data instanceof DeclaredAction) return data;
 
         const name = defaults(data.name).to("anonymous");
 
         this.name      = name;
-        this.triggers  = Immutable.List(defaults(data.triggers).to(Immutable.List.of(new DeclaredTrigger(name))));
-        this.operation = defaults(data.operation).to(DeclaredAction.DEFAULT_OPERATION);
+        this.triggers  = List(defaults(data.triggers).to(List.of(new DeclaredTrigger(name))));
+        this.operation = data.operation;
 
         return this;
     }
 
-    set(key, value) {
+    set(key: string, value: *): DeclaredAction {
         const updated = Object.assign({}, this);
 
         updated[key] = value;
@@ -44,50 +61,51 @@ export default class DeclaredAction {
         return new DeclaredAction(updated);
     }
 
-    setName(name) {
+    setName(name: string): DeclaredAction {
         const trigger = this.triggers.first();
 
         assert(trigger && trigger.name === "anonymous", "Can't set a name, if there is no anonymous trigger");
 
         return new DeclaredAction(Object.assign({}, this, {
-            name:     name,
-            triggers: this.triggers.slice(1).unshift(trigger.setName(name))
+            name:      name,
+            triggers:  this.triggers.slice(1).unshift(trigger.setName(name)),
+            operation: () => {}
         }));
     }
 
-    updateCurrent(op) {
+    updateCurrent(op: DeclaredTrigger => DeclaredTrigger): DeclaredAction {
         const current = this.triggers.last();
 
-        return this.set("triggers", this.triggers.slice(0, -1).concat(op(current)));
+        return this.set("triggers", this.triggers.slice(0, -1).concat([op(current)]));
     }
 
-    merge(action) {
+    merge(action: DeclaredAction): DeclaredAction {
         return this.set("triggers", this.triggers
             .filter(x => !action.triggers.find(y => y.name === x.name))
             .concat(action.triggers));
     }
 
-    by(action) {
+    by(action: string): DeclaredAction {
         return this.set("triggers", this.triggers.push(new DeclaredTrigger(action)));
     }
 
-    if(guard) {
+    if(guard: Guard): DeclaredAction {
         return this.updateCurrent(x => x.addGuard(guard));
     }
 
-    or(guard) {
+    or(guard: Guard): DeclaredAction {
         return this.updateCurrent(x => x.updateCurrentGuard(y => (...args) => y(...args) || guard(...args)));
     }
 
-    with(...args) {
+    with(...args: *): DeclaredAction {
         return this.updateCurrent(x => x.addArguments(args));
     }
 
-    after(delay) {
+    after(delay: number): DeclaredAction {
         return this.updateCurrent(x => x.setDelay(delay));
     }
 
-    toJS() {
+    toJS(): Object {
         return {
             name:     this.name,
             triggers: this.triggers.map(trigger => trigger.toJS()).toJS()

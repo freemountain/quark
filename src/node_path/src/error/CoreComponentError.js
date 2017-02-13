@@ -1,7 +1,9 @@
+// @flow
+
 import Error from "es6-error";
 
 export default class CoreComponentError extends Error {
-    constructor(message, e) {
+    constructor(message: string, e?: ?Error) {
         super(message);
 
         this.recoverable = (
@@ -11,7 +13,7 @@ export default class CoreComponentError extends Error {
         this._e = e;
     }
 
-    isRecoverable() {
-        return this.isRecoverable;
+    isRecoverable(): boolean {
+        return this.recoverable;
     }
 }

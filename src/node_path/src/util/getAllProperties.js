@@ -1,3 +1,5 @@
+// @flow
+
 /**
  * takes a value and returns all properties of the prototype
  * chain
@@ -8,7 +10,7 @@
  * @param  {?string[]} [properties=[]] extracted
  * @return {string[]}
  */
-export default function getAllProperties(obj, properties = []) {
+export default function getAllProperties(obj: Object, properties?: Array<string> = []): Array<string> { // eslint-disable-line
     if(!(obj instanceof Object) || obj === Object) return properties;
 
     const next    = obj instanceof Function ? obj.prototype : Object.getPrototypeOf(obj);

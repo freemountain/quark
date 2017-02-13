@@ -33,12 +33,13 @@ cpp-build: js-build
 $(JS_BUILD)/lib/%.js: $(JS_SRC)/src/%.js $(TOOLS) $(DEPENDENCIES) $(JS_BUILD)/quark.js $(JS_BUILD)/bootstrap.js
 	mkdir -p $(dir $@)
 	$(NODE_CMD) $(JS_BUILD)/node_modules/eslint/bin/eslint.js $<
-	$(NODE_CMD) $(JS_BUILD)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2015 --plugins transform-runtime,transform-class-properties
+	$(NODE_CMD) $(JS_BUILD)/node_modules/babel-cli/bin/babel.js $< --out-file $@ --source-maps --presets es2015 --plugins babel-plugin-syntax-flow,transform-flow-strip-types,transform-runtime,transform-class-properties
 
 ##
 #  unit test js
 #
 js-test: $(JS_OBJECTS)
+	cd $(JS_SRC) && $(JS_BUILD)/node_modules/.bin/flow
 	PATH=$(BIN_PATH):$(PATH) $(JS_BUILD)/node_modules/.bin/istanbul cover --root $(JS_BUILD)/lib -x "**/__tests__/**" $(JS_BUILD)/node_modules/.bin/_mocha $(shell find $(JS_BUILD)/lib -name "*Test.js") -- -R spec --require source-map-support/register
 	PATH=$(BIN_PATH):$(PATH) $(JS_BUILD)/node_modules/.bin/remap-istanbul -i $(PROJECT_PATH)/coverage/coverage.json -o $(PROJECT_PATH)/coverage/lcov-report -t html
 	

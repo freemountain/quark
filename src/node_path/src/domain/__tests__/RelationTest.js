@@ -1,3 +1,5 @@
+// @flow
+
 import Relation from "../Relation";
 import { expect } from "chai";
 

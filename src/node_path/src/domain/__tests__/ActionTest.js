@@ -1,7 +1,9 @@
+// @flow
+
 import Action from "../Action";
 import { expect } from "chai";
 import TestUnit from "../../__tests__/mocks/TestUnit";
-import Immutable from "immutable";
+import { Map, List } from "immutable";
 import Trigger from "../Trigger";
 import DeclaredAction from "../DeclaredAction";
 import Runtime from "../../Runtime";
@@ -192,9 +194,9 @@ describe("ActionTest", function() {
     });
 
     it("creates an Action", function() {
-        const triggers = Immutable.Map(Test2.triggers)
+        const triggers = Map(Test2.triggers)
             .map((x, key) => x.setName(key))
-            .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new Trigger(key, y))), Immutable.List()); // eslint-disable-line
+            .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new Trigger(key, y))), List()); // eslint-disable-line
 
         const descr = new Action("Test", "message", triggers, function(name, value) {
             return this
@@ -222,7 +224,7 @@ describe("ActionTest", function() {
 
     it("applies an action", function() {
         const unit = new Test();
-        const data = Immutable.Map({
+        const data = Map({
             name:  "jupp",
             _unit: new Internals({
                 id:          "blub",
@@ -231,7 +233,7 @@ describe("ActionTest", function() {
             })
         });
 
-        const message  = (new Message("/actions/test", ["test"]));
+        const message  = (new Message("/actions/test", List.of("test")));
         const cursor   = (new unit.__Cursor(data))
             .update("_unit", internals => internals.messageReceived(message))
             .trace("message", message.get("payload"))
@@ -288,9 +290,9 @@ describe("ActionTest", function() {
             });
     });
 
-    it("calls an action handler", function() {
-        const unit = new Test2();
-        const data = Immutable.Map({
+    it("applies an action with typeerror", function() {
+        const unit = new Test();
+        const data = Map({
             name:  "jupp",
             _unit: new Internals({
                 id:          "blub",
@@ -299,7 +301,75 @@ describe("ActionTest", function() {
             })
         });
 
-        const message  = (new Message("/actions/test", ["test"]));
+        const message  = (new Message("/actions/test", List.of("test")));
+        const cursor   = (new unit.__Cursor(data))
+            .update("_unit", internals => internals.messageReceived(message))
+            .trace("message", message.get("payload"))
+            .trace.triggered();
+
+        const descr = new Action("Test", "test", unit.__triggers, function(name) {
+            return this.set("name", name);
+        });
+
+        return unit.ready()
+            .then(() => descr.func.call(cursor, "huhu"))
+            .then(x => { // eslint-disable-line
+                const result = x
+                    .trace.end()
+                    .messageProcessed();
+
+                const cursor2 = cursor
+                        .trace.end()
+                        .messageProcessed()
+                        .filter((_, key) => key !== "_unit"); // eslint-disable-line
+
+                const filtered = result
+                    .filter((_, key) => key !== "_unit"); // eslint-disable-line
+
+                expect(filtered.toJS()).to.eql(cursor2.toJS());
+                expect(cursor.hasErrored).to.equal(true);
+                expect(result.traces.toJS()).to.eql([{
+                    id:       4,
+                    parent:   null,
+                    start:    2,
+                    end:      12,
+                    guards:   0,
+                    locked:   true,
+                    name:     "Test::Message</actions/test>",
+                    params:   ["test"],
+                    triggers: true,
+                    error:    null,
+                    trigger:  null,
+                    traces:   [{
+                        id:       5,
+                        parent:   4,
+                        start:    3,
+                        end:      11,
+                        guards:   0,
+                        locked:   true,
+                        name:     "Test::message",
+                        params:   ["test"],
+                        triggers: true,
+                        error:    null,
+                        traces:   [],
+                        trigger:  null
+                    }]
+                }]);
+            });
+    });
+
+    it("calls an action handler", function() {
+        const unit = new Test2();
+        const data = Map({
+            name:  "jupp",
+            _unit: new Internals({
+                id:          "blub",
+                name:        "Test",
+                description: unit.__actions
+            })
+        });
+
+        const message  = (new Message("/actions/test", List.of("test")));
         const cursor   = (new unit.__Cursor(data))
             .update("_unit", internals => internals.messageReceived(message));
 
@@ -403,7 +473,7 @@ describe("ActionTest", function() {
 
     it("applies triggers", function() {
         const unit = new Test3();
-        const data = Immutable.Map({
+        const data = Map({
             name:  "jupp",
             _unit: new Internals({
                 id:          "blub",
@@ -412,7 +482,7 @@ describe("ActionTest", function() {
             })
         });
 
-        const message  = (new Message("/actions/message", ["test"]));
+        const message  = (new Message("/actions/message", List.of("test")));
         const cursor   = new unit.__Cursor(data);
 
         const descr = new Action("Test", "message", unit.__triggers, Test.prototype.message);
@@ -889,7 +959,7 @@ describe("ActionTest", function() {
                                     id:       19,
                                     parent:   15,
                                     start:    28,
-                                    end:      36,
+                                    end:      35,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test9",
@@ -928,7 +998,7 @@ describe("ActionTest", function() {
                                     id:       22,
                                     parent:   15,
                                     start:    33,
-                                    end:      35,
+                                    end:      36,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test",
@@ -946,7 +1016,7 @@ describe("ActionTest", function() {
 
     it("calls a complex action", function() {
         const unit = new Test3();
-        const data = Immutable.Map({
+        const data = Map({
             name:  "jupp",
             _unit: new Internals({
                 id:          "blub",
@@ -955,7 +1025,7 @@ describe("ActionTest", function() {
             })
         });
 
-        const message  = (new Message("/actions/message", ["test"]));
+        const message  = (new Message("/actions/message", List.of("test")));
         const cursor   = new unit.__Cursor(data);
 
         return unit.ready()
@@ -1049,7 +1119,7 @@ describe("ActionTest", function() {
                                     id:       19,
                                     parent:   15,
                                     start:    28,
-                                    end:      36,
+                                    end:      35,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test9",
@@ -1088,7 +1158,7 @@ describe("ActionTest", function() {
                                     id:       22,
                                     parent:   15,
                                     start:    33,
-                                    end:      35,
+                                    end:      36,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test",
@@ -1132,7 +1202,7 @@ describe("ActionTest", function() {
 
     it("calls a simple action with error (throw)", function() {
         const unit = new Test4();
-        const data = Immutable.Map({
+        const data = Map({
             test:  "jupp",
             _unit: new Internals({
                 id:          "blub",
@@ -1141,7 +1211,7 @@ describe("ActionTest", function() {
             })
         });
 
-        const message  = (new Message("/actions/message", ["test"]));
+        const message  = (new Message("/actions/message", List.of("test")));
         const cursor   = new unit.__Cursor(data);
 
         return unit.ready()
@@ -1470,9 +1540,9 @@ describe("ActionTest", function() {
     });
 
     it("creates an Action", function() {
-        const triggers = Immutable.Map(TestUnit.triggers)
+        const triggers = Map(TestUnit.triggers)
             .map((x, key) => x.setName(key))
-            .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new Trigger(key, y))), Immutable.List()); // eslint-disable-line
+            .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new Trigger(key, y))), List()); // eslint-disable-line
 
         const descr = new Action("Test", "message", triggers, function(message) {
             return this.set("test", message.get("payload"));

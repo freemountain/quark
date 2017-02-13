@@ -1,3 +1,5 @@
+// @flow
+
 import getAllProperties from "./getAllProperties";
 
 /**
@@ -9,7 +11,7 @@ import getAllProperties from "./getAllProperties";
  * @param  {object} obj to extract methods from
  * @return {string}
  */
-export default function printPublicMethods(obj) {
+export default function printPublicMethods(obj: Object): string {
     const object  = obj;
     const methods = getAllProperties(obj)
         .filter(key => object[key] instanceof Function && key.slice(0, 1) !== "_");

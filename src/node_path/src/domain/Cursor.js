@@ -1,44 +1,71 @@
-import Immutable from "immutable";
+// @flow
+
+import { fromJS, Map, List, Set, OrderedSet, OrderedMap, Stack, Record, Seq, Iterable, Collection } from "immutable";
 import ImmutableMethods from "../util/ImmutableMethods";
 import assert from "assert";
 import patch from "immutablepatch";
 import diff from "immutablediff";
+import Trace from "../telemetry/Trace";
+import Message from "../Message";
+import Runtime from "../Runtime";
+
+export type Diffs = List<{
+    op:   string, // eslint-disable-line
+    path: string
+}>
 
 class Cursor {
-    static assertTraceStarted(cursor, caller) {
+    static call: any => Cursor;
+    __data:      { x: any }; // eslint-disable-line
+    __inherited: boolean;
+    update:      any => any; // eslint-disable-line
+    trace:       (string, List<any>, string) => Cursor; // eslint-disable-line
+    constructor: any => Cursor;
+    get:         (string) => any; //eslint-disable-line
+    set:         (string, any) => Cursor; // eslint-disable-line
+
+    static assertTraceStarted(cursor: Cursor, caller: string): void {
         assert(cursor.isTracing, `You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
     }
 
-    static triggered() {
-        Cursor.assertTraceStarted(this, "triggered");
+    static trace(cursor: Cursor, ...args: *): Cursor {
+        assert(cursor.isTracing, "You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
 
-        const data = this.__data.x
+        const data = cursor.__data.x.update("_unit", internals => internals.trace(...args));
+
+        return new cursor.constructor(data);
+    }
+
+    static triggered(cursor: Cursor): Cursor {
+        Cursor.assertTraceStarted(cursor, "triggered");
+
+        const data = cursor.__data.x
             .update("_unit", internals => internals.updateCurrentTrace(trace => trace.triggered()));
 
-        return new this.constructor(data);
+        return new cursor.constructor(data);
     }
 
-    static error(e) {
-        Cursor.assertTraceStarted(this, "errored");
+    static error(cursor: Cursor, e: Error): Cursor {
+        Cursor.assertTraceStarted(cursor, "errored");
 
-        const data = this.__data.x
+        const data = cursor.__data.x
             .update("_unit", internals => internals.updateCurrentTrace(trace => trace.errored(e)));
 
-        return new this.constructor(data);
+        return new cursor.constructor(data);
     }
 
-    static end() {
-        Cursor.assertTraceStarted(this, "ended");
+    static end(cursor: Cursor): Cursor {
+        Cursor.assertTraceStarted(cursor, "ended");
 
-        const data = this.__data.x
+        const data = cursor.__data.x
             .update("_unit", internals => internals.updateCurrentTrace(trace => trace.ended()));
 
-        return new this.constructor(data);
+        return new cursor.constructor(data);
     }
 
-    static for(instance, description) {
+    static for(instance: {}, description: Map<*, *>) {
         assert(instance instanceof Object, `instance has to be an object, but got ${JSON.stringify(instance)}`);
-        assert(description instanceof Immutable.Map, `description has to be an Immutable.Map, but got ${JSON.stringify(description)}`);
+        assert(description instanceof Map, `description has to be an Immutable.Map, but got ${JSON.stringify(description)}`);
 
         const inherited = function(...args) {
             Object.defineProperty(this, "__inherited", {
@@ -51,15 +78,15 @@ class Cursor {
             return Cursor.call(this, ...args);
         };
 
-        Object.defineProperty(inherited, "name", {
+        Object.defineProperty(inherited, "name", ({
             writable: true
-        });
+        }: Object));
 
         inherited.name = `${instance.constructor.name}Cursor`;
 
-        Object.defineProperty(inherited, "name", {
+        Object.defineProperty(inherited, "name", ({
             writable: false
-        });
+        }: Object));
 
         inherited.prototype             = Object.create(Cursor.prototype);
         inherited.prototype.constructor = inherited;
@@ -80,21 +107,21 @@ class Cursor {
         return inherited;
     }
 
-    constructor(data) { // eslint-disable-line
+    constructor(data: {} | Cursor) { // eslint-disable-line
         if(!(data instanceof Object) || data instanceof Cursor) return data;
 
         assert(this.__inherited, "Cursor can only be used, when inherited");
 
         this.__data = {
-            x: Immutable.fromJS(data)
+            x: fromJS(data)
         };
 
         // needs to be copied, since we are mutating the Function
         // object otherwise
-        this.trace           = Cursor.prototype.trace.bind(this);
-        this.trace.triggered = Cursor.triggered.bind(this);
-        this.trace.error     = Cursor.error.bind(this);
-        this.trace.end       = Cursor.end.bind(this);
+        this.trace           = Cursor.trace.bind(null, this);
+        this.trace.triggered = Cursor.triggered.bind(null, this);
+        this.trace.error     = Cursor.error.bind(null, this);
+        this.trace.end       = Cursor.end.bind(null, this);
 
         Object.freeze(this);
         Object.freeze(this.trace);
@@ -102,70 +129,62 @@ class Cursor {
         return this;
     }
 
-    generic(mapper) {
+    generic(mapper: (cursor: Cursor) => Cursor): Cursor {
         return mapper(this);
     }
 
-    get size() {
+    get size(): number {
         return this.__data.x.size;
     }
 
-    get currentMessage() {
+    get currentMessage(): ?Message {
         const message = this.__data.x.get("_unit").action;
 
         return message;
     }
 
-    get currentTrace() {
+    get currentTrace(): ?Trace {
         return this.__data.x.get("_unit").currentTrace();
     }
 
-    get traces() {
+    get traces(): List<Trace> {
         return this.__data.x.get("_unit").traces;
     }
 
-    get currentError() {
+    get currentError(): ?Error {
         return this.errors.last() || null;
     }
 
-    get currentContext() {
+    get currentContext(): string {
         return this.__data.x.get("_unit").name;
     }
 
-    get errors() {
+    get errors(): List<Error> {
         return this.__data.x.get("_unit").errors;
     }
 
-    get children() {
+    get children(): List<Runtime> {
         return this.__data.x.get("_unit").children;
     }
 
-    get hasErrored() {
+    get hasErrored(): boolean {
         return this.__data.x.get("_unit").hasErrored();
     }
 
-    get isRecoverable() {
+    get isRecoverable(): boolean {
         return this.__data.x.get("_unit").isRecoverable();
     }
 
-    get isTracing() {
+    get isTracing(): boolean {
         return this.__data.x.get("_unit") && this.__data.x.get("_unit").isTracing();
     }
 
-    trace(...args) {
-        assert(this.isTracing, "You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
-
-        const data = this.__data.x.update("_unit", internals => internals.trace(...args));
-
-        return new this.constructor(data);
-    }
-
-    patch(diffs, traces = Immutable.List(), errors = Immutable.List()) {
-        assert(diffs instanceof Immutable.List, `Diffs need to be of type Immutable.List or Immutable.Set, got '${typeof diffs === "object" ? diffs.constructor.name : JSON.stringify(diffs)}'.`);
+    patch(diffs: Diffs, traces: List<Trace> = List(), errors: List<Error> = List()) {
+        assert(diffs instanceof List, `Diffs need to be of type Immutable.List or Immutable.Set, got '${typeof diffs === "object" ? diffs.constructor.name : JSON.stringify(diffs)}'.`);
 
         const first = diffs.first();
 
-        assert(!first || (first instanceof Immutable.Map && first.get("op") && first.get("path")), `a diff needs to have the keys 'op' and 'path', got '${typeof first === "object" ? first.constructor.name : JSON.stringify(first)}'.`);
+        assert(!first || (first instanceof Map && first.get("op") && first.get("path")), `a diff needs to have the keys 'op' and 'path', got '${typeof first === "object" ? first.constructor.name : JSON.stringify(first)}'.`);
 
         const patched = patch(this.__data.x, diffs);
         const updated = this.__data.x.get("_unit").traces
@@ -181,11 +200,11 @@ class Cursor {
         return new this.constructor(next);
     }
 
-    diff(cursor) {
+    diff(cursor: Cursor): Diffs {
         return diff(this.__data.x, cursor.__data.x);
     }
 
-    equals(cursor) {
+    equals(cursor: Cursor): boolean {
         assert(false, "Cursor.equals: implement!");
 
         assert(cursor instanceof this.constructor, `You can only compare two cursors of the same type ('${this.constructor.name}'), got '${typeof cursor === "object" ? cursor.constructor.name : JSON.stringify(cursor)}'.`);
@@ -193,47 +212,51 @@ class Cursor {
         return this.__data.x === cursor.__data.x;
     }
 
-    progress() {
+    progress(): Cursor {
         assert(false, "Cursor.progress: implement!");
 
         // hier soll der progress wert hochgesetzt werden um den gegebenen param
+        return this;
     }
 
-    messageReceived(message) {
+    messageReceived(message: Message): Cursor {
         return this.update("_unit", internals => internals.messageReceived(message));
     }
 
-    messageProcessed() {
+    messageProcessed(): Cursor {
         return this.update("_unit", internals => internals.messageProcessed());
     }
 
-    cancel() {
+    cancel(): Cursor {
         assert(false, "Cursor.cancel: implement (use Action.cancel)!");
 
         // hiermit soll die aktuelle action gecanceled, werden + state revert
+        return this;
     }
 
-    undo() {
+    undo(): Cursor {
         assert(false, "Cursor.undo: implement!");
 
         // hiermit soll die history en schritt zurückgesetzt werden
+        return this;
     }
 
-    redo() {
+    redo(): Cursor {
         assert(false, "Cursor.redo: implement!");
 
         // hiermit soll ein schritt in der history nach vorne gegangen werden
+        return this;
     }
 
-    error(e) {
-        assert(e instanceof Error, `You can only error with an error, but got ${e}`);
+    error(e: Error): Cursor {
+        assert(e instanceof Error, `You can only error with an error, but got ${e.toString()}`);
 
         return this
             .update("_unit", internals => internals.error(e))
             .trace.error(e);
     }
 
-    toString() {
+    toString(): string {
         return `${this.constructor.name}<${this.__data ? this.__data.x : this.__data}>`;
     }
 }
@@ -242,16 +265,16 @@ ImmutableMethods
     .filter(key => ( // eslint-disable-line
         key.slice(0, 1) !== "_" &&
         (
-            Immutable.Map.prototype[key] instanceof Function ||
-            Immutable.List.prototype[key] instanceof Function ||
-            Immutable.Set.prototype[key] instanceof Function ||
-            Immutable.OrderedSet.prototype[key] instanceof Function ||
-            Immutable.OrderedMap.prototype[key] instanceof Function ||
-            Immutable.Stack.prototype[key] instanceof Function ||
-            Immutable.Record.prototype[key] instanceof Function ||
-            Immutable.Seq.prototype[key] instanceof Function ||
-            Immutable.Iterable.prototype[key] instanceof Function ||
-            Immutable.Collection.prototype[key] instanceof Function
+            (Map.prototype: Object)[key] instanceof Function ||
+            (List.prototype: Object)[key] instanceof Function ||
+            (Set.prototype: Object)[key] instanceof Function ||
+            (OrderedSet.prototype: Object)[key] instanceof Function ||
+            (OrderedMap.prototype: Object)[key] instanceof Function ||
+            (Stack.prototype: Object)[key] instanceof Function ||
+            (Record.prototype: Object)[key] instanceof Function ||
+            (Seq.prototype: Object)[key] instanceof Function ||
+            (Iterable.prototype: Object)[key] instanceof Function ||
+            (Collection.prototype: Object)[key] instanceof Function
         )
     ))
     .forEach(method => Object.defineProperty(Cursor.prototype, method, {
@@ -266,13 +289,13 @@ ImmutableMethods
 
             // TODO: hier muss nach den props gecheckt werden
             return (
-                result instanceof Immutable.Map ||
-                result instanceof Immutable.List ||
-                result instanceof Immutable.Set ||
-                result instanceof Immutable.OrderedSet ||
-                result instanceof Immutable.OrderedMap ||
-                result instanceof Immutable.Stack ||
-                result instanceof Immutable.Seq
+                result instanceof Map ||
+                result instanceof List ||
+                result instanceof Set ||
+                result instanceof OrderedSet ||
+                result instanceof OrderedMap ||
+                result instanceof Stack ||
+                result instanceof Seq
             ) ? new this.constructor(result, this) : result;
         }
     }));

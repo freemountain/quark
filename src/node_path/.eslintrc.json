@@ -6,6 +6,9 @@
       "es6": true,
       "mocha": true
     },
+    "plugins": [
+        "flowtype"
+    ],
     "rules": {
       "strict": [
         2

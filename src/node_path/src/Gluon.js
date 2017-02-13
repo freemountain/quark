@@ -1,5 +1,6 @@
-import { Duplex, Transform } from "stream";
-import Stream from "stream";
+// @flow
+
+import { Duplex, Transform, Writable, Readable } from "stream";
 import JSONStream from "jsonstream2";
 import Filter from "through2-filter";
 import Mapper from "through2-map";
@@ -14,6 +15,11 @@ const JSONStringifier = () => new Transform({
 });
 
 export default class Gluon extends Duplex {
+    initialLoad: boolean;
+    valueOut:    Writable;  // eslint-disable-line
+    actionOut:   Writable;  // eslint-disable-line
+    actions:     Readable;  // eslint-disable-line
+
     static opts = {
         objectMode: true
     };
@@ -22,8 +28,8 @@ export default class Gluon extends Duplex {
         return new Gluon(...args);
     }
 
-    static Output(resource) {
-        const out = new Stream(Gluon.opts);
+    static Output(resource): Writable {
+        const out = new Transform(Gluon.opts);
 
         out
             .pipe(Mapper(Gluon.opts, payload => ({ resource, payload })))
@@ -53,7 +59,7 @@ export default class Gluon extends Duplex {
 
     // sowohl load als auch start/kill sollten später als io
     // über das plugin system gelöst werden iwie ?
-    load(url) {
+    load(url: string): string {
         this.actionOut.emit("data", {
             type:    "loadQml",
             payload: {
@@ -64,7 +70,7 @@ export default class Gluon extends Duplex {
         return url;
     }
 
-    close(url) {
+    close(url: string): string {
         this.actionOut.emit("data", {
             type:    "closeQml",
             payload: {
@@ -75,13 +81,13 @@ export default class Gluon extends Duplex {
         return url;
     }
 
-    trim(path) {
+    trim(path: string): string {
         return path
             .slice(1)
             .replace(/\//g, "\\");
     }
 
-    start(process) {
+    start(process: string): string {
         this.actionOut.emit("data", {
             type:    "startProcess",
             payload: this.trim(process)
@@ -90,7 +96,7 @@ export default class Gluon extends Duplex {
         return process;
     }
 
-    kill(process) {
+    kill(process: string): string {
         this.actionOut.emit("data", {
             type:    "killProcess",
             payload: this.trim(process)
@@ -99,10 +105,10 @@ export default class Gluon extends Duplex {
         return process;
     }
 
-    _write(data, enc, next) {
+    _write(data: any, enc: string, next: Function) {
         this.valueOut.emit("data", data);
 
-        next();
+        return next();
     }
 
     _read() {}

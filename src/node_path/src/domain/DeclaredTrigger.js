@@ -1,39 +1,43 @@
-import Immutable from "immutable";
+// @flow
+
+import { List } from "immutable";
+
+export type Guard = any => boolean;
 
 export default class DeclaredTrigger {
-    constructor(name, guards = Immutable.List(), params = Immutable.List(), delay = 0, destination) {
+    name:        string;      // eslint-disable-line
+    guards:      List<Guard>; // eslint-disable-line
+    params:      List<*>;     // eslint-disable-line
+    delay:       number;      // eslint-disable-line
+
+    constructor(name: string, guards: List<Guard> = List(), params: List<*> = List(), delay: number = 0) {
         this.name        = name;
         this.guards      = guards;
         this.params      = params;
         this.delay       = delay;
-        this.destination = destination;
     }
 
-    setDelay(delay) {
+    setDelay(delay: number): DeclaredTrigger {
         return new DeclaredTrigger(this.name, this.guards, this.params, delay);
     }
 
-    addGuard(guard) {
+    addGuard(guard: Guard): DeclaredTrigger {
         return new DeclaredTrigger(this.name, this.guards.push(guard), this.params, this.delay);
     }
 
-    updateCurrentGuard(op) {
-        return new DeclaredTrigger(this.name, this.guards.pop().push(op(this.guards.last())), this.params, this.delay);
+    updateCurrentGuard(op: Guard => Guard): DeclaredTrigger {
+        return this.guards.size === 0 ? this : new DeclaredTrigger(this.name, this.guards.pop().push(op(this.guards.last())), this.params, this.delay);
     }
 
-    addArguments(args) {
+    addArguments(args: List<*>): DeclaredTrigger {
         return new DeclaredTrigger(this.name, this.guards, this.params.concat(args), this.delay);
     }
 
-    setName(name) {
+    setName(name: string): DeclaredTrigger {
         return new DeclaredTrigger(name, this.guards, this.params, this.delay);
     }
 
-    setDestination(destination) {
-        return new DeclaredTrigger(this.name, this.guards, this.params, this.delay, destination);
-    }
-
-    toJS() {
+    toJS(): Object {
         const obj = Object.assign({}, this, {
             guards: this.guards.size,
             params: this.params.toJS()

@@ -1,11 +1,14 @@
+// @flow
+
 import assert from "assert";
-import Immutable from "immutable";
+import { Map, List, Record, fromJS } from "immutable";
 import defaults from "set-default-value";
 import Cursor from "./domain/Cursor";
+import Trigger from "./domain/Trigger";
 
-export default class Message extends Immutable.Record({
-    headers:  Immutable.Map(),
-    payload:  Immutable.List(),
+export default class Message extends Record({
+    headers:  Map(),
+    payload:  List(),
     resource: "/default",
     _cursor:  null
 }) {
@@ -22,18 +25,18 @@ export default class Message extends Immutable.Record({
     static assertStructure(data) {
         if(!(
             data &&
-            data.headers instanceof Immutable.Map &&
-            data.payload instanceof Immutable.List &&
+            data.headers instanceof Map &&
+            data.payload instanceof List &&
             typeof data.resource === "string"
         )) assert(false, `Your inputdata is not a valid message, got ${JSON.stringify(data)}.`);
 
         return data;
     }
 
-    constructor(resource, payload, headers = Immutable.Map(), _cursor = null) { // eslint-disable-line
+    constructor(resource: (string | Message | { resource: string, payload?: ?List<*>, headers?: ?Map<string, *> }), payload?: ?List<*>, headers?: Map<string, *> = Map(), _cursor?: ?Cursor = null) { // eslint-disable-line
         assert(_cursor === null || _cursor instanceof Cursor, "a Message needs to reference a cursor to check if it triggers something.");
 
-        const data = Immutable.fromJS(typeof resource === "string" ? { resource, payload, headers, _cursor } : resource);
+        const data = fromJS(typeof resource === "string" ? { resource, payload, headers, _cursor } : resource);
 
         super(data);
 
@@ -44,15 +47,15 @@ export default class Message extends Immutable.Record({
         return Message.assertStructure(this);
     }
 
-    isAction() {
+    isAction(): boolean {
         return this.resource.indexOf("/actions") === 0;
     }
 
-    isDiff() {
+    isDiff(): boolean {
         return !this.isAction();
     }
 
-    willTrigger(...actions) {
+    willTrigger(...actions: Array<string>): boolean {
         assert(this.get("_cursor") instanceof Cursor, "Message::willTrigger - you need to set the cursor before using it");
 
         const description = this.get("_cursor").get("_unit").get("description");
@@ -61,7 +64,7 @@ export default class Message extends Immutable.Record({
         return description.some(handler => handler.willTrigger(this.get("_cursor"), messages));
     }
 
-    preparePayload(trigger) {
+    preparePayload(trigger: Trigger): Message {
         assert(this.get("_cursor") instanceof Cursor, "Message::preparePayload - you need to set the cursor before using it");
 
         const x       = this.get("_cursor");
@@ -70,19 +73,19 @@ export default class Message extends Immutable.Record({
         return this.set("payload", payload.concat(trigger.params));
     }
 
-    unsetCursor() {
+    unsetCursor(): Message {
         return new Message(this.resource, this.payload, this.headers);
     }
 
-    setCursor(cursor) {
+    setCursor(cursor: Cursor): Message {
         return new Message(this.resource, this.payload, this.headers, cursor);
     }
 
-    path() {
-        return Immutable.List(this.resource.split("/"));
+    path(): List<string> {
+        return List(this.resource.split("/"));
     }
 
-    toJS() {
+    toJS(): Object {
         return {
             headers:  this.headers.toJS(),
             payload:  this.payload.toJS(),

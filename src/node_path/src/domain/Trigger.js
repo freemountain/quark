@@ -1,9 +1,24 @@
+// @flow
+
+import { List } from "immutable";
+import Cursor from "./Cursor";
 import GuardError from "./error/GuardError";
 import DeclaredTrigger from "./DeclaredTrigger";
 import assert from "assert";
 
+type Result = {
+    cursor: Cursor,
+    result: boolean
+}
+
 export default class Trigger {
-    constructor(action, trigger) {
+    emits:  string;    // eslint-disable-line
+    guards: List<>;    // eslint-disable-line
+    delay:  number;    // eslint-disable-line
+    action: string;    // eslint-disable-line
+    params: List<any>;
+
+    constructor(action: string, trigger: DeclaredTrigger) {
         this.emits  = action;
         this.guards = trigger.guards;
         this.delay  = trigger.delay;
@@ -11,7 +26,7 @@ export default class Trigger {
         this.action = trigger.name;
     }
 
-    merge(trigger) {
+    merge(trigger: Trigger): Trigger {
         assert(this.emits === trigger.emits && this.action === trigger.action, "can only merge triggers with the same action n emits value");
 
         const guards = trigger.guards.concat(this.guards);
@@ -20,7 +35,7 @@ export default class Trigger {
         return new Trigger(this.emits, new DeclaredTrigger(this.action, guards, params, this.delay));
     }
 
-    toJS() {
+    toJS(): {} {
         return {
             emits:  this.emits,
             delay:  this.delay,
@@ -30,7 +45,7 @@ export default class Trigger {
         };
     }
 
-    shouldTrigger(cursor, params) { // eslint-disable-line
+    shouldTrigger(cursor: Cursor, params: List<any>): Result { // eslint-disable-line
         let result  = true;
         let tracing = cursor;
 

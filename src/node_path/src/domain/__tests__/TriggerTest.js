@@ -1,8 +1,10 @@
+// @flow
+
 import Trigger from "../Trigger";
 import Action from "../Action";
 import { expect } from "chai";
 import DeclaredTrigger from "../DeclaredTrigger";
-import Immutable from "immutable";
+import { List, Map, fromJS } from "immutable";
 import sinon from "sinon";
 import Cursor from "../Cursor";
 import Internals from "../Internals";
@@ -25,12 +27,12 @@ describe("TriggerTest", function() {
     });
 
     it("creates a Trigger", function() {
-        const action      = new Action("Test", "blub", Immutable.List());
-        const guard1      = (param1, param2, x) => x.get("value") > 1 && param1 === 1 && param2 === "huhu";
+        const action      = new Action("Test", "blub", List());
+        const guard1      = (param1, param2, x) => x instanceof Object && x.get instanceof Function && x.get("value") > 1 && param1 === 1 && param2 === "huhu";
         const guard2      = sinon.stub().returns(true);
-        const trigger     = new DeclaredTrigger("blub", Immutable.List([guard1, guard2]), Immutable.List.of("huhu"), 10);
+        const trigger     = new DeclaredTrigger("blub", List([guard1, guard2]), List.of("huhu"), 10);
         const description = new Trigger("blub", trigger);
-        const message     = new Message("/test", []);
+        const message     = new Message("/test", List());
 
         expect(description.toJS()).to.eql({
             emits:  "blub",
@@ -40,10 +42,10 @@ describe("TriggerTest", function() {
             action: "blub"
         });
 
-        const data = Immutable.fromJS({
+        const data = fromJS({
             _unit: (new Internals({
-                actions:     Immutable.fromJS([[]]),
-                description: Immutable.Map({
+                actions:     fromJS([[]]),
+                description: Map({
                     blub: action
                 })
             })).messageReceived(message),
@@ -60,7 +62,7 @@ describe("TriggerTest", function() {
 
         const cursor = new TestCursor(data);
 
-        expect(action.func.call(cursor, new Message("/blub", Immutable.List([1, "huhu"]))).get("value")).to.equal(9);
+        expect(action.func.call(cursor, new Message("/blub", List([1, "huhu"]))).get("value")).to.equal(9);
     });
 });
 

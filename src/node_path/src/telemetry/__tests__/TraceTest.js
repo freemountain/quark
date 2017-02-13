@@ -1,6 +1,8 @@
+// @flow
+
 import Trace from "../Trace";
 import { expect } from "chai";
-import Immutable from "immutable";
+import { List } from "immutable";
 import Uuid from "../../util/Uuid";
 import sinon from "sinon";
 
@@ -46,7 +48,7 @@ describe("TraceTest", function() {
 
         const trace2  = trace.trace({
             name:   "sub1",
-            params: Immutable.List([1, 2]),
+            params: List([1, 2]),
             guards: 1,
             parent: 1
         }, "Blub");
@@ -106,7 +108,7 @@ describe("TraceTest", function() {
 
         const trace5 = trace4.trace({
             name:   "sub2",
-            params: Immutable.List(["huhu"]),
+            params: List(["huhu"]),
             guards: 2,
             parent: 1
         }, "Bla");
@@ -129,7 +131,7 @@ describe("TraceTest", function() {
 
         const trace6 = trace5.trace({
             name:   "sub3",
-            params: Immutable.List([true]),
+            params: List([true]),
             guards: 3,
             parent: 3
         }, "Bli");

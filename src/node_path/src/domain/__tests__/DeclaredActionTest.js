@@ -1,3 +1,5 @@
+// @flow
+
 import DeclaredAction from "../DeclaredAction";
 import { expect } from "chai";
 

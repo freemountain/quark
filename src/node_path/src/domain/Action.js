@@ -1,4 +1,6 @@
-import Immutable from "immutable";
+// @flow
+
+import { List, Set } from "immutable";
 import Cursor from "./Cursor";
 import assert from "assert";
 import Message from "../Message";
@@ -7,7 +9,20 @@ import { schedule } from "../Runloop";
 import Trigger from "./Trigger";
 import DeclaredTrigger from "./DeclaredTrigger";
 
+type Kind = "before" | "cancel" | "progress" | "done" | "error"
+
 class Action {
+    name:     string;         // eslint-disable-line
+    op:       ?(* => Cursor); // eslint-disable-line
+    before:   List<Trigger>;  // eslint-disable-line
+    done:     List<Trigger>;  // eslint-disable-line
+    triggers: List<Trigger>;
+    error:    List<Trigger>;  // eslint-disable-line
+    cancel:   List<Trigger>;  // eslint-disable-line
+    progress: List<Trigger>;
+    unit:     string;         // eslint-disable-line
+    func:     (y: any, prev: (string | void)) => Promise<Cursor>; // eslint-disable-line
+
     static BEFORE   = x => x.action.indexOf(".before") !== -1;   // eslint-disable-line
     static PROGRESS = x => x.action.indexOf(".progress") !== -1;
     static CANCEL   = x => x.action.indexOf(".cancel") !== -1;   // eslint-disable-line
@@ -19,15 +34,16 @@ class Action {
     );
     static ERROR    = x => x.action.indexOf(".error") !== -1;    // eslint-disable-line
 
-    static Handler(description) {
+    static Handler(description: Action): (y: any, prev: (string | void)) => Promise<Cursor> {
         // Todo: prev in den cursor mit undo/redo
+        // + actionliste
         return function(y, prev = description.name) { // eslint-disable-line
             const trigger = description.triggers.find(x => x.action === prev.replace(".done", ""));
 
             try {
-                if(!Message.is(y)) return Promise.resolve(this
-                    .trace(description.name, Immutable.List(), prev, trigger.guards.size)
-                    .error(new UnknownMessageError(y)));
+                if(!Message.is(y) || !trigger) return Promise.resolve(this
+                    .trace(description.name, List(), prev, trigger ? trigger.guards.size : 0)
+                    .error(new UnknownMessageError(description.unit, description.name, y)));
 
                 assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}]'.`);
                 assert(this.isTracing, "cursor not tracing");
@@ -43,14 +59,6 @@ class Action {
 
                 const triggered = x.cursor.trace.triggered();
 
-                // TODO to test:
-                //
-                //  - before und done semantisch tauschen
-                //  (depends: message oder message.before)
-                //
-                //  - more complex triggers (line in constr)
-                //
-                //  MessageTest!
                 return description
                     .applyBefore(triggered, y)
                     .then(cursor => Promise.all([schedule(() => description.applyAction(cursor, message), trigger.delay), cursor]))
@@ -67,7 +75,7 @@ class Action {
         };
     }
 
-    constructor(unit, name, declarativeTriggers, op = null) { // eslint-disable-line
+    constructor(unit: string, name: string, declarativeTriggers: List<Trigger>, op: any = null) { // eslint-disable-line
         const filtered = declarativeTriggers
             .filter(trigger => trigger.action.split(".")[0] === name);
 
@@ -80,8 +88,12 @@ class Action {
         const func = op && op.__Action ? op : Action.Handler(this);
 
         func.__Action = this;
-        func.cancel   = this.cancel.bind(this, func);
+        func.cancel   = Action.cancel.bind(this, func);
 
+        // TODO to test:
+        //
+        //  - more complex triggers (line in constr)
+        //
         // hier müssen bei den ganzen triggern noch dopplungen gefiltert werden:
         // this.before.filter(x => //hat keiner der anderen den auch in before?)
         //
@@ -95,6 +107,7 @@ class Action {
         // test: message
         // test2: test, sons würde das doppelt getriggert
         //
+        //  MessageTest!
         const own = ownTriggers.find(x => x.action === name && x.emits === name);
 
         this.unit      = unit;
@@ -111,28 +124,28 @@ class Action {
     }
 
     // die hier werden dann alle diese actions im cursor
-    applyBefore(cursor, message) {
+    applyBefore(cursor: Cursor, message: Message): Promise<Cursor> {
         return this.applyTriggers("before", cursor, message);
     }
 
-    applyDone(cursor, message) {
+    applyDone(cursor: Cursor, message: Message): Promise<Cursor> {
         return this.applyTriggers("done", cursor, message);
     }
 
-    applyError(cursor, message) {
+    applyError(cursor: Cursor, message: Message): Promise<Cursor> {
         return this.applyTriggers("error", cursor, message);
     }
 
-    applyCancel(cursor, message) {
+    applyCancel(cursor: Cursor, message: Message): Promise<Cursor> {
         return this.applyTriggers("cancel", cursor, message);
     }
 
-    applyProgress(cursor, message) {
+    applyProgress(cursor: Cursor, message: Message): Promise<Cursor> {
         return this.applyTriggers("progress", cursor, message);
     }
 
-    applyTriggers(kind, cursor, message) {
-        assert(cursor instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(cursor)} for ''.`);
+    applyTriggers(kind: Kind, cursor: Cursor, message: Message): Promise<Cursor> {
+        assert(cursor instanceof Cursor, `Invalid cursor of ${cursor.constructor.name} for ''.`);
 
         // TODO: das muss hiermit funktionieren, damit das in runtime.before
         // etc ausgelagert werden kann und dadurch bei inheritance überschreibbar
@@ -141,7 +154,7 @@ class Action {
         const updated = message.setCursor(cursor);
         // hier das löst sich auch durch cursor.currentop
         const prev    = `${this.name}.${kind}`;
-        const promise = Promise.all(this[kind].map(x => cursor[x.emits](updated, prev)).toJS());
+        const promise = Promise.all((this: Object)[kind].map(x => (cursor: Object)[x.emits](updated, prev)).toJS());
             // .map(x => cursor[x.emits] instanceof Function ? cursor[x.emits](updated, prev) : cursor).toJS());
 
         // TODO: hier die logik bei den thens in cursor.patch packen
@@ -152,12 +165,12 @@ class Action {
                     traces: dest.traces.concat(y.traces),
                     errors: dest.errors.concat(y.errors)
                 });
-            }, { diffs: Immutable.Set(), traces: Immutable.List(), errors: Immutable.List() }))
+            }, { diffs: Set(), traces: List(), errors: List() }))
             .then(({ diffs, traces, errors }) => cursor
                 .patch(diffs.toList(), traces, errors));
     }
 
-    applyAction(cursor, message) {
+    applyAction(cursor: Cursor, message: Message): Promise<Cursor> {
         // TODO: das hier muss möglich sein, damit das in
         // die message action ausgelagert werden kann, um den
         // ganzen shit so überschreiben zu können - des weiteren
@@ -179,29 +192,29 @@ class Action {
         }
     }
 
-    onResult(cursor, result) { // eslint-disable-line
+    onResult(cursor: Cursor, result: (Promise<Cursor> | Error | Cursor | void)): Promise<Cursor> { // eslint-disable-line
         try {
             assert((
                 !result ||
                 result instanceof Promise ||
                 result instanceof Cursor ||
                 result instanceof Error
-            ), `Actions have to always return a cursor or undefined, got ${result && result instanceof Object ? result.constructor.name : result}`);
+            ), `Actions have to always return a cursor or undefined, got ${result instanceof Cursor ? result.constructor.name : "undefined"}`);
 
             if(result instanceof Error)   return cursor.update("_unit", internals => internals.error(result));
             if(result instanceof Promise) return result
                 .then(this.onResult.bind(this, cursor))
                 .catch(this.onResult.bind(this, cursor));
 
-            return result || cursor;
+            return Promise.resolve(result instanceof Cursor ? result : cursor);
         } catch(e) {
             return cursor.update("_unit", internals => internals.error(e));
         }
     }
 
-    willTrigger(cursor, ...messages) {
+    willTrigger(cursor: Cursor, ...messages: Array<Message>): boolean {
         // Test!!
-        return Immutable.List(messages).every(message => ( // eslint-disable-line
+        return List(messages).every(message => ( // eslint-disable-line
             (this.triggers.has(message.resource) && this.triggers.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.before.has(message.resource) && this.before.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.progress.has(message.resource) && this.progress.get(message.resource).shouldTrigger(cursor, message.payload)) ||
@@ -211,17 +224,17 @@ class Action {
         ));
     }
 
-    guardsToJS(triggers) {
+    guardsToJS(triggers: Array<{ guards: Array<Object> }>): Array<Object> {
         return triggers.map(x => Object.assign({}, x, {
             guards: x.guards.length
         }));
     }
 
-    cancel() {
+    static cancel() {
         assert(false, "Action.cancel: implement!");
     }
 
-    toJS() {
+    toJS(): Object {
         return {
             triggers: this.guardsToJS(this.triggers.toJS()),
             unit:     this.unit,
