@@ -8,6 +8,7 @@ import UnknownMessageError from "./error/UnknownMessageError";
 import { schedule } from "../Runloop";
 import Trigger from "./Trigger";
 import DeclaredTrigger from "./DeclaredTrigger";
+import InvalidCursorError from "./error/InvalidCursorError";
 
 type Kind = "before" | "cancel" | "progress" | "done" | "error"
 
@@ -38,15 +39,14 @@ class Action {
         // Todo: prev in den cursor mit undo/redo
         // + actionliste
         return function(y, prev = description.name) { // eslint-disable-line
-            const trigger = description.triggers.find(x => x.action === prev.replace(".done", ""));
+            const trigger = description.triggers.find(x => x.action === prev.replace(".done", "")) || new Trigger(description.name, new DeclaredTrigger(description.name));
 
             try {
                 if(!Message.is(y)) return Promise.resolve(this
                     .trace(description.name, List(), prev, trigger.guards.size)
                     .error(new UnknownMessageError(description.unit, description.name, y)));
 
-                assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}]'.`);
-                assert(this.isTracing, "cursor not tracing");
+                if(!(this instanceof Cursor)) throw new InvalidCursorError(this, description);
 
                 const message = y.setCursor(this).preparePayload(trigger);
                 const updated = this.update("_unit", internals => internals.update("action", z => z.setCursor(this)));
@@ -147,8 +147,6 @@ class Action {
     }
 
     applyTriggers(kind: Kind, cursor: Cursor, message: Message): Promise<Cursor> {
-        assert(cursor instanceof Cursor, `Invalid cursor of ${cursor.constructor.name} for ''.`);
-
         // TODO: das muss hiermit funktionieren, damit das in runtime.before
         // etc ausgelagert werden kann und dadurch bei inheritance überschreibbar
         //
@@ -180,8 +178,6 @@ class Action {
         // anwenden
         // const message = cursor.currentMessage
         try {
-            assert(cursor.isTracing, "cursor not tracing (before)");
-
             // currentOp muss auf cursor sein
             if(!this.op) return Promise.resolve(cursor);
 

@@ -1,8 +1,8 @@
 // @flow
 
-import CoreComponentError from "../../error/CoreComponentError";
+import NonRecoverableError from "../../error/NonRecoverableError";
 
-export default class GuardError extends CoreComponentError {
+export default class GuardError extends NonRecoverableError {
     constructor(context: string, trigger: string, position: number, e: Error) {
         super(`The ${position}${GuardError.addition(position)} guard for '${context}::${trigger}' threw an error:\n\n\t${e.toString()}\n\n`, e);
     }

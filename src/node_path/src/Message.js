@@ -1,10 +1,12 @@
 // @flow
 
-import assert from "assert";
+// import assert from "assert";
 import { Map, List, Record, fromJS } from "immutable";
 import defaults from "set-default-value";
 import Cursor from "./domain/Cursor";
 import Trigger from "./domain/Trigger";
+import InvalidMessageError from "./error/InvalidMessageError";
+import NoCursorError from "./error/NoCursorError";
 
 export default class Message extends Record({
     headers:  Map(),
@@ -16,26 +18,18 @@ export default class Message extends Record({
         return x instanceof Message;
     }
 
-    static assert(x) {
-        if(!this.is(x)) assert(false, `Expected x to be an instance of message, but got ${JSON.stringify(x)}`);
-
-        return x;
-    }
-
     static assertStructure(data) {
         if(!(
             data &&
             data.headers instanceof Map &&
             data.payload instanceof List &&
             typeof data.resource === "string"
-        )) assert(false, `Your inputdata is not a valid message, got ${JSON.stringify(data)}.`);
+        )) throw new InvalidMessageError(data);
 
         return data;
     }
 
     constructor(resource: (string | Message | { resource: string, payload?: ?List<*>, headers?: ?Map<string, *> }), payload?: ?List<*>, headers?: Map<string, *> = Map(), _cursor?: ?Cursor = null) { // eslint-disable-line
-        assert(_cursor === null || _cursor instanceof Cursor, "a Message needs to reference a cursor to check if it triggers something.");
-
         const data = fromJS(typeof resource === "string" ? { resource, payload, headers, _cursor } : resource);
 
         super(data);
@@ -56,19 +50,22 @@ export default class Message extends Record({
     }
 
     willTrigger(...actions: Array<string>): boolean {
-        assert(this.get("_cursor") instanceof Cursor, "Message::willTrigger - you need to set the cursor before using it");
+        const cursor = this.get("_cursor");
 
-        const description = this.get("_cursor").get("_unit").get("description");
+        if(!(cursor instanceof Cursor)) throw new NoCursorError("Message::willTrigger");
+
+        const description = cursor.get("_unit").get("description");
         const messages    = actions.map(name => new Message(name, this.payload, this.headers));
 
         return description.some(handler => handler.willTrigger(this.get("_cursor"), messages));
     }
 
     preparePayload(trigger: Trigger): Message {
-        assert(this.get("_cursor") instanceof Cursor, "Message::preparePayload - you need to set the cursor before using it");
+        const cursor = this.get("_cursor");
 
-        const x       = this.get("_cursor");
-        const payload = trigger.action.indexOf(".error") !== -1 ? this.payload.unshift(x.currentError) : this.payload;
+        if(!(cursor instanceof Cursor)) throw new NoCursorError("Message::preparePayload");
+
+        const payload = trigger.action.indexOf(".error") !== -1 ? this.payload.unshift(cursor.currentError) : this.payload;
 
         return this.set("payload", payload.concat(trigger.params));
     }

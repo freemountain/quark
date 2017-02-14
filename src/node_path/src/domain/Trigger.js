@@ -4,7 +4,7 @@ import { List } from "immutable";
 import Cursor from "./Cursor";
 import GuardError from "./error/GuardError";
 import DeclaredTrigger from "./DeclaredTrigger";
-import assert from "assert";
+import MergeError from "./error/MergeError";
 
 type Result = {
     cursor: Cursor,
@@ -27,7 +27,7 @@ export default class Trigger {
     }
 
     merge(trigger: Trigger): Trigger {
-        assert(this.emits === trigger.emits && this.action === trigger.action, "can only merge triggers with the same action n emits value");
+        if(this.emits !== trigger.emits || this.action !== trigger.action) throw new MergeError(this, trigger);
 
         const guards = trigger.guards.concat(this.guards);
         const params = trigger.params.concat(this.params);

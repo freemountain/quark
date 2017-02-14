@@ -1,6 +1,6 @@
 // @flow
 
-import MessageError from "./MessageError";
+import MessageError from "../../error/MessageError";
 
 export default class UnknownMessageError extends MessageError {
     constructor(context: string, action: string, message: any) {

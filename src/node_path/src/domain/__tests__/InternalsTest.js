@@ -54,9 +54,9 @@ describe("InternalsTest", function() {
             name: "blub"
         });
 
-        expect(() => internals.messageProcessed()).to.throw("AssertionError: Can't finish a message before starting.");
+        expect(() => internals.messageProcessed()).to.throw("NotStartedError: Can\'t finish a message before starting.");
         expect(internals.messageReceived(message).action).to.equal(message);
-        expect(() => internals.messageReceived(message).messageReceived(message)).to.throw("AssertionError: Can't start a message, if another message is currently processed.");
+        expect(() => internals.messageReceived(message).messageReceived(message)).to.throw("AlreadyReceivedError: Can\'t start a message, if another message is currently processed.");
         expect(internals.messageReceived(message).messageProcessed().action).to.equal(null);
     });
 
@@ -72,7 +72,7 @@ describe("InternalsTest", function() {
             params: List.of(1)
         }, "blub").set("id", 1).set("start", 1).toJS()]);
 
-        expect(() => internals.updateCurrentTrace(x => x)).to.throw("AssertionError: Can\'t update a trace before receiving a message.");
+        expect(() => internals.updateCurrentTrace(x => x)).to.throw("NoMessageError: Can\'t update a trace before receiving a message.");
         expect(internals.set("action", message).updateCurrentTrace(x => x).toJS()).to.eql(internals.set("action", message).toJS());
         const internals2 = internals
             .messageReceived(message)

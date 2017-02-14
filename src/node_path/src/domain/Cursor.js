@@ -1,17 +1,21 @@
 // @flow
 
-import { fromJS, Map, List, Set, OrderedSet, OrderedMap, Stack, Record, Seq, Iterable, Collection } from "immutable";
+import TraceNotStartedError from "./error/TraceNotStartedError";
+import { fromJS, Map, List, OrderedSet, OrderedMap, Iterable, Seq, Set, Collection, Record, Stack } from "immutable";
 import ImmutableMethods from "../util/ImmutableMethods";
-import assert from "assert";
 import patch from "immutablepatch";
 import diff from "immutablediff";
+import Runtime from "../Runtime";
 import Trace from "../telemetry/Trace";
 import Message from "../Message";
-import Runtime from "../Runtime";
+import CursorAbstractError from "./error/CursorAbstractError";
+import UnknownMethodError from "./error/UnknownMethodError";
+import assert from "assert";
 
 export type Diffs = List<{
-    op:   string, // eslint-disable-line
-    path: string
+    op:    string, // eslint-disable-line
+    path:  string, // eslint-disable-line
+    value: any
 }>
 
 class Cursor {
@@ -25,11 +29,11 @@ class Cursor {
     set:         (string, any) => Cursor; // eslint-disable-line
 
     static assertTraceStarted(cursor: Cursor, caller: string): void {
-        assert(cursor.isTracing, `You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
+        if(!cursor.isTracing) throw new TraceNotStartedError(`You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
     }
 
     static trace(cursor: Cursor, ...args: *): Cursor {
-        assert(cursor.isTracing, "You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
+        if(!cursor.isTracing) throw new TraceNotStartedError("You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
 
         const data = cursor.__data.x.update("_unit", internals => internals.trace(...args));
 
@@ -63,10 +67,7 @@ class Cursor {
         return new cursor.constructor(data);
     }
 
-    static for(instance: {}, description: Map<*, *>) {
-        assert(instance instanceof Object, `instance has to be an object, but got ${JSON.stringify(instance)}`);
-        assert(description instanceof Map, `description has to be an Immutable.Map, but got ${JSON.stringify(description)}`);
-
+    static for(instance: Object, description: Map<*, *>) {
         const inherited = function(...args) {
             Object.defineProperty(this, "__inherited", {
                 enumerable:   false,
@@ -107,10 +108,9 @@ class Cursor {
         return inherited;
     }
 
-    constructor(data: {} | Cursor) { // eslint-disable-line
-        if(!(data instanceof Object) || data instanceof Cursor) return data;
-
-        assert(this.__inherited, "Cursor can only be used, when inherited");
+    constructor(data: any) { // eslint-disable-line
+        if(data instanceof Cursor) return data;
+        if(!this.__inherited)      throw new CursorAbstractError();
 
         this.__data = {
             x: fromJS(data)
@@ -144,7 +144,7 @@ class Cursor {
     }
 
     get currentTrace(): ?Trace {
-        return this.__data.x.get("_unit").currentTrace();
+        return this.__data.x.get("_unit").traces.first();
     }
 
     get traces(): List<Trace> {
@@ -180,12 +180,6 @@ class Cursor {
     }
 
     patch(diffs: Diffs, traces: List<Trace> = List(), errors: List<Error> = List()) {
-        assert(diffs instanceof List, `Diffs need to be of type Immutable.List or Immutable.Set, got '${typeof diffs === "object" ? diffs.constructor.name : JSON.stringify(diffs)}'.`);
-
-        const first = diffs.first();
-
-        assert(!first || (first instanceof Map && first.get("op") && first.get("path")), `a diff needs to have the keys 'op' and 'path', got '${typeof first === "object" ? first.constructor.name : JSON.stringify(first)}'.`);
-
         const patched = patch(this.__data.x, diffs);
         const updated = this.__data.x.get("_unit").traces
             .concat(traces.filter(x => !x.locked))
@@ -204,12 +198,8 @@ class Cursor {
         return diff(this.__data.x, cursor.__data.x);
     }
 
-    equals(cursor: Cursor): boolean {
-        assert(false, "Cursor.equals: implement!");
-
-        assert(cursor instanceof this.constructor, `You can only compare two cursors of the same type ('${this.constructor.name}'), got '${typeof cursor === "object" ? cursor.constructor.name : JSON.stringify(cursor)}'.`);
-
-        return this.__data.x === cursor.__data.x;
+    isEqual(cursor: Cursor): boolean {
+        return cursor instanceof this.constructor && this.__data.x === cursor.__data.x;
     }
 
     progress(): Cursor {
@@ -249,15 +239,13 @@ class Cursor {
     }
 
     error(e: Error): Cursor {
-        assert(e instanceof Error, `You can only error with an error, but got ${e.toString()}`);
-
         return this
             .update("_unit", internals => internals.error(e))
             .trace.error(e);
     }
 
     toString(): string {
-        return `${this.constructor.name}<${this.__data ? this.__data.x : this.__data}>`;
+        return `${this.constructor.name}<${this.__data.x instanceof Collection ? this.__data.x.filter((_, key) => key !== "_unit").toString() : JSON.stringify(this.__data)}>`;
     }
 }
 
@@ -281,9 +269,9 @@ ImmutableMethods
         enumerable:   false,
         configurable: false,
         value:        function(...args) { // eslint-disable-line
-            const op = this.__data.x[method];
+            const op = this.__data.x instanceof Object ? this.__data.x[method] : null;
 
-            assert(op instanceof Function, `Method '${this.__data.x.constructor.name}::${method}' is undefined.`);
+            if(!(op instanceof Function)) throw new UnknownMethodError(this.__data.x, method);
 
             const result = op.call(this.__data.x, ...args);
 

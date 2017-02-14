@@ -213,7 +213,7 @@ describe("TraceTest", function() {
             .addSubtrace(trace8)
             .errored(new Error("huhu"));
 
-        expect(() => trace9.lock()).to.throw("NotRootError: You can only lock the root of a trace @Bla::sub2");
+        expect(() => trace9.lock()).to.throw("NotRootError: You can only lock the root of a trace (@Bla::sub2).");
         expect(trace9.isConsistent()).to.equal(true);
         expect(trace9.toJS()).to.eql({
             id:       3,

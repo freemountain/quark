@@ -112,11 +112,11 @@ describe("CursorTest", function() { // eslint-disable-line
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
         const cursor     = new UnitCursor(data);
 
-        expect(() => cursor.trace.end()).to.throw("AssertionError: You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to 'ended'.");
-        expect(() => cursor.trace.triggered()).to.throw("AssertionError: You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to 'triggered'.");
-        expect(() => cursor.trace.error()).to.throw("AssertionError: You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to 'errored'.");
+        expect(() => cursor.trace.end()).to.throw("TraceNotStartedError: You have to start a trace with \'Cursor::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'ended\'.");
+        expect(() => cursor.trace.triggered()).to.throw("TraceNotStartedError: You have to start a trace with \'Cursor::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'triggered\'.");
+        expect(() => cursor.trace.error()).to.throw("TraceNotStartedError: You have to start a trace with \'Cursor::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'errored\'.");
 
-        expect(() => cursor.trace("/test", List.of(false))).to.throw("AssertionError: You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
+        expect(() => cursor.trace("/test", List.of(false))).to.throw("TraceNotStartedError: You can only call \'Cursor::trace\' in the context of an arriving message. Please make sure to use this class in conjunction with \'Runtime\' or to provide an \'Internals\' instance to the constructor of this class, which did receive a message.");
 
         const cursor2 = cursor
             .update("_unit", internals => internals.set("action", null).messageReceived(message))
@@ -811,7 +811,7 @@ describe("CursorTest", function() { // eslint-disable-line
             }
         });
 
-        expect(cursor10.traces.first().toString()).to.equal("                                          \u001b[7m\u001b[32m Unit::Message</test>(1) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m11ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m\n                                                                                      |\n                                             \u001b[7m\u001b[32m Unit::test(false) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m9ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m\n                                                                                      |\n                                          \u001b[7m\u001b[31m #ERROR Unit::test2(1) - \u001b[39m\u001b[27m\u001b[7m\u001b[31m7ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m\n                                                                                      |\n                                               \u001b[7m\u001b[32m Unit::test3(2) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m5ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m____\n                                              /                                                                                   \\\n  \u001b[7m\u001b[31m #ERROR Unit::test4(3) - \u001b[39m\u001b[27m\u001b[7m\u001b[31m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m  \u001b[7m\u001b[32m Unit::test5(4) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m");
+        expect(cursor10.currentTrace.toString()).to.equal("                                          \u001b[7m\u001b[32m Unit::Message</test>(1) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m11ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m\n                                                                                      |\n                                             \u001b[7m\u001b[32m Unit::test(false) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m9ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m\n                                                                                      |\n                                          \u001b[7m\u001b[31m #ERROR Unit::test2(1) - \u001b[39m\u001b[27m\u001b[7m\u001b[31m7ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m\n                                                                                      |\n                                               \u001b[7m\u001b[32m Unit::test3(2) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m5ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m____\n                                              /                                                                                   \\\n  \u001b[7m\u001b[31m #ERROR Unit::test4(3) - \u001b[39m\u001b[27m\u001b[7m\u001b[31m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m  \u001b[7m\u001b[32m Unit::test5(4) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m");
     });
 
     it("creates some cursors", function() {
@@ -826,9 +826,9 @@ describe("CursorTest", function() { // eslint-disable-line
             }),
             test: "test"
         });
-        const InteritedCursor = Cursor.for(class Test {}, map.get("_unit").description);
-        const cursor          = new InteritedCursor(map);
-        const cursor2         = new InteritedCursor(cursor);
+        const InheritedCursor = Cursor.for(class Test {}, map.get("_unit").description);
+        const cursor          = new InheritedCursor(map);
+        const cursor2         = new InheritedCursor(cursor);
         const spy             = sinon.spy();
 
         cursor.generic(spy);
@@ -842,7 +842,7 @@ describe("CursorTest", function() { // eslint-disable-line
         }).to.throw();
         expect(cursor).to.equal(cursor2);
         expect(cursor.blub).to.be.a("function");
-        // expect(cursor.blub()).to.equal(4);
+        expect(cursor.toString()).to.equal("FunctionCursor<Map { \"test\": \"test\" }>");
     });
 
     it("errors with a cursor", function() {
@@ -891,5 +891,22 @@ describe("CursorTest", function() { // eslint-disable-line
             value: 2
         }]);
         expect(cursor.patch(cursor.diff(cursor2)).toJS()).to.eql(cursor2.toJS());
+    });
+
+    it("triggers some errors", function() {
+        expect(() => new Cursor()).to.throw("CursorAbstractError: Cursor can only be used, when inherited.");
+    });
+
+    it("compares two cursors", function() {
+        const Cursor2 = Cursor.for(new (class Unit {})(), Map());
+        const Cursor3 = Cursor.for(new (class Unit {})(), Map());
+        const data    = new Map({ test: 1 });
+        const cursor2 = new Cursor2();
+        const cursor3 = new Cursor3();
+
+        expect(cursor2.isEqual(cursor3)).to.equal(false);
+        expect((new Cursor2(data)).isEqual(new Cursor2(data))).to.equal(true);
+        expect(cursor2.toString()).to.equal("UnitCursor<{}>");
+        expect(() => cursor2.map()).to.throw("UnknownMethodError: Trying to call unknown method \'undefined::map\'.");
     });
 });

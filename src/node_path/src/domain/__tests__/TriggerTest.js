@@ -73,6 +73,7 @@ describe("TriggerTest", function() {
         const trigger3     = new DeclaredTrigger("blub", List([guard3, guard1, guard2]), List.of(3, true, "huhu"), 10);
 
         expect(description.merge(description2)).to.eql(new Trigger("blub", trigger3));
+        expect(() => description.merge(new Trigger("blub2", new DeclaredTrigger("blub", List(), List(), 0)))).to.throw("MergeError: You can only merge triggers with the same action and emits value, got (blub, blub) and (blub2, blub).");
     });
 });
 

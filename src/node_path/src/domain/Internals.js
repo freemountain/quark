@@ -3,7 +3,9 @@
 import { Record, List, Map, Set } from "immutable";
 import Trace from "../telemetry/Trace";
 import Message from "../Message";
-import assert from "assert";
+import NoMessageError from "./error/NoMessageError";
+import AlreadyReceivedError from "./error/AlreadyReceivedError";
+import NotStartedError from "./error/NotStartedError";
 
 export default class Internals extends Record({
     description: Map(),
@@ -38,7 +40,7 @@ export default class Internals extends Record({
     }
 
     updateCurrentTrace(op: Trace => Trace): Internals {
-        assert(this.action !== null, "Can't update a trace before receiving a message.");
+        if(this.action === null) throw new NoMessageError();
 
         const current = this.currentTrace();
 
@@ -65,8 +67,7 @@ export default class Internals extends Record({
     }
 
     messageReceived(message: Message): Internals {
-        Message.assert(message);
-        assert(this.action === null, "Can't start a message, if another message is currently processed.");
+        if(this.action !== null) throw new AlreadyReceivedError();
 
         return this
             .trace(`Message<${message.resource}>`, message.payload)
@@ -75,7 +76,7 @@ export default class Internals extends Record({
     }
 
     messageProcessed(): Internals {
-        assert(this.action !== null, "Can't finish a message before starting.");
+        if(this.action === null) throw new NotStartedError();
 
         const filtered = this.traces.filter(x => !x.locked);
         const trace    = filtered

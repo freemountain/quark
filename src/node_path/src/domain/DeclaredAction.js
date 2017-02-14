@@ -3,7 +3,6 @@
 import { List } from "immutable";
 import DeclaredTrigger from "./DeclaredTrigger";
 import defaults from "set-default-value";
-import assert from "assert";
 import type { Guard } from "./DeclaredTrigger";
 
 type DeclaredTriggerDescription = {
@@ -55,8 +54,6 @@ export default class DeclaredAction {
 
     setName(name: string): DeclaredAction {
         const trigger = this.triggers.first();
-
-        assert(trigger && trigger.name === "anonymous", "Can't set a name, if there is no anonymous trigger");
 
         return new DeclaredAction(Object.assign({}, this, {
             name:     name,

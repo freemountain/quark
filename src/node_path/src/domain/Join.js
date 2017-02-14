@@ -1,7 +1,8 @@
-import Immutable from "immutable";
+// @flow
+
+import { List, Collection } from "immutable";
 import assert from "assert";
 import Cursor from "./Cursor";
-import curry from "lodash.curry";
 
 /**
  * This class is used to create joins. the of function is
@@ -60,14 +61,14 @@ class Join {
      * @param  {Immutable.Map}              entity    current entity to join into
      * @return {Immutable.Map}
      */
-    static mapper({ key }, data, predicate, entity) {
-        const isOneToMany = entity.get(key) instanceof Immutable.List;
-        const idxs        = isOneToMany ? entity.get(key) : Immutable.List.of(entity.get(key));
+    static mapper({ key }: { key: string }, data: Collection<*, *>, predicate: any => boolean, entity: Map<string, *>) {
+        const isOneToMany = entity.get(key) instanceof List;
+        const idxs        = isOneToMany ? entity.get(key) : List.of(entity.get(key));
         const result      = data.filter(relation => {
-            return idxs.some(idx => predicate(new Cursor(entity.set(key, idx)), new Cursor(relation))); // eslint-disable-line
+            return idxs instanceof List ? idxs.some(idx => predicate(new Cursor(entity.set(key, idx)), new Cursor(relation))) : false; // eslint-disable-line
         });
 
-        assert(!isOneToMany ? result.size <= 1 : true, `Ambigous relation, found for ${entity} ${result.size} matches: ${result}.`);
+        assert(!isOneToMany ? result.size <= 1 : true, `Ambigous relation, found for ${entity.toString()} ${result.size} matches: ${result.toString()}.`);
 
         return entity.set(key, isOneToMany ? result : result.first());
     }
@@ -83,12 +84,12 @@ class Join {
      * @return {Cursor}
      */
     static of(current, first, predicate, args) {
-        assert(args.first() instanceof Immutable.Collection, "All relations have to be of type Immutable.Collection.");
+        assert(args.first() instanceof Collection, "All relations have to be of type Immutable.Collection.");
 
         const data = current.name === first.name ? args.first() : args.last();
         const dest = args
             .first()
-            .map(Join.mapper(current, data, predicate))
+            .map(Join.mapper.bind(null, current, data, predicate))
             .filter(x => x.get(current.key));
 
         const transformed = args
@@ -99,8 +100,5 @@ class Join {
         return new Cursor(transformed);
     }
 }
-
-Join.mapper = curry(Join.mapper, 4);
-Join.of     = curry(Join.of, 4);
 
 export default Join;
