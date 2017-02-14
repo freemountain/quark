@@ -23,6 +23,53 @@ describe("DeclaredActionTest", function() {
         });
     });
 
+    it("creates a declared action (2)", function() {
+        const action = DeclaredAction.triggered.with("blub");
+
+        expect(action.toJS()).to.eql({
+            name:     "anonymous",
+            triggers: [{
+                delay:  0,
+                guards: 0,
+                name:   "anonymous",
+                params: ["blub"]
+            }]
+        });
+    });
+
+    it("creates a declared action (3)", function() {
+        const action = DeclaredAction.triggered.after(200);
+
+        expect(action.toJS()).to.eql({
+            name:     "anonymous",
+            triggers: [{
+                delay:  200,
+                guards: 0,
+                name:   "anonymous",
+                params: []
+            }]
+        });
+    });
+
+    it("creates a declared action (4)", function() {
+        const guard1 = () => false;
+        const guard2 = () => true;
+        const action = DeclaredAction.triggered
+            .if(guard1)
+            .or(guard2);
+
+        expect(action.toJS()).to.eql({
+            name:     "anonymous",
+            triggers: [{
+                delay:  0,
+                guards: 1,
+                name:   "anonymous",
+                params: []
+            }]
+        });
+        expect(action.triggers.first().guards.first()()).to.equal(true);
+    });
+
     it("adds a name to a declared action", function() {
         const action = DeclaredAction.triggered
             .by("blub")

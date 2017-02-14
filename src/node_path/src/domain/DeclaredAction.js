@@ -7,14 +7,14 @@ import assert from "assert";
 import type { Guard } from "./DeclaredTrigger";
 
 type DeclaredTriggerDescription = {
-    name:      ?string,                // eslint-disable-line
-    triggers:  ?List<DeclaredTrigger>, // eslint-disable-line
-    operation: Function
+    name?:      ?string,                // eslint-disable-line
+    triggers?:  ?List<DeclaredTrigger>, // eslint-disable-line
+    operation?: ?Function
 }
 
 export default class DeclaredAction {
     triggers:  List<DeclaredTrigger>; // eslint-disable-line
-    operation: Function;
+    operation: ?Function;
     name:      string;                // eslint-disable-line
 
     static triggered = {
@@ -35,15 +35,7 @@ export default class DeclaredAction {
         }
     };
 
-    constructor(x: ?DeclaredTriggerDescription) {
-        const data = defaults(x).to({
-            name:      "anonymous",
-            operation: () => {},
-            triggers:  null
-        });
-
-        if(data instanceof DeclaredAction) return data;
-
+    constructor(data?: DeclaredTriggerDescription = {}) {
         const name = defaults(data.name).to("anonymous");
 
         this.name      = name;
@@ -67,9 +59,8 @@ export default class DeclaredAction {
         assert(trigger && trigger.name === "anonymous", "Can't set a name, if there is no anonymous trigger");
 
         return new DeclaredAction(Object.assign({}, this, {
-            name:      name,
-            triggers:  this.triggers.slice(1).unshift(trigger.setName(name)),
-            operation: () => {}
+            name:     name,
+            triggers: this.triggers.slice(1).unshift(trigger.setName(name))
         }));
     }
 

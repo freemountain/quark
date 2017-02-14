@@ -61,5 +61,18 @@ describe("TriggerTest", function() {
             .call(cursor, new Message("/blub", List([1, "huhu"])))
             .then(x => expect(x.get("x")).to.equal(9));
     });
+
+    it("merges two triggers", function() {
+        const guard1       = sinon.stub().returns(true);
+        const guard2      = sinon.stub().returns(true);
+        const guard3      = sinon.stub().returns(true);
+        const trigger      = new DeclaredTrigger("blub", List([guard1, guard2]), List.of("huhu"), 10);
+        const description  = new Trigger("blub", trigger);
+        const trigger2     = new DeclaredTrigger("blub", List([guard3]), List.of(3, true), 20);
+        const description2 = new Trigger("blub", trigger2);
+        const trigger3     = new DeclaredTrigger("blub", List([guard3, guard1, guard2]), List.of(3, true, "huhu"), 10);
+
+        expect(description.merge(description2)).to.eql(new Trigger("blub", trigger3));
+    });
 });
 

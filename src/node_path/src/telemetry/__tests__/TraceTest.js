@@ -7,7 +7,7 @@ import Uuid from "../../util/Uuid";
 import sinon from "sinon";
 
 describe("TraceTest", function() {
-    before(function() {
+    beforeEach(function() {
         let counter = 0;
         let id      = 0;
 
@@ -17,13 +17,34 @@ describe("TraceTest", function() {
         global.Date.now = () => ++counter;
     });
 
-    after(function() {
+    afterEach(function() {
         global.Date.now = this.now;
         this.uuid.restore();
     });
 
+    it("checks some edge cases", function() {
+        const trace = new Trace({
+            name:    "test",
+            trigger: "message.done"
+        }, "Unit");
+
+        const trace2 = new Trace({
+            id:      "2",
+            name:    "test",
+            trigger: "message.done",
+            params:  List.of(/ddfsf/, 2)
+        });
+
+        expect(`${trace.id + 1}`).to.equal(trace2.id);
+        expect(trace.name).to.equal("Unit::test");
+        expect(trace2.name).to.equal("test");
+        expect(() => trace.ended().ended()).to.throw("TraceEndedError: A trace can only be ended once, but got \n\n\t\u001b[7m\u001b[90m !Unit::test() - done@\u001b[39m\u001b[27m\u001b[7m\u001b[90m2ms\u001b[39m\u001b[27m\u001b[7m\u001b[90m \u001b[39m\u001b[27m.");
+        expect(trace2.toArray()).to.eql(["\u001b[7m\u001b[90m !test(RegExp, 2) - done@\u001b[39m\u001b[27m\u001b[7m\u001b[90m2ms\u001b[39m\u001b[27m\u001b[7m\u001b[90m \u001b[39m\u001b[27m"]);
+    });
+
     it("creates a trace with subtraces", function() { // eslint-disable-line
         const trace = new Trace({
+            id:      null,
             name:    "test",
             trigger: "message.done"
         }, "Unit");
@@ -192,6 +213,7 @@ describe("TraceTest", function() {
             .addSubtrace(trace8)
             .errored(new Error("huhu"));
 
+        expect(() => trace9.lock()).to.throw("NotRootError: You can only lock the root of a trace @Bla::sub2");
         expect(trace9.isConsistent()).to.equal(true);
         expect(trace9.toJS()).to.eql({
             id:       3,

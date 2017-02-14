@@ -1,18 +1,20 @@
 // @flow
 
 import { Record, List, Map } from "immutable";
-import assert from "assert";
 import asciiTree from "asciitree";
 import Uuid from "../util/Uuid";
 import chalk from "chalk";
+import TraceEndedError from "./error/TraceEndedError";
+import NotRootError from "./error/NotRootError";
+import NotConsistentError from "./error/NotConsistentError";
 
 type TraceDescription = {
-    name:     string,             // eslint-disable-line
-    id?:      ?string,            // eslint-disable-line
-    parent?:  ?number,            // eslint-disable-line
-    trigger?: ?string,            // eslint-disable-line
-    params?:  List<*> | Array<*>, // eslint-disable-line
-    start?:   ?number             // eslint-disable-line
+    name:     string,   // eslint-disable-line
+    id?:      ?string,  // eslint-disable-line
+    parent?:  ?number,  // eslint-disable-line
+    trigger?: ?string,  // eslint-disable-line
+    params?:  ?List<*>, // eslint-disable-line
+    start?:   ?number   // eslint-disable-line
 }
 
 type Context = ?string
@@ -20,7 +22,7 @@ type Context = ?string
 type TraceList = Array<string | TraceList>
 
 export default class Trace extends Record({
-    id:       null,
+    id:       "",
     start:    0,
     name:     "unknown",
     triggers: false,
@@ -35,15 +37,13 @@ export default class Trace extends Record({
     locked:   false
 }) {
     constructor(data: TraceDescription, context: Context) { // eslint-disable-line
-        assert(data && typeof data.name === "string", "a trace needs a name");
-
-        super(Object.assign(data, {
-            id:      !data.id || data.id === null ? Uuid.uuid() : data.id,
+        super(Object.assign({}, data, {
             name:    context ? `${context}::${data.name}` : data.name,
             parent:  data.parent || null,
             start:   Date.now(),
             trigger: !data.trigger || data.trigger === null || data.trigger === data.name ? null : data.trigger.split(".").pop(),
-            params:  data.params && data.params instanceof List ? data.params.map(x => x instanceof Map ? x.delete("_unit") : x).toJS() : []
+            params:  data.params instanceof List ? data.params.map(x => x instanceof Map ? x.delete("_unit") : x).toJS() : [],
+            id:      !data.id ? Uuid.uuid() : data.id
         }));
     }
 
@@ -57,11 +57,7 @@ export default class Trace extends Record({
     }
 
     ended(): Trace {
-        if(this.end !== null) {
-            assert(false, `A trace can only be ended once, but got \n\n\t${this.toString()}.`);
-
-            return this;
-        }
+        if(this.end !== null) throw new TraceEndedError(this);
 
         const now     = Date.now();
         const ended   = this.set("end", now);
@@ -87,7 +83,7 @@ export default class Trace extends Record({
     }
 
     lockRec(): Trace {
-        assert(this.isConsistent(), `You can only lock consistent traces. Some end calls are probably missing.\n\n${this.toString()}`);
+        if(!this.isConsistent()) throw new NotConsistentError(this);
 
         return this
             .set("locked", true)
@@ -95,7 +91,7 @@ export default class Trace extends Record({
     }
 
     lock(): Trace {
-        assert(this.parent === null, "You can only lock the root of a trace");
+        if(this.parent !== null) throw new NotRootError(this);
 
         return this.lockRec();
     }
@@ -120,7 +116,7 @@ export default class Trace extends Record({
     toArray(): TraceList { // eslint-disable-line
         const triggers = this.triggers ? "" : "!";
         const params   = this.params
-            .map(x => typeof x === "object" ? x.constructor.name : JSON.stringify(x)).join(", ");
+            .map(x => x instanceof Object ? x.constructor.name : JSON.stringify(x)).join(", ");
 
         const name        = `${triggers}${this.name}(${params})`;
         const trigger     = this.trigger === null ? "" : this.trigger.concat("@");

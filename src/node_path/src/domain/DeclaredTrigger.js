@@ -38,13 +38,9 @@ export default class DeclaredTrigger {
     }
 
     toJS(): Object {
-        const obj = Object.assign({}, this, {
+        return Object.assign({}, this, {
             guards: this.guards.size,
             params: this.params.toJS()
         });
-
-        if(!this.destination) delete obj.destination;
-
-        return obj;
     }
 }

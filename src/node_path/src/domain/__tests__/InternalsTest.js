@@ -73,6 +73,7 @@ describe("InternalsTest", function() {
         }, "blub").set("id", 1).set("start", 1).toJS()]);
 
         expect(() => internals.updateCurrentTrace(x => x)).to.throw("AssertionError: Can\'t update a trace before receiving a message.");
+        expect(internals.set("action", message).updateCurrentTrace(x => x).toJS()).to.eql(internals.set("action", message).toJS());
         const internals2 = internals
             .messageReceived(message)
             .trace("lulu", List(), "lala.done", 1)
@@ -171,7 +172,7 @@ describe("InternalsTest", function() {
 
         expect(internals3.isTracing()).to.equal(true);
         expect(internals3.messageProcessed().isTracing()).to.equal(false);
-        expect(() => internals3.trace("g", List()).messageProcessed().toJS()).to.throw("AssertionError: You can only lock consistent traces. Some end calls are probably missing.");
+        expect(() => internals3.trace("g", List()).messageProcessed().toJS()).to.throw("NotConsistentError: You can only lock consistent traces. Some end calls are probably missing @blub::Message</blub>.");
     });
 
     it("works with the error functions", function() {

@@ -6,16 +6,15 @@
  *
  * @author Marco Sliwa <marco@circle.ai>
  *
- * @param  {*}         obj             to extract methods from
+ * @param  {*}         object          to extract methods from
  * @param  {?string[]} [properties=[]] extracted
  * @return {string[]}
  */
-export default function getAllProperties(obj: Object, properties?: Array<string> = []): Array<string> { // eslint-disable-line
-    if(!(obj instanceof Object) || obj === Object) return properties;
+export default function getAllProperties(object: Object, properties?: Array<string> = []): Array<string> { // eslint-disable-line
+    if(!(object instanceof Object) || object === Object) return properties;
 
-    const next    = obj instanceof Function ? obj.prototype : Object.getPrototypeOf(obj);
-    const current = obj instanceof Function ? {} : obj;
-    const props   = Object.getOwnPropertyNames(current);
+    const next    = Object.getPrototypeOf(object);
+    const props   = Object.getOwnPropertyNames(object);
 
     return getAllProperties(next, properties.concat(props));
 }

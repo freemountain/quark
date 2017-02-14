@@ -74,10 +74,6 @@ export default class Internals extends Record({
             .updateCurrentTrace(trace => trace.triggered());
     }
 
-    mergeTraces(traces: List<Trace>): Internals {
-        return this.updateCurrentTrace(trace => traces.reduce((dest, x) => dest.merge(x), trace));
-    }
-
     messageProcessed(): Internals {
         assert(this.action !== null, "Can't finish a message before starting.");
 

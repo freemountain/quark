@@ -205,6 +205,7 @@ export default class Runtime extends Duplex {
         const initialProps = properties
             .merge(fromJS(bindings))
             .filter(Runtime.ValueFilter)
+            // TODO: use deps
             .merge(deps.map(() => null))
             .set("_unit", new Internals({
                 description: unit.__actions,
@@ -337,6 +338,6 @@ export default class Runtime extends Duplex {
     }
 
     toJS() {
-        return this.description;
+        return this.description.toJS();
     }
 }

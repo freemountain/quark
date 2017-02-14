@@ -41,4 +41,10 @@ describe("DeclaredTriggerTest", function() {
             delay:  10
         });
     });
+
+    it("checks some edge cases", function() {
+        const trigger = new DeclaredTrigger("test");
+
+        expect(trigger.updateCurrentGuard(x => x)).to.equal(trigger);
+    });
 });
