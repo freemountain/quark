@@ -27,13 +27,10 @@ describe("CursorTest", function() { // eslint-disable-line
 
     it("creates a cursor for a unit", function() {
         const func = function(a) {
-            return this.get("test").length + 2 + a;
+            return this.update("test", x => x.length + 2 + a);
         };
         const action = new Action("Test", "blub", List(), func);
-
-        action.func = func;
-
-        const data = fromJS({
+        const data   = fromJS({
             _unit: new Internals({
                 name:        "Unit",
                 description: Map({
@@ -69,7 +66,10 @@ describe("CursorTest", function() { // eslint-disable-line
             test: {}
         });
         expect(cursor.blub).to.be.a("function");
-        expect(cursor.blub(1)).to.equal(7);
+        return cursor
+            .messageReceived(new Message("/test", List.of(1)))
+            .blub(new Message("/test", List.of(1)))
+            .then(x => expect(x.get("test")).to.equal(7));
     });
 
     it("checks some methods on a cursor", function() {
@@ -815,8 +815,10 @@ describe("CursorTest", function() { // eslint-disable-line
     });
 
     it("creates some cursors", function() {
-        const action = new Action("Test", "blub", List(), () => 4);
-        const map    = fromJS({
+        const action = new Action("Test", "blub", List(), function() {
+            return this.set("four", 4);
+        });
+        const map = fromJS({
             _unit: new Internals({
                 description: Map({
                     blub: action
@@ -845,14 +847,7 @@ describe("CursorTest", function() { // eslint-disable-line
 
     it("errors with a cursor", function() {
         const message = new Message("/test", List.of(1));
-        const func = function(a) {
-            return this.get("test").length + 2 + a;
-        };
-        const action = new Action("Test", "blub", List(), func);
-
-        action.func = func;
-
-        const data = fromJS({
+        const data    = fromJS({
             _unit: (new Internals({
                 name:        "Unit",
                 description: Map()

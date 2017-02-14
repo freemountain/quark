@@ -19,6 +19,7 @@ import { schedule } from "./Runloop";
 import Internals from "./domain/Internals";
 import Message from "./Message";
 import type { Diffs } from "./domain/Cursor";
+import Trace from "./telemetry/Trace";
 
 export default class Runtime extends Duplex {
     id:               string;                  // eslint-disable-line
@@ -98,9 +99,7 @@ export default class Runtime extends Duplex {
     static diff(instance: Runtime, updated: Cursor): Promise<{ cursor: Cursor, diffs: Diffs}> {
         return new Promise((resolve, reject) => {
             try {
-                if(!(updated instanceof Cursor)) return assert(false, `Every action needs to return a cursor, but got ${updated}`);
-
-                const previous = !instance.cursor || instance.cursor === null ? updated.__data.constructor() : instance.cursor.__data;
+                const previous = !(instance.cursor instanceof Cursor) ? updated.__data.constructor() : instance.cursor.__data;
                 const cursor   = updated.update("_unit", x => x
                     .update("revision", y => y + 1)
                     .update("history", y => y.push(previous))
@@ -237,7 +236,7 @@ export default class Runtime extends Duplex {
     }
 
     state(): ?Object {
-        if(!this.cursor || this.cursor === null) return this.cursor;
+        if(!(this.cursor instanceof Cursor)) return null;
 
         return this.cursor.update("_unit", x => x.toMap().filter(Runtime.StateFilter)).toJS();
     }
@@ -246,8 +245,8 @@ export default class Runtime extends Duplex {
         return this.description.map(x => x.toJS()).toJS();
     }
 
-    traces() {
-        return !this.cursor || this.cursor === null ? List() : this.cursor
+    traces(): List<Trace> {
+        return !(this.cursor instanceof Cursor) ? List() : this.cursor
             .get("_unit")
             .get("traces");
     }
@@ -293,24 +292,15 @@ export default class Runtime extends Duplex {
         return new Cursor({});
     }
 
-    message() {
+    message(...args: Array<*>): Cursor {
         assert(false, "Every unit needs to implement a 'message' action");
 
+        console.log(args);
         return new Cursor({});
     }
 
     before(message: Message): Cursor {
         return this.messageReceived(message);
-    }
-
-    // muss man sehn, ob das nötig is
-    progress(): void {
-        assert(false, "Every unit needs to implement a 'progress' action");
-    }
-
-    // vlt eher revert?
-    cancel(): void {
-        assert(false, "Every unit needs to implement a 'cancel' action");
     }
 
     done(diffs: Diffs): Cursor { // eslint-disable-line
@@ -319,6 +309,17 @@ export default class Runtime extends Duplex {
 
     error(): Cursor {
         return this.messageProcessed();
+    }
+
+    // muss man sehn, ob das nötig is,
+    // glaube eher nich, vlt bei io?
+    progress(): void {
+        assert(false, "Every unit needs to implement a 'progress' action");
+    }
+
+    // vlt eher revert?
+    cancel(): void {
+        assert(false, "Every unit needs to implement a 'cancel' action");
     }
 
     _write(message: *, enc: string, cb: Function) {

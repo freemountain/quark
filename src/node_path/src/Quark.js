@@ -32,7 +32,7 @@ export default class Quark {
 
         this.app   = new app();
         this.state = this.app.state();
-        this.view  = Gluon.of(this.state.get("qml"));
+        this.view  = Gluon.of(this.state === null ? "" : this.state.get("qml"));
 
         assert(this.app instanceof Unit, message);
 

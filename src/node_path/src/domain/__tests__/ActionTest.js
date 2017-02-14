@@ -13,6 +13,7 @@ import Uuid from "../../util/Uuid";
 import sinon from "sinon";
 import { schedule } from "../../Runloop";
 import GuardError from "../error/GuardError";
+import UnknownMessageError from "../error/UnknownMessageError";
 
 const triggered = DeclaredAction.triggered;
 
@@ -290,7 +291,7 @@ describe("ActionTest", function() {
             });
     });
 
-    it("applies an action with typeerror", function() {
+    it("applies an action with typeerror triggered by wrong message", function() {
         const unit = new Test();
         const data = Map({
             name:  "jupp",
@@ -327,12 +328,13 @@ describe("ActionTest", function() {
                     .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
-                expect(cursor.hasErrored).to.equal(true);
+                expect(x.hasErrored).to.equal(true);
+                expect(x.errors.toJS()).to.eql([new UnknownMessageError("Test", "test", "huhu")]);
                 expect(result.traces.toJS()).to.eql([{
                     id:       4,
                     parent:   null,
                     start:    2,
-                    end:      12,
+                    end:      14,
                     guards:   0,
                     locked:   true,
                     name:     "Test::Message</actions/test>",
@@ -344,15 +346,28 @@ describe("ActionTest", function() {
                         id:       5,
                         parent:   4,
                         start:    3,
-                        end:      11,
+                        end:      13,
                         guards:   0,
                         locked:   true,
                         name:     "Test::message",
                         params:   ["test"],
                         triggers: true,
                         error:    null,
-                        traces:   [],
-                        trigger:  null
+                        traces:   [{
+                            id:       9,
+                            parent:   5,
+                            start:    11,
+                            end:      12,
+                            guards:   0,
+                            locked:   true,
+                            name:     "Test::test",
+                            params:   [],
+                            triggers: false,
+                            error:    new UnknownMessageError("Test", "test", ""),
+                            traces:   [],
+                            trigger:  null
+                        }],
+                        trigger: null
                     }]
                 }]);
             });

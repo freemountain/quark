@@ -1,3 +1,5 @@
+// @flow
+
 import DeclaredAction from "../../domain/DeclaredAction";
 import Runtime from "../../Runtime";
 

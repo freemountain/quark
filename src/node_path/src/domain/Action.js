@@ -41,8 +41,8 @@ class Action {
             const trigger = description.triggers.find(x => x.action === prev.replace(".done", ""));
 
             try {
-                if(!Message.is(y) || !trigger) return Promise.resolve(this
-                    .trace(description.name, List(), prev, trigger ? trigger.guards.size : 0)
+                if(!Message.is(y)) return Promise.resolve(this
+                    .trace(description.name, List(), prev, trigger.guards.size)
                     .error(new UnknownMessageError(description.unit, description.name, y)));
 
                 assert(this instanceof Cursor, `Invalid cursor of ${Object.getPrototypeOf(this)} for '${description.unit}[${description.name}]'.`);
@@ -121,6 +121,8 @@ class Action {
         this.func      = func;
         this.triggers  = ownTriggers
             .concat(own ? [] : [new Trigger(name, new DeclaredTrigger(name))]);
+
+        Object.freeze(this);
     }
 
     // die hier werden dann alle diese actions im cursor
@@ -193,23 +195,12 @@ class Action {
     }
 
     onResult(cursor: Cursor, result: (Promise<Cursor> | Error | Cursor | void)): Promise<Cursor> { // eslint-disable-line
-        try {
-            assert((
-                !result ||
-                result instanceof Promise ||
-                result instanceof Cursor ||
-                result instanceof Error
-            ), `Actions have to always return a cursor or undefined, got ${result instanceof Cursor ? result.constructor.name : "undefined"}`);
+        if(result instanceof Error)   return cursor.update("_unit", internals => internals.error(result));
+        if(result instanceof Promise) return result
+            .then(this.onResult.bind(this, cursor))
+            .catch(this.onResult.bind(this, cursor));
 
-            if(result instanceof Error)   return cursor.update("_unit", internals => internals.error(result));
-            if(result instanceof Promise) return result
-                .then(this.onResult.bind(this, cursor))
-                .catch(this.onResult.bind(this, cursor));
-
-            return Promise.resolve(result instanceof Cursor ? result : cursor);
-        } catch(e) {
-            return cursor.update("_unit", internals => internals.error(e));
-        }
+        return Promise.resolve(result instanceof Cursor ? result : cursor);
     }
 
     willTrigger(cursor: Cursor, ...messages: Array<Message>): boolean {

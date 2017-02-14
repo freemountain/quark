@@ -1,7 +1,9 @@
+// @flow
+
 import Cursor from "./Cursor";
 import assert from "assert";
 import printPublicMethods from "../util/printPublicMethods";
-import Immutable from "immutable";
+import { List, Collection } from "immutable";
 
 /**
  * this class represents a transformation of data.
@@ -32,13 +34,15 @@ import Immutable from "immutable";
  * console.log(map.toJS());  // prints { test: 3 }
  */
 export default class Transformation {
+    args: Array<*>;
+    op:   string;   // eslint-disable-line
 
     /**
      * constructs a transformation from op and args
      *
      * @param {{ op: string, args: array}} first description of transformation
      */
-    constructor({ args, op }) {
+    constructor({ args, op }: { op: string, args: Array<*>}) {
         /** @private */ // eslint-disable-line
         this.op   = op;
 
@@ -53,10 +57,10 @@ export default class Transformation {
      * @param   {*}       data to check
      * @return  {boolean}
      */
-    shouldExtract(data) {
+    shouldExtract(data: any): boolean {
         return (
-            data instanceof Immutable.List &&
-            data.first() instanceof Immutable.List &&
+            data instanceof List &&
+            data.first() instanceof List &&
             this.op !== "join"
         );
     }
@@ -69,12 +73,12 @@ export default class Transformation {
      * @param  {?object}              deps for computation
      * @return {*}
      */
-    compute(data, deps = {}) {
+    compute(data: Collection<*, *>, deps?: Object = {}) {
         const extracted = this.shouldExtract(data) ? data.first() : data;
         const cursor    = new Cursor(extracted);
-        const action    = cursor[this.op];
+        const action    = (cursor: Object)[this.op];
 
-        if(!action || !(action instanceof Function)) return assert(false, `\n\tYou are trying to apply the non-existing method '${this.op}' on \n\t\t${data}.\n\n\tTry one of these instead: ${printPublicMethods(data)}.`);
+        if(!action || !(action instanceof Function)) return assert(false, `\n\tYou are trying to apply the non-existing method '${this.op}' on \n\t\t${data.toString()}.\n\n\tTry one of these instead: ${printPublicMethods(data)}.`);
 
         return action.apply(cursor, this.args.map(arg => arg instanceof Function ? (...args) => arg(deps, ...args) : arg));
     }

@@ -1,9 +1,11 @@
+// @flow
+
 import Runtime from "../Runtime";
 import { expect } from "chai";
 import TestUnit from "./mocks/TestUnit";
 import DeclaredAction from "../domain/DeclaredAction";
 import DeclaredTrigger from "../domain/DeclaredTrigger";
-import Immutable from "immutable";
+import { List, Map } from "immutable";
 import Uuid from "../util/Uuid";
 import sinon from "sinon";
 import Internals from "../domain/Internals";
@@ -27,7 +29,7 @@ class Inheritance extends TestUnit {
 class Inheritance2 extends TestUnit {
     static props = {};
 
-    message(payload) {
+    message(payload: { name: string }) {
         return this.set("name", payload.name);
     }
 }
@@ -69,7 +71,7 @@ describe("RuntimeTest", function() {
                 name:     "action",
                 triggers: [
                     (new DeclaredTrigger("action")).toJS(),
-                    (new DeclaredTrigger("message.before", Immutable.List([() => true]))).toJS()
+                    (new DeclaredTrigger("message.before", List([() => true]))).toJS()
                 ]
             },
 
@@ -77,7 +79,7 @@ describe("RuntimeTest", function() {
                 name:     "children",
                 triggers: [
                     (new DeclaredTrigger("children")).toJS(),
-                    (new DeclaredTrigger("message.before", Immutable.List([() => true]))).toJS()
+                    (new DeclaredTrigger("message.before", List([() => true]))).toJS()
                 ]
             },
 
@@ -85,7 +87,7 @@ describe("RuntimeTest", function() {
                 name:     "diffs",
                 triggers: [
                     (new DeclaredTrigger("diffs")).toJS(),
-                    (new DeclaredTrigger("message.before", Immutable.List([() => true]))).toJS()
+                    (new DeclaredTrigger("message.before", List([() => true]))).toJS()
                 ]
             },
 
@@ -93,7 +95,7 @@ describe("RuntimeTest", function() {
                 name:     "init",
                 triggers: [
                     (new DeclaredTrigger("init")).toJS(),
-                    (new DeclaredTrigger("message.before", Immutable.List([() => true]))).toJS()
+                    (new DeclaredTrigger("message.before", List([() => true]))).toJS()
                 ]
             },
 
@@ -289,7 +291,7 @@ describe("RuntimeTest", function() {
 
         expect(unit.state()).to.eql(null);
 
-        const data = Immutable.Map({
+        const data = Map({
             name:  "jupp",
             _unit: new Internals({
                 id:          "blub",
@@ -298,9 +300,9 @@ describe("RuntimeTest", function() {
             })
         });
 
-        const message  = (new Message("/actions/init", [data])).setCursor(unit.cursor);
+        const message  = (new Message("/actions/init", List([data]))).setCursor(unit.cursor);
         const cursor   = (new unit.__Cursor(data)).update("_unit", internals => internals.messageReceived(message));
-        const payload  = Immutable.List.of(cursor);
+        const payload  = List.of(cursor);
         const message2 = message.set("payload", payload);
 
         expect(message2.get("payload").first()).to.equal(payload.first());

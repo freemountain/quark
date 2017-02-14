@@ -27,7 +27,9 @@ describe("TriggerTest", function() {
     });
 
     it("creates a Trigger", function() {
-        const action      = new Action("Test", "blub", List());
+        const action = new Action("Test", "blub", List(), function(x) {
+            return this.set("x", 8 + x);
+        });
         const guard1      = (param1, param2, x) => x instanceof Object && x.get instanceof Function && x.get("value") > 1 && param1 === 1 && param2 === "huhu";
         const guard2      = sinon.stub().returns(true);
         const trigger     = new DeclaredTrigger("blub", List([guard1, guard2]), List.of("huhu"), 10);
@@ -53,16 +55,11 @@ describe("TriggerTest", function() {
         });
 
         const TestCursor = Cursor.for(class Test {}, data.get("_unit").description);
+        const cursor     = new TestCursor(data);
 
-        action.func = function(y) {
-            const [a, b] = y.get("payload").toJS();
-
-            return this.update("value", value => value + a + b.length + 2);
-        };
-
-        const cursor = new TestCursor(data);
-
-        expect(action.func.call(cursor, new Message("/blub", List([1, "huhu"]))).get("value")).to.equal(9);
+        return action.func
+            .call(cursor, new Message("/blub", List([1, "huhu"])))
+            .then(x => expect(x.get("x")).to.equal(9));
     });
 });
 
