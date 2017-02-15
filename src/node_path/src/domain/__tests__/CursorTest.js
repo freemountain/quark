@@ -909,4 +909,18 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor2.toString()).to.equal("UnitCursor<{}>");
         expect(() => cursor2.map()).to.throw("UnknownMethodError: Trying to call unknown method \'undefined::map\'.");
     });
+
+    it("checks undo and redo", function() {
+        const Cursor2 = Cursor.for(new (class Unit {})(), Map());
+        const cursor  = new Cursor2(new Map({ name: "test" }));
+        const cursor2 = cursor.set("name", "lulu");
+
+        expect(cursor.undo()).to.equal(cursor);
+        expect(cursor2.get("name")).to.equal("lulu");
+        expect(cursor2.undo().get("name")).to.equal("test");
+        expect(cursor2.undo().toJS()).to.eql(cursor.toJS());
+        expect(cursor2.undo().isEqual(cursor)).to.equal(true);
+        expect(cursor2.undo().redo()).to.equal(cursor2);
+        expect(cursor.redo()).to.equal(cursor);
+    });
 });

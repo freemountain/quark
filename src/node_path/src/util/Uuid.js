@@ -1,5 +1,5 @@
 // @flow
 
-import uuid from "uuid";
+import uuid from "uuid/v4";
 
-export default { uuid: (uuid: () => string) };
+export default { uuid: (uuid: any => string) };

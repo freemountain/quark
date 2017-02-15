@@ -53,19 +53,16 @@ class Action {
                 const tracing = updated.trace(description.name, message.payload, prev, trigger.guards.size);
                 const x       = trigger.shouldTrigger(tracing, message.payload);
 
-                // TODO: use undo here
-                if(x.cursor.currentError !== tracing.currentError) return Promise.resolve(x.cursor.trace.end());
-                if(!x.result)                                      return Promise.resolve(x.cursor.trace.end());
+                if(x.cursor.hasRecentlyErrored) return Promise.resolve(x.cursor.trace.end());
+                if(!x.result)                   return Promise.resolve(x.cursor.trace.end());
 
                 const triggered = x.cursor.trace.triggered();
 
                 return description
                     .applyBefore(triggered, y)
-                    .then(cursor => Promise.all([schedule(() => description.applyAction(cursor, message), trigger.delay), cursor]))
-                    // TODO: use undo here
-                    .then(([cursor, previous]) => cursor.currentError !== previous.currentError ? [cursor, cursor.currentError] : [cursor])
+                    .then(cursor => schedule(() => description.applyAction(cursor, message), trigger.delay))
+                    .then(cursor => [cursor, cursor.hasRecentlyErrored ? cursor.currentError : null])
                     .then(([cursor, error]) => Promise.all([error ? description.applyError(cursor, message) : description.applyDone(cursor, message), error]))
-                    // TODO: use undo here
                     .then(([cursor, error]) => error ? cursor.trace.error(error) : cursor.trace.end())
                     .then(cursor => cursor.update("_unit", internals => internals.update("action", z => z.unsetCursor())))
                     .catch(e => triggered.error(e));
@@ -90,24 +87,6 @@ class Action {
         func.__Action = this;
         func.cancel   = Action.cancel.bind(this, func);
 
-        // TODO to test:
-        //
-        //  - more complex triggers (line in constr)
-        //
-        // hier müssen bei den ganzen triggern noch dopplungen gefiltert werden:
-        // this.before.filter(x => //hat keiner der anderen den auch in before?)
-        //
-        // außerdem müssen zyklen erkannt werden (mit hilfe traces dynamisch oder hier statisch?)
-        //
-        // dadurch würde:
-        //
-        // test: message
-        // test2: test message
-        //
-        // test: message
-        // test2: test, sons würde das doppelt getriggert
-        //
-        //  MessageTest!
         const own = ownTriggers.find(x => x.action === name && x.emits === name);
 
         this.unit      = unit;

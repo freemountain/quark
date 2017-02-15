@@ -1,2 +1,4 @@
 [options]
 unsafe.enable_getters_and_setters=true
+emoji=true
+munge_underscores=true

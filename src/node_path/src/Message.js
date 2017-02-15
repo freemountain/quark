@@ -34,11 +34,7 @@ export default class Message extends Record({
 
         super(data);
 
-        if(resource instanceof Message) return Message.assertStructure(resource);
-
-        data.headers = defaults(data.headers).to(headers);
-
-        return Message.assertStructure(this);
+        return Message.assertStructure(resource instanceof Message ? resource : this.set("headers", defaults(data.headers).to(headers)));
     }
 
     isAction(): boolean {

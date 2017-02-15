@@ -20,13 +20,15 @@ export type Diffs = List<{
 
 class Cursor {
     static call: any => Cursor;
-    __data:      { x: any }; // eslint-disable-line
+    __data:      { x: any };                            // eslint-disable-line
     __inherited: boolean;
-    update:      any => any; // eslint-disable-line
+    __previous:  ?Cursor;                               // eslint-disable-line
+    __next:      ?Cursor;                               // eslint-disable-line       
+    update:      any => any;                            // eslint-disable-line
     trace:       (string, List<any>, string) => Cursor; // eslint-disable-line
     constructor: any => Cursor;
-    get:         (string) => any; //eslint-disable-line
-    set:         (string, any) => Cursor; // eslint-disable-line
+    get:         (string) => any;                       //eslint-disable-line
+    set:         (string, any) => Cursor;               // eslint-disable-line
 
     static assertTraceStarted(cursor: Cursor, caller: string): void {
         if(!cursor.isTracing) throw new TraceNotStartedError(`You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
@@ -108,13 +110,15 @@ class Cursor {
         return inherited;
     }
 
-    constructor(data: any) { // eslint-disable-line
+    constructor(data: any, previous?: Cursor, next?: Cursor) { // eslint-disable-line
         if(data instanceof Cursor) return data;
         if(!this.__inherited)      throw new CursorAbstractError();
 
         this.__data = {
             x: fromJS(data)
         };
+        this.__previous = previous;
+        this.__next     = next;
 
         // needs to be copied, since we are mutating the Function
         // object otherwise
@@ -179,6 +183,10 @@ class Cursor {
         return this.__data.x.get("_unit") && this.__data.x.get("_unit").isTracing();
     }
 
+    get hasRecentlyErrored(): boolean {
+        return this.currentError !== this.undo().currentError;
+    }
+
     patch(diffs: Diffs, traces: List<Trace> = List(), errors: List<Error> = List()) {
         const patched = patch(this.__data.x, diffs);
         const updated = this.__data.x.get("_unit").traces
@@ -225,17 +233,11 @@ class Cursor {
     }
 
     undo(): Cursor {
-        assert(false, "Cursor.undo: implement!");
-
-        // hiermit soll die history en schritt zurückgesetzt werden
-        return this;
+        return this.__previous ? new this.constructor(this.__previous.__data.x, this.__previous.__previous, this) : this;
     }
 
     redo(): Cursor {
-        assert(false, "Cursor.redo: implement!");
-
-        // hiermit soll ein schritt in der history nach vorne gegangen werden
-        return this;
+        return this.__next ? this.__next : this;
     }
 
     error(e: Error): Cursor {
