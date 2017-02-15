@@ -1,6 +1,6 @@
 // @flow
 
-import { List, Set } from "immutable";
+import { List } from "immutable";
 import Cursor from "./Cursor";
 import assert from "assert";
 import Message from "../Message";
@@ -48,24 +48,31 @@ class Action {
 
                 if(!(this instanceof Cursor)) throw new InvalidCursorError(this, description);
 
+                // als erstes muss die resource der message auf den action
+                // namen gesetzt werden, dann sollte das prinzipiell klappen
+                console.log("handler", prev, this.currentAction ? this.currentState : null);
+
+                // Cursor.BEFORE
                 const message = y.setCursor(this).preparePayload(trigger);
-                const updated = this.update("_unit", internals => internals.update("action", z => z.setCursor(this)));
+                const updated = this.update("_unit", internals => internals.cursorChanged(this));
                 const tracing = updated.trace(description.name, message.payload, prev, trigger.guards.size);
                 const x       = trigger.shouldTrigger(tracing, message.payload);
 
-                if(x.cursor.hasRecentlyErrored) return Promise.resolve(x.cursor.trace.end());
-                if(!x.result)                   return Promise.resolve(x.cursor.trace.end());
+                if(!x.cursor.shouldTrigger) return Promise.resolve(x.cursor.trace.end());
 
-                const triggered = x.cursor.trace.triggered();
+                const guarded = x.cursor.trace.triggered();
 
                 return description
-                    .applyBefore(triggered, y)
-                    .then(cursor => schedule(() => description.applyAction(cursor, message), trigger.delay))
+                    // hier nur mit cursor arbeiten, sodass cursor.MESSAGE_UPDATE() oder sowas)
+                    // dann mal das schema der privaten vereinheitlichen bei cursor
+                    .applyBefore(guarded, y.setCursor(guarded))
+                    .then(cursor => schedule(() => description.applyAction(cursor.TRIGGERS(), message.setCursor(cursor.TRIGGERS())), trigger.delay))
+                    // das muss noch in den cursor
                     .then(cursor => [cursor, cursor.hasRecentlyErrored ? cursor.currentError : null])
-                    .then(([cursor, error]) => Promise.all([error ? description.applyError(cursor, message) : description.applyDone(cursor, message), error]))
+                    .then(([cursor, error]) => Promise.all([error ? description.applyError(cursor.ERROR(), message.setCursor(cursor.ERROR())) : description.applyDone(cursor.DONE(), message.setCursor(cursor.DONE())), error]))
                     .then(([cursor, error]) => error ? cursor.trace.error(error) : cursor.trace.end())
-                    .then(cursor => cursor.update("_unit", internals => internals.update("action", z => z.unsetCursor())))
-                    .catch(e => triggered.error(e));
+                    .then(cursor => cursor.update("_unit", internals => internals.actionFinished()))
+                    .catch(e => guarded.error(e));
             } catch(e) {
                 return Promise.resolve(this.error(e));
             }
@@ -126,28 +133,21 @@ class Action {
     }
 
     applyTriggers(kind: Kind, cursor: Cursor, message: Message): Promise<Cursor> {
-        // TODO: das muss hiermit funktionieren, damit das in runtime.before
-        // etc ausgelagert werden kann und dadurch bei inheritance überschreibbar
-        //
-        // const updated = cursor.currentMessage.setCursor(cursor);
-        const updated = message.setCursor(cursor);
-        // hier das löst sich auch durch cursor.currentop
-        const prev    = `${this.name}.${kind}`;
-        const promise = Promise.all((this: Object)[kind].map(x => (cursor: Object)[x.emits](updated, prev)).toJS());
-            // .map(x => cursor[x.emits] instanceof Function ? cursor[x.emits](updated, prev) : cursor).toJS());
+        // hier das in message
+        const prev = `${this.name}.${kind}`;
 
-        // TODO: hier die logik bei den thens in cursor.patch packen
-        return promise
-            .then(x => x.reduce((dest, y) => {
-                return Object.assign(dest, {
-                    diffs:  dest.diffs.concat(cursor.diff(y)),
-                    traces: dest.traces.concat(y.traces),
-                    errors: dest.errors.concat(y.errors)
-                });
-            }, { diffs: Set(), traces: List(), errors: List() }))
-            .then(({ diffs, traces, errors }) => cursor
-                .patch(diffs.toList(), traces, errors));
+        return Promise
+            // das hier mittels cursor.send.<resource>(<...payload>, headers ?)
+            // speziell hier dann cursor.send[message.resource](...message.payload, message.headers);
+            .all((this: Object)[kind].map(x => (cursor: Object)[x.emits](message, prev)).toJS())
+            .then(x => cursor.patch(...x));
     }
+
+    /* applyGuards(cursor: Cursor, message: Message, trigger: Trigger): Cursor {
+        const guarded = trigger.shouldTrigger(cursor, message.payload);
+
+        return guarded.shouldTrigger ? guarded.trace.triggered() : guarded.trace.end();
+    }*/
 
     applyAction(cursor: Cursor, message: Message): Promise<Cursor> {
         // TODO: das hier muss möglich sein, damit das in
@@ -178,16 +178,18 @@ class Action {
         return Promise.resolve(result instanceof Cursor ? result : cursor);
     }
 
-    willTrigger(cursor: Cursor, ...messages: Array<Message>): boolean {
+    willTrigger(cursor: Cursor, ...messages: Array<Message>): boolean { // eslint-disable-line
         // Test!!
-        return List(messages).every(message => ( // eslint-disable-line
+        return false;
+
+        /* List(messages).every(message => ( // eslint-disable-line
             (this.triggers.has(message.resource) && this.triggers.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.before.has(message.resource) && this.before.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.progress.has(message.resource) && this.progress.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.cancel.has(message.resource) && this.cancel.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.done.has(message.resource) && this.done.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.error.has(message.resource) && this.error.get(message.resource).shouldTrigger(cursor, message.payload))
-        ));
+        ));*/
     }
 
     guardsToJS(triggers: Array<{ guards: Array<Object> }>): Array<Object> {

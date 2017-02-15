@@ -6,11 +6,6 @@ import GuardError from "./error/GuardError";
 import DeclaredTrigger from "./DeclaredTrigger";
 import MergeError from "./error/MergeError";
 
-type Result = {
-    cursor: Cursor,
-    result: boolean
-}
-
 export default class Trigger {
     emits:  string;    // eslint-disable-line
     guards: List<>;    // eslint-disable-line
@@ -45,7 +40,7 @@ export default class Trigger {
         };
     }
 
-    shouldTrigger(cursor: Cursor, params: List<any>): Result { // eslint-disable-line
+    shouldTrigger(cursor: Cursor, params: List<any>): { cursor: Cursor } { // eslint-disable-line
         let result  = true;
         let tracing = cursor;
 
@@ -62,18 +57,21 @@ export default class Trigger {
                 result  = guard(...(params.toJS()), tracing);
                 tracing = tracing.trace.end();
 
-                if(!result) return { cursor: tracing, result };
+                if(!result) return {
+                    cursor: tracing
+                    .update("_unit", internals => internals.actionWontTrigger())
+                };
             } catch(e) {
                 return {
-                    cursor: tracing.error(new GuardError(tracing.currentContext, this.emits, i + 1, e)),
-                    result: false
+                    cursor: tracing
+                        .update("_unit", internals => internals.actionWontTrigger())
+                        .error(new GuardError(tracing.currentContext, this.emits, i + 1, e))
                 };
             }
         }
 
         return {
-            result,
-            cursor: tracing
+            cursor: tracing.update("_unit", internals => internals.actionWillTrigger())
         };
     }
 }

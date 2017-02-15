@@ -55,7 +55,7 @@ describe("InternalsTest", function() {
         });
 
         expect(() => internals.messageProcessed()).to.throw("NotStartedError: Can\'t finish a message before starting.");
-        expect(internals.messageReceived(message).action).to.equal(message);
+        expect(internals.messageReceived(message).action.message).to.equal(message);
         expect(() => internals.messageReceived(message).messageReceived(message)).to.throw("AlreadyReceivedError: Can\'t start a message, if another message is currently processed.");
         expect(internals.messageReceived(message).messageProcessed().action).to.equal(null);
     });
@@ -82,9 +82,13 @@ describe("InternalsTest", function() {
         expect(internals2.isTracing()).to.equal(true);
         expect(internals2.toJS()).to.eql({
             action: {
-                headers:  {},
-                payload:  [],
-                resource: "/blub"
+                message: {
+                    headers:  {},
+                    payload:  [],
+                    resource: "/blub"
+                },
+                state:       "before",
+                willTrigger: false
             },
             current:     0,
             description: {},
@@ -128,9 +132,13 @@ describe("InternalsTest", function() {
 
         expect(internals3.toJS()).to.eql({
             action: {
-                headers:  {},
-                payload:  [],
-                resource: "/blub"
+                message: {
+                    headers:  {},
+                    payload:  [],
+                    resource: "/blub"
+                },
+                state:       "before",
+                willTrigger: false
             },
             current:     0,
             description: {},

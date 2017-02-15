@@ -8,6 +8,7 @@ import Action from "../Action";
 import Internals from "../Internals";
 import Message from "../../Message";
 import Uuid from "../../util/Uuid";
+import PendingAction from "../PendingAction";
 
 describe("CursorTest", function() { // eslint-disable-line
     beforeEach(function() {
@@ -83,7 +84,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: new Internals({
                 name:        "Unit",
                 description: Map(),
-                action:      message,
+                action:      new PendingAction({ message }),
                 errors:      List.of(error),
                 children:    children
             })
@@ -124,7 +125,11 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor2.toJS()).to.eql({
             _unit: {
-                action:      message.toJS(),
+                action: {
+                    message:     message.toJS(),
+                    state:       "before",
+                    willTrigger: false
+                },
                 children:    {},
                 current:     0,
                 description: {},
@@ -168,7 +173,11 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor3.toJS()).to.eql({
             _unit: {
-                action:      message.toJS(),
+                action: {
+                    message:     message.toJS(),
+                    state:       "before",
+                    willTrigger: false
+                },
                 children:    {},
                 current:     0,
                 description: {},
@@ -212,7 +221,11 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor4.toJS()).to.eql({
             _unit: {
-                action:      message.toJS(),
+                action: {
+                    message:     message.toJS(),
+                    state:       "before",
+                    willTrigger: false
+                },
                 children:    {},
                 current:     0,
                 description: {},
@@ -269,7 +282,11 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor5.toJS()).to.eql({
             _unit: {
-                action:      message.toJS(),
+                action: {
+                    message:     message.toJS(),
+                    state:       "before",
+                    willTrigger: false
+                },
                 children:    {},
                 current:     0,
                 description: {},
@@ -343,7 +360,11 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor6.toJS()).to.eql({
             _unit: {
-                action:      message.toJS(),
+                action: {
+                    message:     message.toJS(),
+                    state:       "before",
+                    willTrigger: false
+                },
                 children:    {},
                 current:     0,
                 description: {},
@@ -429,7 +450,11 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor7.toJS()).to.eql({
             _unit: {
-                action:      message.toJS(),
+                action: {
+                    message:     message.toJS(),
+                    state:       "before",
+                    willTrigger: false
+                },
                 children:    {},
                 current:     0,
                 description: {},
@@ -525,7 +550,11 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor8.toJS()).to.eql({
             _unit: {
-                action:      message.toJS(),
+                action: {
+                    message:     message.toJS(),
+                    state:       "before",
+                    willTrigger: false
+                },
                 children:    {},
                 current:     0,
                 description: {},
@@ -621,7 +650,11 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor9.toJS()).to.eql({
             _unit: {
-                action:      message.toJS(),
+                action: {
+                    message:     message.toJS(),
+                    state:       "before",
+                    willTrigger: false
+                },
                 children:    {},
                 current:     0,
                 description: {},
@@ -890,7 +923,7 @@ describe("CursorTest", function() { // eslint-disable-line
             path:  "/blub",
             value: 2
         }]);
-        expect(cursor.patch(cursor.diff(cursor2)).toJS()).to.eql(cursor2.toJS());
+        expect(cursor.patch(cursor2).toJS()).to.eql(cursor2.toJS());
     });
 
     it("triggers some errors", function() {

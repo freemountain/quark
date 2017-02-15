@@ -74,8 +74,12 @@ export default class Message extends Record({
         return new Message(this.resource, this.payload, this.headers, cursor);
     }
 
-    path(): List<string> {
+    get path(): List<string> {
         return List(this.resource.split("/"));
+    }
+
+    get currentDir(): string {
+        return this.path.last();
     }
 
     toJS(): Object {

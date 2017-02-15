@@ -1253,14 +1253,14 @@ describe("ActionTest", function() {
                         expect(filtered.toJS()).to.eql(cursor3.toJS());
                         expect(y.hasErrored).to.equal(true, "cursor should have errored");
                         expect(y.errors.toJS()).to.eql([
-                            new Error("an error2"),
                             new Error("an error3"),
+                            new Error("an error2"),
                             new GuardError("Test", "test5", 1, new Error("an error6")),
                             new Error("an error"),
+                            new GuardError("Test", "test6", 1, new Error("an error7")),
                             new Error("an error4"),
-                            new GuardError("Test", "test7", 1, new Error("an error8")),
                             new Error("an error5"),
-                            new GuardError("Test", "test6", 1, new Error("an error7"))
+                            new GuardError("Test", "test7", 1, new Error("an error8"))
                         ]);
 
                         expect(result.traces.toJS()).to.eql([{

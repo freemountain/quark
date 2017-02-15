@@ -8,9 +8,11 @@ import diff from "immutablediff";
 import Runtime from "../Runtime";
 import Trace from "../telemetry/Trace";
 import Message from "../Message";
+import type { State } from "./PendingAction";
 import CursorAbstractError from "./error/CursorAbstractError";
 import UnknownMethodError from "./error/UnknownMethodError";
 import assert from "assert";
+import PendingAction from "./PendingAction";
 
 export type Diffs = List<{
     op:    string, // eslint-disable-line
@@ -142,13 +144,19 @@ class Cursor {
     }
 
     get currentMessage(): ?Message {
-        const message = this.__data.x.get("_unit").action;
+        return this.currentAction ? this.currentAction.message : null;
+    }
 
-        return message;
+    get currentAction(): ?Message {
+        return this.__data.x.get("_unit").action;
+    }
+
+    get currentState(): State {
+        return this.currentAction ? this.currentAction.getState() : "waiting";
     }
 
     get currentTrace(): ?Trace {
-        return this.__data.x.get("_unit").traces.first();
+        return this.traces.first();
     }
 
     get traces(): List<Trace> {
@@ -161,6 +169,10 @@ class Cursor {
 
     get currentContext(): string {
         return this.__data.x.get("_unit").name;
+    }
+
+    get shouldTrigger(): boolean {
+        return !this.hasRecentlyErrored && this.currentAction instanceof PendingAction ? this.currentAction.willTrigger : false;
     }
 
     get errors(): List<Error> {
@@ -187,17 +199,25 @@ class Cursor {
         return this.currentError !== this.undo().currentError;
     }
 
-    patch(diffs: Diffs, traces: List<Trace> = List(), errors: List<Error> = List()) {
-        const patched = patch(this.__data.x, diffs);
+    patch(...results: Array<Cursor>): Cursor {
+        const patchSet = results.reduce((dest, y) => {
+            return Object.assign(dest, {
+                diffs:  dest.diffs.concat(this.diff(y)),
+                traces: dest.traces.concat(y.traces),
+                errors: dest.errors.concat(y.errors)
+            });
+        }, { diffs: Set(), traces: List(), errors: List() });
+
+        const patched = patch(this.__data.x, patchSet.diffs.toList());
         const updated = this.__data.x.get("_unit").traces
-            .concat(traces.filter(x => !x.locked))
+            .concat(patchSet.traces.filter(x => !x.locked))
             .groupBy(x => x.name)
             .map(x => x.first())
             .toList();
 
         const next = patched
             .update("_unit", internals => internals.set("traces", updated))
-            .update("_unit", internals => internals.update("errors", x => x.concat(errors)));
+            .update("_unit", internals => internals.update("errors", x => x.concat(patchSet.errors)));
 
         return new this.constructor(next);
     }
@@ -248,6 +268,22 @@ class Cursor {
 
     toString(): string {
         return `${this.constructor.name}<${this.__data.x instanceof Collection ? this.__data.x.filter((_, key) => key !== "_unit").toString() : JSON.stringify(this.__data)}>`;
+    }
+
+    BEFORE() {
+        return this.update("_unit", internals => internals.actionBefore());
+    }
+
+    DONE() {
+        return this.update("_unit", internals => internals.actionDone());
+    }
+
+    ERROR() {
+        return this.update("_unit", internals => internals.actionError());
+    }
+
+    TRIGGERS() {
+        return this.update("_unit", internals => internals.actionTriggers());
     }
 }
 

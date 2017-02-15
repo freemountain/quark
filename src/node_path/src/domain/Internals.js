@@ -6,6 +6,8 @@ import Message from "../Message";
 import NoMessageError from "./error/NoMessageError";
 import AlreadyReceivedError from "./error/AlreadyReceivedError";
 import NotStartedError from "./error/NotStartedError";
+import PendingAction from "./PendingAction";
+import type Cursor from "./Cursor";
 
 export default class Internals extends Record({
     description: Map(),
@@ -71,7 +73,7 @@ export default class Internals extends Record({
 
         return this
             .trace(`Message<${message.resource}>`, message.payload)
-            .set("action", message)
+            .set("action", new PendingAction({ message }))
             .updateCurrentTrace(trace => trace.triggered());
     }
 
@@ -91,5 +93,37 @@ export default class Internals extends Record({
 
     isRecoverable(): boolean {
         return this.errors.every(x => x.isRecoverable && x.isRecoverable());
+    }
+
+    cursorChanged(cursor: Cursor): Internals {
+        return this.update("action", action => action.cursorChanged(cursor));
+    }
+
+    actionFinished(): Internals {
+        return this.update("action", action => action.finish());
+    }
+
+    actionBefore(): Internals {
+        return this.update("action", action => action.before());
+    }
+
+    actionDone(): Internals {
+        return this.update("action", action => action.done());
+    }
+
+    actionError(): Internals {
+        return this.update("action", action => action.error());
+    }
+
+    actionTriggers(): Internals {
+        return this.update("action", action => action.triggers());
+    }
+
+    actionWillTrigger(): Internals {
+        return this.update("action", action => action.set("willTrigger", true));
+    }
+
+    actionWontTrigger(): Internals {
+        return this.update("action", action => action.set("willTrigger", false));
     }
 }
