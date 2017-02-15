@@ -2,15 +2,18 @@
 import { Record } from "immutable";
 import type Message from "../Message";
 import type Cursor from "./Cursor";
+import type Action from "./Action";
 
 export type State = "before" | "triggers" | "error" | "done" | "cancel" | "progress" | "finished" | "waiting";
 
 export default class PendingAction extends Record({
     message:     null,
-    state:       "before",
-    willTrigger: false
+    state:       "waiting",
+    willTrigger: false,
+    caller:      null,
+    action:      null
 }) {
-    constructor(data: { message: Message, state?: State, willTrigger?: boolean }) {
+    constructor(data: { message: Message, state?: State, willTrigger?: boolean, caller?: Action, action?: Action }) {
         super(data);
     }
 
@@ -42,7 +45,16 @@ export default class PendingAction extends Record({
         return this.set("state", state);
     }
 
+    actionChanged(action: Action): PendingAction {
+        return this
+            .set("action", action)
+            .set("caller", this.get("action"));
+    }
+
     getState() {
+        if(this.caller !== null) return `${this.caller.name}.${this.state}`;
+        if(this.action !== null) return this.action.name;
+
         return `${this.message.currentDir}.${this.state}`;
     }
 }

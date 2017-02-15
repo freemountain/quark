@@ -66,6 +66,10 @@ export default class Message extends Record({
         return this.set("payload", payload.concat(trigger.params));
     }
 
+    setAction(action: string) {
+        return this.set("resource", this.path.pop().concat([action]).join("/"));
+    }
+
     unsetCursor(): Message {
         return new Message(this.resource, this.payload, this.headers);
     }

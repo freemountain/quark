@@ -124,8 +124,8 @@ class Cursor {
         this.__previous = previous;
         this.__next     = next;
 
-        // needs to be copied, since we are mutating the Function
-        // object otherwise
+        // needs to be copied, since we are mutating
+        // the Function object otherwise
         this.trace           = Cursor.trace.bind(null, this);
         this.trace.triggered = Cursor.triggered.bind(null, this);
         this.trace.error     = Cursor.error.bind(null, this);
@@ -275,6 +275,7 @@ class Cursor {
     // TODO: beides raus ausm cursor
     BEFORE(description: Action, prev: string, trigger: Trigger, message: Message): Cursor {
         return this
+            .update("_unit", internals => internals.actionChanged(description))
             .update("_unit", internals => internals.cursorChanged(this))
             .trace(description.name, message.payload, prev, trigger.guards.size)
             .update("_unit", internals => internals.actionBefore());

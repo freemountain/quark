@@ -40,25 +40,34 @@ class Action {
         // + actionliste
         return function(y, prev = description.name) { // eslint-disable-line
             // der hier muss auch in die pendingaction rein
+            if(!(this instanceof Cursor)) return Promise.reject(new InvalidCursorError(this, description));
+            if(!Message.is(y))            return Promise.resolve(this
+                .trace(description.name, List(), prev)
+                .error(new UnknownMessageError(description.unit, description.name, y)));
+
             const trigger = description.triggers.find(x => x.action === prev.replace(".done", "")) || new Trigger(description.name, new DeclaredTrigger(description.name));
 
             try {
-                if(!Message.is(y)) return Promise.resolve(this
-                    .trace(description.name, List(), prev, trigger.guards.size)
-                    .error(new UnknownMessageError(description.unit, description.name, y)));
-
-                if(!(this instanceof Cursor)) throw new InvalidCursorError(this, description);
-
                 // als erstes muss die resource der message auf den action
                 // namen gesetzt werden, dann sollte das prinzipiell klappen
-                console.log("handler", prev, this.currentAction ? this.currentState : null);
 
                 // hier das muss auch noch in die BEFORE
-                const message = y.setCursor(this).preparePayload(trigger);
+                // hier das muss komplett in den cursor: am anfang:
+                // cursor actionChanged(description). => rest müsste hieraus
+                // abgeleitet werden können
+                const message = y
+                    .setCursor(this)
+                    .setAction(description.name)
+                    .preparePayload(trigger);
+
+                const befored = this.BEFORE(description, prev, trigger, message);
+
+                console.log("handler", prev, befored.currentAction ? befored.currentState : null);
                 // TODO: hier alle elemente rauskriegen bei BEFORE,
                 // applyGuards darf nur auf message dependen
-                const guarded = description.applyGuards(this.BEFORE(description, prev, trigger, message), message, trigger);
+                const guarded = description.applyGuards(befored, message, trigger);
 
+                // hier das kann mit in before, sobald cancel drin is
                 return !guarded.shouldTrigger ? Promise.resolve(guarded) : description
                     // hier nur mit cursor arbeiten, sodass cursor.MESSAGE_UPDATE() oder sowas)
                     // dann mal das schema der privaten vereinheitlichen bei cursor
@@ -129,22 +138,23 @@ class Action {
         return this.applyTriggers("progress", cursor, message);
     }
 
+    applyGuards(cursor: Cursor, message: Message, trigger: Trigger): Cursor {
+        // trigger auch zu pending
+        const x = trigger.shouldTrigger(cursor, message.payload);
+
+        return x.shouldTrigger ? x.trace.triggered() : x.trace.end();
+    }
+
     applyTriggers(kind: Kind, cursor: Cursor, message: Message): Promise<Cursor> {
         // hier das in message + kind auch aus pendingaction
         const prev = `${this.name}.${kind}`;
+
 
         return Promise
             // das hier mittels cursor.send.<resource>(<...payload>, headers ?)
             // speziell hier dann cursor.send[message.resource](...message.payload, message.headers);
             .all((this: Object)[kind].map(x => (cursor: Object)[x.emits](message, prev)).toJS())
             .then(x => cursor.patch(...x));
-    }
-
-    applyGuards(cursor: Cursor, message: Message, trigger: Trigger): Cursor {
-        // trigger auch zu pending
-        const x = trigger.shouldTrigger(cursor, message.payload);
-
-        return x.cursor.shouldTrigger ? x.cursor.trace.triggered() : x.cursor.trace.end();
     }
 
     applyAction(cursor: Cursor, message: Message): Promise<Cursor> {

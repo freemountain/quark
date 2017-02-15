@@ -8,6 +8,7 @@ import AlreadyReceivedError from "./error/AlreadyReceivedError";
 import NotStartedError from "./error/NotStartedError";
 import PendingAction from "./PendingAction";
 import type Cursor from "./Cursor";
+import type Action from "./Action";
 
 export default class Internals extends Record({
     description: Map(),
@@ -98,27 +99,31 @@ export default class Internals extends Record({
     }
 
     cursorChanged(cursor: Cursor): Internals {
-        return this.update("action", action => action.cursorChanged(cursor));
+        return this.update("action", action => action instanceof PendingAction ? action.cursorChanged(cursor) : action);
+    }
+
+    actionChanged(action: Action): Internals {
+        return this.update("action", pending => pending instanceof PendingAction ? pending.actionChanged(action) : pending);
     }
 
     actionFinished(): Internals {
-        return this.update("action", action => action.finish());
+        return this.update("action", action => action instanceof PendingAction ? action.finish() : action);
     }
 
     actionBefore(): Internals {
-        return this.update("action", action => action.before());
+        return this.update("action", action => action instanceof PendingAction ? action.before() : action);
     }
 
     actionDone(): Internals {
-        return this.update("action", action => action.done());
+        return this.update("action", action => action instanceof PendingAction ? action.done() : action);
     }
 
     actionError(): Internals {
-        return this.update("action", action => action.error());
+        return this.update("action", action => action instanceof PendingAction ? action.error() : action);
     }
 
     actionTriggers(): Internals {
-        return this.update("action", action => action.triggers());
+        return this.update("action", action => action instanceof PendingAction ? action.triggers() : action);
     }
 
     actionWillTrigger(): Internals {

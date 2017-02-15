@@ -88,7 +88,9 @@ describe("InternalsTest", function() {
                     payload:  [],
                     resource: "/blub"
                 },
-                state:       "before",
+                action:      null,
+                caller:      null,
+                state:       "waiting",
                 willTrigger: false
             },
             previous:    null,
@@ -139,8 +141,10 @@ describe("InternalsTest", function() {
                     payload:  [],
                     resource: "/blub"
                 },
-                state:       "before",
-                willTrigger: false
+                state:       "waiting",
+                willTrigger: false,
+                action:      null,
+                caller:      null
             },
             previous:    null,
             current:     0,

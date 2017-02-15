@@ -40,7 +40,7 @@ export default class Trigger {
         };
     }
 
-    shouldTrigger(cursor: Cursor, params: List<any>): { cursor: Cursor } { // eslint-disable-line
+    shouldTrigger(cursor: Cursor, params: List<any>): Cursor { // eslint-disable-line
         let result  = true;
         let tracing = cursor;
 
@@ -57,21 +57,15 @@ export default class Trigger {
                 result  = guard(...(params.toJS()), tracing);
                 tracing = tracing.trace.end();
 
-                if(!result) return {
-                    cursor: tracing
-                    .update("_unit", internals => internals.actionWontTrigger())
-                };
+                if(!result) return tracing
+                    .update("_unit", internals => internals.actionWontTrigger());
             } catch(e) {
-                return {
-                    cursor: tracing
-                        .update("_unit", internals => internals.actionWontTrigger())
-                        .error(new GuardError(tracing.currentContext, this.emits, i + 1, e))
-                };
+                return tracing
+                    .update("_unit", internals => internals.actionWontTrigger())
+                    .error(new GuardError(tracing.currentContext, this.emits, i + 1, e));
             }
         }
 
-        return {
-            cursor: tracing.update("_unit", internals => internals.actionWillTrigger())
-        };
+        return tracing.update("_unit", internals => internals.actionWillTrigger());
     }
 }
