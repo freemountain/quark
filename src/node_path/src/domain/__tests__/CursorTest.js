@@ -130,6 +130,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     state:       "before",
                     willTrigger: false
                 },
+                previous:    null,
                 children:    {},
                 current:     0,
                 description: {},
@@ -178,6 +179,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     state:       "before",
                     willTrigger: false
                 },
+                previous:    null,
                 children:    {},
                 current:     0,
                 description: {},
@@ -226,6 +228,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     state:       "before",
                     willTrigger: false
                 },
+                previous:    null,
                 children:    {},
                 current:     0,
                 description: {},
@@ -287,6 +290,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     state:       "before",
                     willTrigger: false
                 },
+                previous:    null,
                 children:    {},
                 current:     0,
                 description: {},
@@ -365,6 +369,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     state:       "before",
                     willTrigger: false
                 },
+                previous:    null,
                 children:    {},
                 current:     0,
                 description: {},
@@ -455,6 +460,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     state:       "before",
                     willTrigger: false
                 },
+                previous:    null,
                 children:    {},
                 current:     0,
                 description: {},
@@ -555,6 +561,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     state:       "before",
                     willTrigger: false
                 },
+                previous:    null,
                 children:    {},
                 current:     0,
                 description: {},
@@ -655,6 +662,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     state:       "before",
                     willTrigger: false
                 },
+                previous:    null,
                 children:    {},
                 current:     0,
                 description: {},
@@ -752,7 +760,12 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor10.toJS()).to.eql({
             _unit: {
-                action:      null,
+                action:   null,
+                previous: {
+                    message:     message.toJS(),
+                    state:       "before",
+                    willTrigger: false
+                },
                 children:    {},
                 current:     0,
                 description: {},

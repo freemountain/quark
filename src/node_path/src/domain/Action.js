@@ -27,18 +27,19 @@ class Action {
     static BEFORE   = x => x.action.indexOf(".before") !== -1;   // eslint-disable-line
     static PROGRESS = x => x.action.indexOf(".progress") !== -1;
     static CANCEL   = x => x.action.indexOf(".cancel") !== -1;   // eslint-disable-line
+    static ERROR    = x => x.action.indexOf(".error") !== -1;    // eslint-disable-line
     static DONE     = x => (                                     // eslint-disable-line
         !Action.PROGRESS(x) &&
         !Action.CANCEL(x) &&
         !Action.BEFORE(x) &&
         !Action.ERROR(x)
     );
-    static ERROR    = x => x.action.indexOf(".error") !== -1;    // eslint-disable-line
 
-    static Handler(description: Action): (y: any, prev: (string | void)) => Promise<Cursor> {
+    static Handler(description: Action): (y: any, prev?: string) => Promise<Cursor> {
         // Todo: prev in den cursor mit undo/redo
         // + actionliste
         return function(y, prev = description.name) { // eslint-disable-line
+            // der hier muss auch in die pendingaction rein
             const trigger = description.triggers.find(x => x.action === prev.replace(".done", "")) || new Trigger(description.name, new DeclaredTrigger(description.name));
 
             try {
@@ -52,17 +53,13 @@ class Action {
                 // namen gesetzt werden, dann sollte das prinzipiell klappen
                 console.log("handler", prev, this.currentAction ? this.currentState : null);
 
-                // Cursor.BEFORE
+                // hier das muss auch noch in die BEFORE
                 const message = y.setCursor(this).preparePayload(trigger);
-                const updated = this.update("_unit", internals => internals.cursorChanged(this));
-                const tracing = updated.trace(description.name, message.payload, prev, trigger.guards.size);
-                const x       = trigger.shouldTrigger(tracing, message.payload);
+                // TODO: hier alle elemente rauskriegen bei BEFORE,
+                // applyGuards darf nur auf message dependen
+                const guarded = description.applyGuards(this.BEFORE(description, prev, trigger, message), message, trigger);
 
-                if(!x.cursor.shouldTrigger) return Promise.resolve(x.cursor.trace.end());
-
-                const guarded = x.cursor.trace.triggered();
-
-                return description
+                return !guarded.shouldTrigger ? Promise.resolve(guarded) : description
                     // hier nur mit cursor arbeiten, sodass cursor.MESSAGE_UPDATE() oder sowas)
                     // dann mal das schema der privaten vereinheitlichen bei cursor
                     .applyBefore(guarded, y.setCursor(guarded))
@@ -133,7 +130,7 @@ class Action {
     }
 
     applyTriggers(kind: Kind, cursor: Cursor, message: Message): Promise<Cursor> {
-        // hier das in message
+        // hier das in message + kind auch aus pendingaction
         const prev = `${this.name}.${kind}`;
 
         return Promise
@@ -143,11 +140,12 @@ class Action {
             .then(x => cursor.patch(...x));
     }
 
-    /* applyGuards(cursor: Cursor, message: Message, trigger: Trigger): Cursor {
-        const guarded = trigger.shouldTrigger(cursor, message.payload);
+    applyGuards(cursor: Cursor, message: Message, trigger: Trigger): Cursor {
+        // trigger auch zu pending
+        const x = trigger.shouldTrigger(cursor, message.payload);
 
-        return guarded.shouldTrigger ? guarded.trace.triggered() : guarded.trace.end();
-    }*/
+        return x.cursor.shouldTrigger ? x.cursor.trace.triggered() : x.cursor.trace.end();
+    }
 
     applyAction(cursor: Cursor, message: Message): Promise<Cursor> {
         // TODO: das hier muss möglich sein, damit das in

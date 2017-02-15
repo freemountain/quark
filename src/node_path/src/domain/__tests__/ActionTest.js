@@ -1257,10 +1257,10 @@ describe("ActionTest", function() {
                             new Error("an error2"),
                             new GuardError("Test", "test5", 1, new Error("an error6")),
                             new Error("an error"),
-                            new GuardError("Test", "test6", 1, new Error("an error7")),
                             new Error("an error4"),
+                            new GuardError("Test", "test6", 1, new Error("an error8")),
                             new Error("an error5"),
-                            new GuardError("Test", "test7", 1, new Error("an error8"))
+                            new GuardError("Test", "test7", 1, new Error("an error7"))
                         ]);
 
                         expect(result.traces.toJS()).to.eql([{

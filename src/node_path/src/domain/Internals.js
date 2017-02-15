@@ -20,6 +20,7 @@ export default class Internals extends Record({
     traces:      List(),
     current:     0,
     action:      null,
+    previous:    null,
     name:        "Default"
 }) {
     currentTrace(): ?Trace {
@@ -88,6 +89,7 @@ export default class Internals extends Record({
         return this
             .update("traces", traces => traces.filter(x => x.locked).push(trace.lock()))
             .update("errors", errors => errors.clear())
+            .set("previous", this.action)
             .set("action", null);
     }
 

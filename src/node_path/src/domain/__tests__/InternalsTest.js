@@ -42,7 +42,8 @@ describe("InternalsTest", function() {
             description: {},
             revision:    0,
             current:     0,
-            action:      null
+            action:      null,
+            previous:    null
         });
 
         expect(internals.get("description")).to.eql(Map());
@@ -90,6 +91,7 @@ describe("InternalsTest", function() {
                 state:       "before",
                 willTrigger: false
             },
+            previous:    null,
             current:     0,
             description: {},
             diffs:       [],
@@ -140,6 +142,7 @@ describe("InternalsTest", function() {
                 state:       "before",
                 willTrigger: false
             },
+            previous:    null,
             current:     0,
             description: {},
             diffs:       [],

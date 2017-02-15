@@ -13,6 +13,8 @@ import CursorAbstractError from "./error/CursorAbstractError";
 import UnknownMethodError from "./error/UnknownMethodError";
 import assert from "assert";
 import PendingAction from "./PendingAction";
+import type Action from "./Action";
+import type Trigger from "./Trigger";
 
 export type Diffs = List<{
     op:    string, // eslint-disable-line
@@ -270,19 +272,23 @@ class Cursor {
         return `${this.constructor.name}<${this.__data.x instanceof Collection ? this.__data.x.filter((_, key) => key !== "_unit").toString() : JSON.stringify(this.__data)}>`;
     }
 
-    BEFORE() {
-        return this.update("_unit", internals => internals.actionBefore());
+    // TODO: beides raus ausm cursor
+    BEFORE(description: Action, prev: string, trigger: Trigger, message: Message): Cursor {
+        return this
+            .update("_unit", internals => internals.cursorChanged(this))
+            .trace(description.name, message.payload, prev, trigger.guards.size)
+            .update("_unit", internals => internals.actionBefore());
     }
 
-    DONE() {
+    DONE(): Cursor {
         return this.update("_unit", internals => internals.actionDone());
     }
 
-    ERROR() {
+    ERROR(): Cursor {
         return this.update("_unit", internals => internals.actionError());
     }
 
-    TRIGGERS() {
+    TRIGGERS(): Cursor {
         return this.update("_unit", internals => internals.actionTriggers());
     }
 }
