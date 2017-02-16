@@ -10,7 +10,8 @@ import Trigger from "./Trigger";
 import DeclaredTrigger from "./DeclaredTrigger";
 import InvalidCursorError from "./error/InvalidCursorError";
 
-type Kind = "before" | "cancel" | "progress" | "done" | "error"
+type Kind    = "before" | "cancel" | "progress" | "done" | "error"; // eslint-disable-line
+type Handler = (y: any, prev?: string) => Promise<Cursor>;
 
 class Action {
     name:     string;         // eslint-disable-line
@@ -22,7 +23,7 @@ class Action {
     cancel:   List<Trigger>;  // eslint-disable-line
     progress: List<Trigger>;
     unit:     string;         // eslint-disable-line
-    func:     (y: any, prev: (string | void)) => Promise<Cursor>; // eslint-disable-line
+    func:     (y: any, prev?: string) => Promise<Cursor>; // eslint-disable-line
 
     static BEFORE   = x => x.action.indexOf(".before") !== -1;   // eslint-disable-line
     static PROGRESS = x => x.action.indexOf(".progress") !== -1;
@@ -35,16 +36,14 @@ class Action {
         !Action.ERROR(x)
     );
 
-    static Handler(description: Action): (y: any, prev?: string) => Promise<Cursor> {
-        // Todo: prev in den cursor mit undo/redo
-        // + actionliste
+    static Handler(description: Action): Handler {
         return function(y, prev = description.name) { // eslint-disable-line
-            // der hier muss auch in die pendingaction rein
             if(!(this instanceof Cursor)) return Promise.reject(new InvalidCursorError(this, description));
             if(!Message.is(y))            return Promise.resolve(this
                 .trace(description.name, List(), prev)
                 .error(new UnknownMessageError(description.unit, description.name, y)));
 
+            // der hier muss auch in die pendingaction rein
             const trigger = description.triggers.find(x => x.action === prev.replace(".done", "")) || new Trigger(description.name, new DeclaredTrigger(description.name));
 
             try {
@@ -56,15 +55,16 @@ class Action {
                 // cursor actionChanged(description). => rest müsste hieraus
                 // abgeleitet werden können
                 const message = y
+                    // das rauskriegen, indem das in dem getter gesetzt wird
                     .setCursor(this)
                     .setAction(description.name)
                     .preparePayload(trigger);
 
                 const befored = this.BEFORE(description, prev, trigger, message);
 
-                console.log("handler", prev, befored.currentAction ? befored.currentState : null);
+                // console.log("handler", prev, befored.currentAction ? befored.currentState : null);
                 // TODO: hier alle elemente rauskriegen bei BEFORE,
-                // applyGuards darf nur auf message dependen
+                // applyGuards darf nur auf cursor dependen
                 const guarded = description.applyGuards(befored, message, trigger);
 
                 // hier das kann mit in before, sobald cancel drin is
@@ -140,6 +140,7 @@ class Action {
 
     applyGuards(cursor: Cursor, message: Message, trigger: Trigger): Cursor {
         // trigger auch zu pending
+        // const x = trigger.shouldTrigger(cursor) -> da cursor.message nutzen
         const x = trigger.shouldTrigger(cursor, message.payload);
 
         return x.shouldTrigger ? x.trace.triggered() : x.trace.end();
@@ -149,20 +150,17 @@ class Action {
         // hier das in message + kind auch aus pendingaction
         const prev = `${this.name}.${kind}`;
 
-
         return Promise
-            // das hier mittels cursor.send.<resource>(<...payload>, headers ?)
-            // speziell hier dann cursor.send[message.resource](...message.payload, message.headers);
-            .all((this: Object)[kind].map(x => (cursor: Object)[x.emits](message, prev)).toJS())
+            // cursor.send.<resource>(...args (payload), headers?)
+            .all((this: Object)[kind].map(x => (cursor.send: Object)[x.emits](message, prev)).toJS())
             .then(x => cursor.patch(...x));
     }
 
-    applyAction(cursor: Cursor, message: Message): Promise<Cursor> {
+    applyAction(cursor: Cursor, message: Message): Promise<Cursor> { // eslint-disable-line
         // TODO: das hier muss möglich sein, damit das in
         // die message action ausgelagert werden kann, um den
-        // ganzen shit so überschreiben zu können - des weiteren
-        // muss der trigger hieraus (delay schon beim handler
-        // anwenden
+        // ganzen shit so überschreiben zu können
+        //
         // const message = cursor.currentMessage
         try {
             // currentOp muss auf cursor sein

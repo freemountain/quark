@@ -185,8 +185,8 @@ export default class Runtime extends Duplex {
         init: DeclaredAction.triggered
             .by("message.before")
             .if((_, unit) => (
-                unit.currentMessage.isAction() &&
-                unit.currentMessage.resource.indexOf("/actions/init") === 0
+                unit.message.isAction() &&
+                unit.message.resource.indexOf("/actions/init") === 0
             ))
     };
 

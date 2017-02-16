@@ -18,9 +18,14 @@ export default class PendingAction extends Record({
     }
 
     finish(): PendingAction {
-        return this.changeState("finished");
+        return this
+            .set("action", null)
+            .set("caller", null)
+            .changeState("finished");
     }
 
+    // die müssen alle ne action kriegen
+    // dann kann actionChanged weg
     before(): PendingAction {
         return this.changeState("before");
     }
@@ -45,12 +50,17 @@ export default class PendingAction extends Record({
         return this.set("state", state);
     }
 
+    messageChanged(message: Message): PendingAction {
+        return this.set("message", message);
+    }
+
     actionChanged(action: Action): PendingAction {
         return this
             .set("action", action)
             .set("caller", this.get("action"));
     }
 
+    // get state()
     getState() {
         if(this.caller !== null) return `${this.caller.name}.${this.state}`;
         if(this.action !== null) return this.action.name;

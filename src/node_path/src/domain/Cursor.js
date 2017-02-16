@@ -31,8 +31,9 @@ class Cursor {
     update:      any => any;                            // eslint-disable-line
     trace:       (string, List<any>, string) => Cursor; // eslint-disable-line
     constructor: any => Cursor;
-    get:         (string) => any;                       //eslint-disable-line
+    get:         (string) => any;                       // eslint-disable-line
     set:         (string, any) => Cursor;               // eslint-disable-line
+    __actions:   Object;                                // eslint-disable-line
 
     static assertTraceStarted(cursor: Cursor, caller: string): void {
         if(!cursor.isTracing) throw new TraceNotStartedError(`You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
@@ -75,13 +76,6 @@ class Cursor {
 
     static for(instance: Object, description: Map<*, *>) {
         const inherited = function(...args) {
-            Object.defineProperty(this, "__inherited", {
-                enumerable:   false,
-                value:        true,
-                writable:     false,
-                configurable: false
-            });
-
             return Cursor.call(this, ...args);
         };
 
@@ -97,19 +91,12 @@ class Cursor {
 
         inherited.prototype             = Object.create(Cursor.prototype);
         inherited.prototype.constructor = inherited;
+        inherited.prototype.__actions   = {};
+        inherited.prototype.__inherited = true;
 
-        description.forEach((action, key) => {
-            Object.defineProperty(inherited.prototype, key, {
-                enumerable:   false,
-                configurable: false,
-                writable:     false,
-                value:        function(...args) {
-                    return action.func.call(this, ...args);
-                }
-            });
-        });
-
-        // TODO: add props getter
+        Object.assign(inherited.prototype.__actions, description.map(action => function(...args) {
+            return action.func.call(this.__cursor, ...args);
+        }).toJS());
 
         return inherited;
     }
@@ -141,62 +128,94 @@ class Cursor {
         return mapper(this);
     }
 
+    get send(): Object {
+        // naively this looks fine, but we are effectively
+        // mutating the prototype
+        // further thinking reveals potencial race conditions,
+        // where two instances of cursor could overwrite them-
+        // selfes when triggering actions in parallel, so it seems
+        // potencially really bad
+        // But since this is a getter and the only possibility to send
+        // an actions and every operation following this getter is also
+        // blocking, the states of the cursor and this should be always
+        // consistent, since we have effectively an access control mechanism
+        // in place.
+        this.__actions.__cursor = this;
+
+        return this.__actions;
+    }
+
     get size(): number {
         return this.__data.x.size;
     }
 
-    get currentMessage(): ?Message {
-        return this.currentAction ? this.currentAction.message : null;
+    // _message
+    get message(): ?Message {
+        return this.currentAction ? this.currentAction.message.setCursor(this) : null;
     }
 
+    // _action
     get currentAction(): ?Message {
         return this.__data.x.get("_unit").action;
     }
 
+    // _action.state
     get currentState(): State {
         return this.currentAction ? this.currentAction.getState() : "waiting";
     }
 
+    // _debug.currentTrace
     get currentTrace(): ?Trace {
         return this.traces.first();
     }
 
+    // _debug.traces
     get traces(): List<Trace> {
         return this.__data.x.get("_unit").traces;
     }
 
+    // _state.currentError
     get currentError(): ?Error {
         return this.errors.last() || null;
     }
 
+    // das hier müsste statisch im konstruktor gemacht werden
+    // _unit.name
     get currentContext(): string {
         return this.__data.x.get("_unit").name;
     }
 
+    // _action.shouldTrigger
     get shouldTrigger(): boolean {
         return !this.hasRecentlyErrored && this.currentAction instanceof PendingAction ? this.currentAction.willTrigger : false;
     }
 
+    // _state.errors
     get errors(): List<Error> {
         return this.__data.x.get("_unit").errors;
     }
 
+    // _unit.children
     get children(): List<Runtime> {
         return this.__data.x.get("_unit").children;
     }
 
+    // _state.hasErrored
     get hasErrored(): boolean {
         return this.__data.x.get("_unit").hasErrored();
     }
 
+    // _state.isRecoverable
     get isRecoverable(): boolean {
         return this.__data.x.get("_unit").isRecoverable();
     }
 
+    // _debug.isTracing -> besserer name
     get isTracing(): boolean {
         return this.__data.x.get("_unit") && this.__data.x.get("_unit").isTracing();
     }
 
+    // _state.hasRecentlyErrored
     get hasRecentlyErrored(): boolean {
         return this.currentError !== this.undo().currentError;
     }
@@ -239,10 +258,12 @@ class Cursor {
         return this;
     }
 
+    // _state.messageReceived
     messageReceived(message: Message): Cursor {
         return this.update("_unit", internals => internals.messageReceived(message));
     }
 
+    // _state.messageProcessed
     messageProcessed(): Cursor {
         return this.update("_unit", internals => internals.messageProcessed());
     }
@@ -262,6 +283,7 @@ class Cursor {
         return this.__next ? this.__next : this;
     }
 
+    // __state.error
     error(e: Error): Cursor {
         return this
             .update("_unit", internals => internals.error(e))
@@ -272,11 +294,12 @@ class Cursor {
         return `${this.constructor.name}<${this.__data.x instanceof Collection ? this.__data.x.filter((_, key) => key !== "_unit").toString() : JSON.stringify(this.__data)}>`;
     }
 
-    // TODO: beides raus ausm cursor
+    // TODO: hier nur description, rest sollte da sein
     BEFORE(description: Action, prev: string, trigger: Trigger, message: Message): Cursor {
         return this
-            .update("_unit", internals => internals.actionChanged(description))
             .update("_unit", internals => internals.cursorChanged(this))
+            .update("_unit", internals => internals.actionChanged(description))
+            .update("_unit", internals => internals.messageChanged(message))
             .trace(description.name, message.payload, prev, trigger.guards.size)
             .update("_unit", internals => internals.actionBefore());
     }
@@ -294,6 +317,7 @@ class Cursor {
     }
 }
 
+// das bei cursor.for machen je nach props
 ImmutableMethods
     .filter(key => ( // eslint-disable-line
         key.slice(0, 1) !== "_" &&

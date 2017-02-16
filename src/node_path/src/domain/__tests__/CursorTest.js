@@ -66,10 +66,10 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor.children.toJS()).to.eql({
             test: {}
         });
-        expect(cursor.blub).to.be.a("function");
+        expect(cursor.send.blub).to.be.a("function");
         return cursor
             .messageReceived(new Message("/test", List.of(1)))
-            .blub(new Message("/test", List.of(1)))
+            .send.blub(new Message("/test", List.of(1)))
             .then(x => expect(x.get("test")).to.equal(7));
     });
 
@@ -92,8 +92,8 @@ describe("CursorTest", function() { // eslint-disable-line
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
         const cursor     = new UnitCursor(data);
 
-        expect(cursor.currentMessage).to.equal(message);
-        expect(cursor.set("action", message).currentMessage).to.be.an.instanceOf(Message);
+        expect(cursor.message.toJS()).to.eql(message.setCursor(cursor).toJS());
+        expect(cursor.set("action", message).message).to.be.an.instanceOf(Message);
         expect(cursor.errors.toJS()).to.eql([error]);
         expect(cursor.currentError).to.equal(error);
         expect(cursor.currentContext).to.equal("Unit");
@@ -905,7 +905,7 @@ describe("CursorTest", function() { // eslint-disable-line
             cursor.x = "huhu";
         }).to.throw();
         expect(cursor).to.equal(cursor2);
-        expect(cursor.blub).to.be.a("function");
+        expect(cursor.send.blub).to.be.a("function");
         expect(cursor.toString()).to.equal("FunctionCursor<Map { \"test\": \"test\" }>");
     });
 

@@ -106,6 +106,11 @@ export default class Internals extends Record({
         return this.update("action", pending => pending instanceof PendingAction ? pending.actionChanged(action) : pending);
     }
 
+    messageChanged(): Internals {
+        return this;
+        // return this.update("action", pending => pending instanceof PendingAction ? pending.messageChanged(message) : pending);
+    }
+
     actionFinished(): Internals {
         return this.update("action", action => action instanceof PendingAction ? action.finish() : action);
     }
