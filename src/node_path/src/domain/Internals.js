@@ -102,21 +102,19 @@ export default class Internals extends Record({
         return this.update("action", action => action instanceof PendingAction ? action.cursorChanged(cursor) : action);
     }
 
-    actionChanged(action: Action): Internals {
-        return this.update("action", pending => pending instanceof PendingAction ? pending.actionChanged(action) : pending);
-    }
-
-    messageChanged(): Internals {
-        return this;
-        // return this.update("action", pending => pending instanceof PendingAction ? pending.messageChanged(message) : pending);
+    messageChanged(message: Message): Internals {
+        return this.update("action", action => action instanceof PendingAction ? action.set("message", message) : action);
     }
 
     actionFinished(): Internals {
         return this.update("action", action => action instanceof PendingAction ? action.finish() : action);
     }
 
-    actionBefore(): Internals {
-        return this.update("action", action => action instanceof PendingAction ? action.before() : action);
+    actionBefore(description: Action, y: Message, prev: string): Internals {
+        const updated = this.update("action", action => action instanceof PendingAction ? action.before(description, prev, y) : action);
+
+        return updated
+            .trace(updated.action.description.name, updated.action.message.payload, prev, updated.action.trigger.guards.size);
     }
 
     actionDone(): Internals {

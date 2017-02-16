@@ -12,8 +12,11 @@ export default class Message extends Record({
     headers:  Map(),
     payload:  List(),
     resource: "/default",
-    _cursor:  null
+    _cursor:  null,
+    _initial: List()
 }) {
+    _initial: List<*>;
+
     static is(x) {
         return x instanceof Message;
     }
@@ -30,7 +33,7 @@ export default class Message extends Record({
     }
 
     constructor(resource: (string | Message | { resource: string, payload?: ?List<*>, headers?: ?Map<string, *> }), payload?: ?List<*>, headers?: Map<string, *> = Map(), _cursor?: ?Cursor = null) { // eslint-disable-line
-        const data = fromJS(typeof resource === "string" ? { resource, payload, headers, _cursor } : resource);
+        const data = fromJS(typeof resource === "string" ? { resource, payload, headers, _cursor, _initial: payload } : resource);
 
         super(data);
 
@@ -64,6 +67,10 @@ export default class Message extends Record({
         const payload = trigger.action.indexOf(".error") !== -1 ? this.payload.unshift(cursor.currentError) : this.payload;
 
         return this.set("payload", payload.concat(trigger.params));
+    }
+
+    revertPayload(): Message {
+        return this.set("payload", this._initial);
     }
 
     setAction(action: string) {

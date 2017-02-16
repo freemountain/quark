@@ -6,28 +6,49 @@ import type Action from "./Action";
 
 export type State = "before" | "triggers" | "error" | "done" | "cancel" | "progress" | "finished" | "waiting";
 
+type PendingActionData = {
+    message:      Message, // eslint-disable-line
+    state?:       State,   // eslint-disable-line
+    willTrigger?: boolean,
+    caller?:      Action,  // eslint-disable-line
+    description?: Action,  // eslint-disable-line
+    start?:       Action   // eslint-disable-line
+};
+
 export default class PendingAction extends Record({
     message:     null,
     state:       "waiting",
     willTrigger: false,
     caller:      null,
-    action:      null
+    description: null,
+    trigger:     null,
+    start:       null
 }) {
-    constructor(data: { message: Message, state?: State, willTrigger?: boolean, caller?: Action, action?: Action }) {
+    constructor(data: PendingActionData) {
         super(data);
     }
 
     finish(): PendingAction {
         return this
-            .set("action", null)
+            .set("description", null)
             .set("caller", null)
+            .set("trigger", null)
+            .set("start", null)
             .changeState("finished");
     }
 
     // die müssen alle ne action kriegen
     // dann kann actionChanged weg
-    before(): PendingAction {
-        return this.changeState("before");
+    before(action: Action, prev: string, message: Message): PendingAction {
+        const trigger = action.triggerFor(prev);
+
+        return this
+            .set("start", message)
+            .set("message", message.preparePayload(trigger))
+            .set("trigger", trigger)
+            .set("description", action)
+            .set("caller", this.get("action"))
+            .changeState("before");
     }
 
     done(): PendingAction {
@@ -43,27 +64,18 @@ export default class PendingAction extends Record({
     }
 
     cursorChanged(cursor: Cursor): PendingAction {
-        return this.update("message", message => message.setCursor(cursor));
+        return this
+            .update("message", message => message.setCursor(cursor));
     }
 
     changeState(state: State): PendingAction {
         return this.set("state", state);
     }
 
-    messageChanged(message: Message): PendingAction {
-        return this.set("message", message);
-    }
-
-    actionChanged(action: Action): PendingAction {
-        return this
-            .set("action", action)
-            .set("caller", this.get("action"));
-    }
-
     // get state()
-    getState() {
-        if(this.caller !== null) return `${this.caller.name}.${this.state}`;
-        if(this.action !== null) return this.action.name;
+    getState(): string {
+        if(this.caller !== null)      return `${this.caller.name}.${this.state}`;
+        if(this.description !== null) return this.description.name;
 
         return `${this.message.currentDir}.${this.state}`;
     }

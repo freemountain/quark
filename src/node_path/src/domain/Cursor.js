@@ -8,13 +8,11 @@ import diff from "immutablediff";
 import Runtime from "../Runtime";
 import Trace from "../telemetry/Trace";
 import Message from "../Message";
-import type { State } from "./PendingAction";
 import CursorAbstractError from "./error/CursorAbstractError";
 import UnknownMethodError from "./error/UnknownMethodError";
 import assert from "assert";
 import PendingAction from "./PendingAction";
 import type Action from "./Action";
-import type Trigger from "./Trigger";
 
 export type Diffs = List<{
     op:    string, // eslint-disable-line
@@ -95,7 +93,9 @@ class Cursor {
         inherited.prototype.__inherited = true;
 
         Object.assign(inherited.prototype.__actions, description.map((action, key) => function(...payload: Array<mixed>) {
-            return action.func.call(this.__cursor, new Message(key, List(payload), this.__headers), this.__from);
+            const message = new Message(key, List(payload), this.__headers);
+
+            return action.func.call(this.__cursor, message, this.__from);
         }).set("headers", function(headers: Object): { headers: Function, from: Function } {
             this.__headers = Map(headers);
 
@@ -159,16 +159,17 @@ class Cursor {
 
     // _message
     get message(): ?Message {
-        return this.currentAction ? this.currentAction.message.setCursor(this) : null;
+        return this.currentAction ? this.currentAction.message : null;
     }
 
     // _action
-    get currentAction(): ?Message {
-        return this.__data.x.get("_unit").action;
+    get currentAction(): ?PendingAction {
+        return this.__data.x.get("_unit").action
+            .cursorChanged(this);
     }
 
     // _action.state
-    get currentState(): State {
+    get currentState(): string {
         return this.currentAction ? this.currentAction.getState() : "waiting";
     }
 
@@ -271,6 +272,10 @@ class Cursor {
         return this.update("_unit", internals => internals.messageReceived(message));
     }
 
+    messageChanged(message: Message): Cursor {
+        return this.update("_unit", internals => internals.messageChanged(message));
+    }
+
     // _state.messageProcessed
     messageProcessed(): Cursor {
         return this.update("_unit", internals => internals.messageProcessed());
@@ -303,25 +308,33 @@ class Cursor {
     }
 
     // TODO: hier nur description, rest sollte da sein
-    BEFORE(description: Action, prev: string, trigger: Trigger, message: Message): Cursor {
+    BEFORE(description: Action, prev: string): Cursor {
+        // die sind iwie anders noch?
+        //
+        const message = this.message;
+
+        if(!(message instanceof Message)) return this;
+
         return this
-            .update("_unit", internals => internals.cursorChanged(this))
-            .update("_unit", internals => internals.actionChanged(description))
-            .update("_unit", internals => internals.messageChanged(message))
-            .trace(description.name, message.payload, prev, trigger.guards.size)
-            .update("_unit", internals => internals.actionBefore());
+            // message von this holen
+            // prev von this.currentAction holen
+            .update("_unit", internals => internals.actionBefore(description, message.setCursor(this), prev))
+            .update("_unit", internals => internals.cursorChanged(this));
     }
 
     DONE(): Cursor {
-        return this.update("_unit", internals => internals.actionDone());
+        return this
+            .update("_unit", internals => internals.actionDone());
     }
 
     ERROR(): Cursor {
-        return this.update("_unit", internals => internals.actionError());
+        return this
+            .update("_unit", internals => internals.actionError());
     }
 
     TRIGGERS(): Cursor {
-        return this.update("_unit", internals => internals.actionTriggers());
+        return this
+            .update("_unit", internals => internals.actionTriggers());
     }
 }
 

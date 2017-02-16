@@ -43,35 +43,23 @@ class Action {
                 .trace(description.name, List(), prev)
                 .error(new UnknownMessageError(description.unit, description.name, y)));
 
-            // der hier muss auch in die pendingaction rein
-            const trigger = description.triggers.find(x => x.action === prev.replace(".done", "")) || new Trigger(description.name, new DeclaredTrigger(description.name));
-
             try {
-                // als erstes muss die resource der message auf den action
-                // namen gesetzt werden, dann sollte das prinzipiell klappen
-
-                // hier das muss auch noch in die BEFORE
-                // hier das muss komplett in den cursor: am anfang:
-                // cursor actionChanged(description). => rest müsste hieraus
-                // abgeleitet werden können
-                const message = y
-                    // das rauskriegen, indem das in dem getter gesetzt wird
-                    .setCursor(this)
-                    .preparePayload(trigger);
-
-                const befored = this.BEFORE(description, prev, trigger, message);
-
-                console.log("handler", prev, befored.currentAction ? befored.currentState : null);
                 // TODO: hier alle elemente rauskriegen bei BEFORE,
-                // applyGuards darf nur auf cursor dependen
-                const guarded = description.applyGuards(befored, message, trigger);
+                const befored = this
+                    .messageChanged(y)
+                    .BEFORE(description, prev);
 
-                // hier das kann mit in before, sobald cancel drin is
+                // hier das zwischenspeichern sollte durch .action.start weggehen
+                const message = befored.message;
+                const guarded = description.applyGuards(befored);
+
+                // console.log("handler", prev, befored.currentAction ? befored.currentState : null);
+
                 return !guarded.shouldTrigger ? Promise.resolve(guarded) : description
                     // hier nur mit cursor arbeiten
                     // dann mal das schema der privaten vereinheitlichen bei cursor
                     .applyBefore(guarded, y.setCursor(guarded))
-                    .then(cursor => schedule(() => description.applyAction(cursor.TRIGGERS(), message.setCursor(cursor.TRIGGERS())), trigger.delay))
+                    .then(cursor => schedule(() => description.applyAction(cursor.TRIGGERS(), message.setCursor(cursor.TRIGGERS())), befored.currentAction.trigger.delay))
                     // das muss noch in den cursor
                     .then(cursor => [cursor, cursor.hasRecentlyErrored ? cursor.currentError : null])
                     .then(([cursor, error]) => Promise.all([error ? description.applyError(cursor.ERROR(), message.setCursor(cursor.ERROR())) : description.applyDone(cursor.DONE(), message.setCursor(cursor.DONE())), error]))
@@ -118,6 +106,8 @@ class Action {
 
     // die hier werden dann alle diese actions im cursor
     applyBefore(cursor: Cursor, message: Message): Promise<Cursor> {
+        // if(!(cursor.message instanceof Message)) throw new Error("huhu");
+
         return this.applyTriggers("before", cursor, message);
     }
 
@@ -137,10 +127,11 @@ class Action {
         return this.applyTriggers("progress", cursor, message);
     }
 
-    applyGuards(cursor: Cursor, message: Message, trigger: Trigger): Cursor {
+    applyGuards(cursor: Cursor): Cursor {
+        if(!cursor.currentAction || cursor.currentAction === null) return cursor.error(new Error("no action"));
         // trigger auch zu pending
         // const x = trigger.shouldTrigger(cursor) -> da cursor.message nutzen
-        const x = trigger.shouldTrigger(cursor, message.payload);
+        const x = cursor.currentAction.trigger.shouldTrigger(cursor, cursor.message ? cursor.message.payload : List());
 
         return x.shouldTrigger ? x.trace.triggered() : x.trace.end();
     }
@@ -201,6 +192,13 @@ class Action {
         return triggers.map(x => Object.assign({}, x, {
             guards: x.guards.length
         }));
+    }
+
+    triggerFor(name: string) {
+        const trimmed = name.replace(".done", "");
+        const trigger = this.triggers.find(x => x.action === trimmed);
+
+        return trigger || new Trigger(this.name, new DeclaredTrigger(this.name));
     }
 
     static cancel() {

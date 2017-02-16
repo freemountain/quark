@@ -56,8 +56,8 @@ describe("MessageTest", function() {
 
     it("creates an invalid message", function() {
         // $FlowFixMe
-        expect(() => (new Message("/blub", "huhu")).toJS()).to.throw("InvalidMessageError: Your inputdata is not a valid message, got {\"headers\":{},\"payload\":\"huhu\",\"resource\":\"/blub\",\"_cursor\":null}.");
-        expect(() => (new Message("/blub", null)).toJS()).to.throw("InvalidMessageError: Your inputdata is not a valid message, got {\"headers\":{},\"payload\":null,\"resource\":\"/blub\",\"_cursor\":null}.");
+        expect(() => (new Message("/blub", "huhu")).toJS()).to.throw("InvalidMessageError: Your inputdata is not a valid message, got {\"headers\":{},\"payload\":\"huhu\",\"resource\":\"/blub\",\"_cursor\":null,\"_initial\":\"huhu\"}.");
+        expect(() => (new Message("/blub", null)).toJS()).to.throw("InvalidMessageError: Your inputdata is not a valid message, got {\"headers\":{},\"payload\":null,\"resource\":\"/blub\",\"_cursor\":null,\"_initial\":null}.");
         expect(() => (new Message("/blub", undefined)).toJS()).to.throw("InvalidMessageError: Your inputdata is not a valid message, got {\"headers\":{},\"resource\":\"/blub\",\"_cursor\":null}."); // eslint-disable-line
     });
 
