@@ -69,7 +69,7 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor.send.blub).to.be.a("function");
         return cursor
             .messageReceived(new Message("/test", List.of(1)))
-            .send.blub(new Message("/test", List.of(1)))
+            .send.headers({ test: "test" }).blub(1)
             .then(x => expect(x.get("test")).to.equal(7));
     });
 

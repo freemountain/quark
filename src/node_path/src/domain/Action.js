@@ -57,19 +57,18 @@ class Action {
                 const message = y
                     // das rauskriegen, indem das in dem getter gesetzt wird
                     .setCursor(this)
-                    .setAction(description.name)
                     .preparePayload(trigger);
 
                 const befored = this.BEFORE(description, prev, trigger, message);
 
-                // console.log("handler", prev, befored.currentAction ? befored.currentState : null);
+                console.log("handler", prev, befored.currentAction ? befored.currentState : null);
                 // TODO: hier alle elemente rauskriegen bei BEFORE,
                 // applyGuards darf nur auf cursor dependen
                 const guarded = description.applyGuards(befored, message, trigger);
 
                 // hier das kann mit in before, sobald cancel drin is
                 return !guarded.shouldTrigger ? Promise.resolve(guarded) : description
-                    // hier nur mit cursor arbeiten, sodass cursor.MESSAGE_UPDATE() oder sowas)
+                    // hier nur mit cursor arbeiten
                     // dann mal das schema der privaten vereinheitlichen bei cursor
                     .applyBefore(guarded, y.setCursor(guarded))
                     .then(cursor => schedule(() => description.applyAction(cursor.TRIGGERS(), message.setCursor(cursor.TRIGGERS())), trigger.delay))
@@ -152,7 +151,7 @@ class Action {
 
         return Promise
             // cursor.send.<resource>(...args (payload), headers?)
-            .all((this: Object)[kind].map(x => (cursor.send: Object)[x.emits](message, prev)).toJS())
+            .all((this: Object)[kind].map(x => (cursor.send.from(prev): Object)[x.emits](...message.payload)).toJS())
             .then(x => cursor.patch(...x));
     }
 

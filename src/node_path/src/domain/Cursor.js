@@ -94,8 +94,16 @@ class Cursor {
         inherited.prototype.__actions   = {};
         inherited.prototype.__inherited = true;
 
-        Object.assign(inherited.prototype.__actions, description.map(action => function(...args) {
-            return action.func.call(this.__cursor, ...args);
+        Object.assign(inherited.prototype.__actions, description.map((action, key) => function(...payload: Array<mixed>) {
+            return action.func.call(this.__cursor, new Message(key, List(payload), this.__headers), this.__from);
+        }).set("headers", function(headers: Object): { headers: Function, from: Function } {
+            this.__headers = Map(headers);
+
+            return this;
+        }).set("from", function(from: string): { headers: Function, from: Function } {
+            this.__from = from;
+
+            return this;
         }).toJS());
 
         return inherited;
