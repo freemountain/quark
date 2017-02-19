@@ -92,7 +92,7 @@ describe("InternalsTest", function() {
                 caller:      null,
                 trigger:     null,
                 start:       null,
-                state:       "waiting",
+                state:       null,
                 willTrigger: false
             },
             previous:    null,
@@ -143,7 +143,7 @@ describe("InternalsTest", function() {
                     payload:  [],
                     resource: "/blub"
                 },
-                state:       "waiting",
+                state:       null,
                 willTrigger: false,
                 description: null,
                 caller:      null,

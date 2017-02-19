@@ -37,32 +37,27 @@ class Action {
     );
 
     static Handler(description: Action): Handler {
-        return function(y, prev = description.name) { // eslint-disable-line
+        return function(y) { // eslint-disable-line
             if(!(this instanceof Cursor)) return Promise.reject(new InvalidCursorError(this, description));
             if(!Message.is(y))            return Promise.resolve(this
-                .trace(description.name, List(), prev)
+                .trace(description.name, List(), this.currentState)
                 .error(new UnknownMessageError(description.unit, description.name, y)));
 
             try {
-                // TODO: hier alle elemente rauskriegen bei BEFORE,
-                const befored = this
-                    .messageChanged(y)
-                    .BEFORE(description, prev);
-
+                const befored = this.before(description, y);
                 // hier das zwischenspeichern sollte durch .action.start weggehen
                 const message = befored.message;
                 const guarded = description.applyGuards(befored);
-
-                // console.log("handler", prev, befored.currentAction ? befored.currentState : null);
 
                 return !guarded.shouldTrigger ? Promise.resolve(guarded) : description
                     // hier nur mit cursor arbeiten
                     // dann mal das schema der privaten vereinheitlichen bei cursor
                     .applyBefore(guarded, y.setCursor(guarded))
-                    .then(cursor => schedule(() => description.applyAction(cursor.TRIGGERS(), message.setCursor(cursor.TRIGGERS())), befored.currentAction.trigger.delay))
+                    .then(cursor => schedule(() => description.applyAction(cursor.triggers(), message.setCursor(cursor.triggers())), befored.currentAction.trigger.delay))
                     // das muss noch in den cursor
                     .then(cursor => [cursor, cursor.hasRecentlyErrored ? cursor.currentError : null])
-                    .then(([cursor, error]) => Promise.all([error ? description.applyError(cursor.ERROR(), message.setCursor(cursor.ERROR())) : description.applyDone(cursor.DONE(), message.setCursor(cursor.DONE())), error]))
+                    // diesen error durchschleifen auch durch den cursor jagen
+                    .then(([cursor, error]) => Promise.all([error ? description.applyError(cursor.errored(), message.setCursor(cursor.errored())) : description.applyDone(cursor.done(), message.setCursor(cursor.done())), error]))
                     .then(([cursor, error]) => error ? cursor.trace.error(error) : cursor.trace.end())
                     .then(cursor => cursor.update("_unit", internals => internals.actionFinished()))
                     .catch(e => guarded.error(e));
@@ -151,7 +146,9 @@ class Action {
         // die message action ausgelagert werden kann, um den
         // ganzen shit so überschreiben zu können
         //
-        // const message = cursor.currentMessage
+        // const message = cursor.message;
+        // if(!message) return Promise.reject(new Error("huhu"));
+
         try {
             // currentOp muss auf cursor sein
             if(!this.op) return Promise.resolve(cursor);
@@ -176,16 +173,14 @@ class Action {
 
     willTrigger(cursor: Cursor, ...messages: Array<Message>): boolean { // eslint-disable-line
         // Test!!
-        return false;
-
-        /* List(messages).every(message => ( // eslint-disable-line
+        return List(messages).every(message => ( // eslint-disable-line
             (this.triggers.has(message.resource) && this.triggers.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.before.has(message.resource) && this.before.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.progress.has(message.resource) && this.progress.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.cancel.has(message.resource) && this.cancel.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.done.has(message.resource) && this.done.get(message.resource).shouldTrigger(cursor, message.payload)) ||
             (this.error.has(message.resource) && this.error.get(message.resource).shouldTrigger(cursor, message.payload))
-        ));*/
+        ));
     }
 
     guardsToJS(triggers: Array<{ guards: Array<Object> }>): Array<Object> {

@@ -102,19 +102,15 @@ export default class Internals extends Record({
         return this.update("action", action => action instanceof PendingAction ? action.cursorChanged(cursor) : action);
     }
 
-    messageChanged(message: Message): Internals {
-        return this.update("action", action => action instanceof PendingAction ? action.set("message", message) : action);
-    }
-
     actionFinished(): Internals {
         return this.update("action", action => action instanceof PendingAction ? action.finish() : action);
     }
 
-    actionBefore(description: Action, y: Message, prev: string): Internals {
-        const updated = this.update("action", action => action instanceof PendingAction ? action.before(description, prev, y) : action);
+    actionBefore(description: Action, y: Message): Internals {
+        const updated = this.update("action", action => action instanceof PendingAction ? action.before(description, y, this.action) : action);
 
         return updated
-            .trace(updated.action.description.name, updated.action.message.payload, prev, updated.action.trigger.guards.size);
+            .trace(updated.action.description.name, updated.action.message.payload, !this.action || this.action === null ? description.name : this.action.caller, updated.action.trigger.guards.size);
     }
 
     actionDone(): Internals {
@@ -135,5 +131,9 @@ export default class Internals extends Record({
 
     actionWontTrigger(): Internals {
         return this.update("action", action => action.set("willTrigger", false));
+    }
+
+    callerChanged(caller: string) {
+        return this.update("action", action => action instanceof PendingAction ? action.set("caller", caller) : action);
     }
 }

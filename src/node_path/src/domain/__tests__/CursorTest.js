@@ -127,7 +127,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       "waiting",
+                    state:       null,
                     willTrigger: false,
                     caller:      null,
                     trigger:     null,
@@ -180,7 +180,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       "waiting",
+                    state:       null,
                     willTrigger: false,
                     description: null,
                     caller:      null,
@@ -233,7 +233,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       "waiting",
+                    state:       null,
                     willTrigger: false,
                     description: null,
                     caller:      null,
@@ -299,7 +299,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       "waiting",
+                    state:       null,
                     willTrigger: false,
                     description: null,
                     caller:      null,
@@ -382,7 +382,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       "waiting",
+                    state:       null,
                     willTrigger: false,
                     description: null,
                     caller:      null,
@@ -477,7 +477,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       "waiting",
+                    state:       null,
                     willTrigger: false,
                     description: null,
                     caller:      null,
@@ -582,7 +582,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       "waiting",
+                    state:       null,
                     willTrigger: false,
                     description: null,
                     caller:      null,
@@ -687,7 +687,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       "waiting",
+                    state:       null,
                     willTrigger: false,
                     description: null,
                     caller:      null,
@@ -795,7 +795,7 @@ describe("CursorTest", function() { // eslint-disable-line
                 action:   null,
                 previous: {
                     message:     message.toJS(),
-                    state:       "waiting",
+                    state:       null,
                     willTrigger: false,
                     description: null,
                     caller:      null,

@@ -13,6 +13,7 @@ import UnknownMethodError from "./error/UnknownMethodError";
 import assert from "assert";
 import PendingAction from "./PendingAction";
 import type Action from "./Action";
+// import Internals from "./Internals";
 
 export type Diffs = List<{
     op:    string, // eslint-disable-line
@@ -22,16 +23,17 @@ export type Diffs = List<{
 
 class Cursor {
     static call: any => Cursor;
-    __data:      { x: any };                            // eslint-disable-line
-    __inherited: boolean;
-    __previous:  ?Cursor;                               // eslint-disable-line
-    __next:      ?Cursor;                               // eslint-disable-line       
-    update:      any => any;                            // eslint-disable-line
-    trace:       (string, List<any>, string) => Cursor; // eslint-disable-line
-    constructor: any => Cursor;
-    get:         (string) => any;                       // eslint-disable-line
-    set:         (string, any) => Cursor;               // eslint-disable-line
-    __actions:   Object;                                // eslint-disable-line
+    __data:        { x: any };                            // eslint-disable-line
+    __inherited:   boolean;                               // eslint-disable-line
+    __previous:    ?Cursor;                               // eslint-disable-line
+    __next:        ?Cursor;                               // eslint-disable-line       
+    update:        any => any;                            // eslint-disable-line
+    trace:         (string, List<any>, string) => Cursor; // eslint-disable-line
+    constructor:   any => Cursor;                         // eslint-disable-line
+    get:           (string) => any;                       // eslint-disable-line
+    set:           (string, any) => Cursor;               // eslint-disable-line
+    __actions:     Object;                                // eslint-disable-line
+    __actionProto: Object;
 
     static assertTraceStarted(cursor: Cursor, caller: string): void {
         if(!cursor.isTracing) throw new TraceNotStartedError(`You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
@@ -87,15 +89,15 @@ class Cursor {
             writable: false
         }: Object));
 
-        inherited.prototype             = Object.create(Cursor.prototype);
-        inherited.prototype.constructor = inherited;
-        inherited.prototype.__actions   = {};
-        inherited.prototype.__inherited = true;
+        inherited.prototype               = Object.create(Cursor.prototype);
+        inherited.prototype.constructor   = inherited;
+        inherited.prototype.__actionProto = {};
+        inherited.prototype.__inherited   = true;
 
-        Object.assign(inherited.prototype.__actions, description.map((action, key) => function(...payload: Array<mixed>) {
+        Object.assign(inherited.prototype.__actionProto, description.map((action, key) => function(...payload: Array<mixed>) {
             const message = new Message(key, List(payload), this.__headers);
 
-            return action.func.call(this.__cursor, message, this.__from);
+            return action.func.call(this.__cursor.callerChanged(this.__from), message, this.__from);
         }).set("headers", function(headers: Object): { headers: Function, from: Function } {
             this.__headers = Map(headers);
 
@@ -113,11 +115,14 @@ class Cursor {
         if(data instanceof Cursor) return data;
         if(!this.__inherited)      throw new CursorAbstractError();
 
+        const x = fromJS(data);
+
         this.__data = {
-            x: fromJS(data)
+            x: x
         };
         this.__previous = previous;
         this.__next     = next;
+        this.__actions  = Object.assign({}, this.__actionProto);
 
         // needs to be copied, since we are mutating
         // the Function object otherwise
@@ -157,33 +162,33 @@ class Cursor {
         return this.__data.x.size;
     }
 
-    // _message
+    // _message => _unit.action.message
     get message(): ?Message {
-        return this.currentAction ? this.currentAction.message : null;
+        return this.currentAction ? this.currentAction.message.setCursor(this) : null;
     }
 
-    // _action
+    // _action => _unit.action
     get currentAction(): ?PendingAction {
         return this.__data.x.get("_unit").action
             .cursorChanged(this);
     }
 
-    // _action.state
-    get currentState(): string {
+    // _state => _unit.action.state
+    get currentState(): ?string {
         return this.currentAction ? this.currentAction.getState() : "waiting";
     }
 
-    // _debug.currentTrace
+    // _debug.currentTrace => _unit.debug.currentTrace
     get currentTrace(): ?Trace {
         return this.traces.first();
     }
 
-    // _debug.traces
+    // _debug.traces => _unit.debug.traces
     get traces(): List<Trace> {
         return this.__data.x.get("_unit").traces;
     }
 
-    // _state.currentError
+    // _state.currentError => _unit.action.state.currentError
     get currentError(): ?Error {
         return this.errors.last() || null;
     }
@@ -194,12 +199,12 @@ class Cursor {
         return this.__data.x.get("_unit").name;
     }
 
-    // _action.shouldTrigger
+    // _action.shouldTrigger => _unit.action.shouldTrigger
     get shouldTrigger(): boolean {
         return !this.hasRecentlyErrored && this.currentAction instanceof PendingAction ? this.currentAction.willTrigger : false;
     }
 
-    // _state.errors
+    // _state.errors => _unit.action.state.errors
     get errors(): List<Error> {
         return this.__data.x.get("_unit").errors;
     }
@@ -209,22 +214,22 @@ class Cursor {
         return this.__data.x.get("_unit").children;
     }
 
-    // _state.hasErrored
+    // _state.hasErrored => _unit.action.state.hasErrored
     get hasErrored(): boolean {
         return this.__data.x.get("_unit").hasErrored();
     }
 
-    // _state.isRecoverable
+    // _state.isRecoverable => _unit.action.state.isRecoverable
     get isRecoverable(): boolean {
         return this.__data.x.get("_unit").isRecoverable();
     }
 
-    // _debug.isTracing -> besserer name
+    // _debug.isTracing -> besserer name => _unit.debug.isTracing
     get isTracing(): boolean {
         return this.__data.x.get("_unit") && this.__data.x.get("_unit").isTracing();
     }
 
-    // _state.hasRecentlyErrored
+    // _state.hasRecentlyErrored => _unit.action.state.hasRecentlyErrored
     get hasRecentlyErrored(): boolean {
         return this.currentError !== this.undo().currentError;
     }
@@ -272,8 +277,8 @@ class Cursor {
         return this.update("_unit", internals => internals.messageReceived(message));
     }
 
-    messageChanged(message: Message): Cursor {
-        return this.update("_unit", internals => internals.messageChanged(message));
+    callerChanged(caller: string): Cursor {
+        return this.update("_unit", internals => internals.callerChanged(caller));
     }
 
     // _state.messageProcessed
@@ -308,33 +313,37 @@ class Cursor {
     }
 
     // TODO: hier nur description, rest sollte da sein
-    BEFORE(description: Action, prev: string): Cursor {
+    // .action.before(...)
+    before(description: Action, message: Message): Cursor {
         // die sind iwie anders noch?
         //
-        const message = this.message;
 
-        if(!(message instanceof Message)) return this;
-
-        return this
-            // message von this holen
+        const updated = this
             // prev von this.currentAction holen
-            .update("_unit", internals => internals.actionBefore(description, message.setCursor(this), prev))
-            .update("_unit", internals => internals.cursorChanged(this));
+            .update("_unit", internals => internals.actionBefore(description, message.setCursor(this)));
+
+        return updated.update("_unit", internals => internals.cursorChanged(updated));
     }
 
-    DONE(): Cursor {
-        return this
+    done(): Cursor {
+        const updated = this
             .update("_unit", internals => internals.actionDone());
+
+        return updated.update("_unit", internals => internals.cursorChanged(updated));
     }
 
-    ERROR(): Cursor {
-        return this
+    errored(): Cursor {
+        const updated = this
             .update("_unit", internals => internals.actionError());
+
+        return updated.update("_unit", internals => internals.cursorChanged(updated));
     }
 
-    TRIGGERS(): Cursor {
-        return this
+    triggers(): Cursor {
+        const updated = this
             .update("_unit", internals => internals.actionTriggers());
+
+        return updated.update("_unit", internals => internals.cursorChanged(updated));
     }
 }
 
