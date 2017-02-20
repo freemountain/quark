@@ -46,6 +46,8 @@ describe("TriggerTest", function() {
 
         const data = fromJS({
             _unit: (new Internals({
+                id:          "id",
+                name:        "unit",
                 actions:     fromJS([[]]),
                 description: Map({
                     blub: action

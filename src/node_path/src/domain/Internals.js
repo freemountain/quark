@@ -8,7 +8,25 @@ import AlreadyReceivedError from "./error/AlreadyReceivedError";
 import NotStartedError from "./error/NotStartedError";
 import PendingAction from "./PendingAction";
 import type Cursor from "./Cursor";
-import type Action from "./Action";
+import Action from "./Action";
+import type Runtime from "../Runtime";
+import Trigger from "./Trigger";
+import DeclaredTrigger from "./DeclaredTrigger";
+
+type InternalsData = {
+    description?: Map<string, Action>,
+    id:           string,               // eslint-disable-line
+    revision?:    number,               // eslint-disable-line
+    children?:    Map<string, Runtime>, // eslint-disable-line
+    history?:     List<*>,              // eslint-disable-line
+    errors?:      Set<Error>,           // eslint-disable-line
+    diffs?:       List<*>,              // eslint-disable-line
+    traces?:      List<Trace>,          // eslint-disable-line
+    current?:     number,               // eslint-disable-line
+    action?:      ?PendingAction,       // eslint-disable-line
+    previous?:    ?PendingAction,       // eslint-disable-line
+    name:         string                // eslint-disable-line
+}
 
 export default class Internals extends Record({
     description: Map(),
@@ -24,6 +42,13 @@ export default class Internals extends Record({
     previous:    null,
     name:        "Default"
 }) {
+    constructor(data: InternalsData) {
+        const description = data.description instanceof Map ? data.description : Map();
+
+        super(Object.assign({}, data, {
+            description: description.has("message") ? description : description.set("message", new Action(data.name, "message", List.of(new Trigger("message", new DeclaredTrigger("message")))))
+        }));
+    }
     currentTrace(): ?Trace {
         return this.traces.findLast(x => x.end === null && !x.locked);
     }
@@ -74,8 +99,10 @@ export default class Internals extends Record({
         if(this.action !== null) throw new AlreadyReceivedError();
 
         return this
-            .trace(`Message<${message.resource}>`, message.payload)
-            .set("action", new PendingAction({ message }))
+            // .set("action", new PendingAction({ message }))
+            // .trace(`Message<${message.resource}>`, message.payload)
+            // das muss hiermit klappen
+            .actionBefore(message)
             .updateCurrentTrace(trace => trace.triggered());
     }
 
@@ -106,11 +133,14 @@ export default class Internals extends Record({
         return this.update("action", action => action instanceof PendingAction ? action.finish() : action);
     }
 
-    actionBefore(description: Action, y: Message): Internals {
-        const updated = this.update("action", action => action instanceof PendingAction ? action.before(description, y, this.action) : action);
+    actionBefore(y: Message, descr?: ?Action): Internals { // eslint-disable-line
+        const description = descr instanceof Action ? descr : this.description.get("message");
+        const updated     = this.update("action", action => action instanceof PendingAction ? action.before(description, y, this.action) : new PendingAction({ message: y, description }));
+        const name        = !(descr instanceof Action) ? `Message<${y.resource}>` : description.name;
+        const trigger     = !this.action || this.action === null ? undefined : this.action.caller;    // eslint-disable-line
+        const guards      = updated.action.trigger !== null ? updated.action.trigger.guards.size : 0;
 
-        return updated
-            .trace(updated.action.description.name, updated.action.message.payload, !this.action || this.action === null ? description.name : this.action.caller, updated.action.trigger.guards.size);
+        return updated.trace(name, updated.action.message.payload, trigger, guards);
     }
 
     actionDone(): Internals {

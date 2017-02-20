@@ -2,7 +2,6 @@
 
 import Internals from "../Internals";
 import { expect } from "chai";
-import { Map } from "immutable";
 import Message from "../../Message";
 import { List } from "immutable";
 import Trace from "../../telemetry/Trace";
@@ -28,7 +27,8 @@ describe("InternalsTest", function() {
 
     it("creates internals", function() {
         const internals = new Internals({
-            name: "Blub"
+            name: "Blub",
+            id:   "id"
         });
 
         expect(internals.toJS()).to.eql({
@@ -38,21 +38,56 @@ describe("InternalsTest", function() {
             errors:      [],
             history:     [],
             children:    {},
-            id:          null,
-            description: {},
+            id:          "id",
             revision:    0,
             current:     0,
             action:      null,
-            previous:    null
+            previous:    null,
+            description: {
+                message: {
+                    name:     "message",
+                    before:   [],
+                    cancel:   [],
+                    done:     [],
+                    error:    [],
+                    progress: [],
+                    unit:     "Blub",
+                    triggers: [{
+                        action: "message",
+                        delay:  0,
+                        emits:  "message",
+                        guards: 0,
+                        params: []
+                    }]
+                }
+            }
         });
 
-        expect(internals.get("description")).to.eql(Map());
+        expect(internals.get("description").toJS()).to.eql({
+            message: {
+                name:     "message",
+                before:   [],
+                cancel:   [],
+                done:     [],
+                error:    [],
+                progress: [],
+                unit:     "Blub",
+                triggers: [{
+                    action: "message",
+                    delay:  0,
+                    emits:  "message",
+                    guards: 0,
+                    params: []
+                }]
+            }
+        });
     });
 
     it("checks the action functions", function() {
         const message   = new Message("/blub", List());
         const internals = new Internals({
-            name: "blub"
+            name: "blub",
+            id:   "id"
         });
 
         expect(() => internals.messageProcessed()).to.throw("NotStartedError: Can\'t finish a message before starting.");
@@ -64,7 +99,8 @@ describe("InternalsTest", function() {
     it("starts and updates a trace", function() {
         const message   = new Message("/blub", List());
         const internals = new Internals({
-            name: "blub"
+            name: "blub",
+            id:   "id"
         });
 
         expect(internals.isTracing()).to.equal(false);
@@ -88,24 +124,56 @@ describe("InternalsTest", function() {
                     payload:  [],
                     resource: "/blub"
                 },
-                description: null,
+                description: {
+                    name:     "message",
+                    before:   [],
+                    cancel:   [],
+                    done:     [],
+                    error:    [],
+                    progress: [],
+                    unit:     "blub",
+                    triggers: [{
+                        action: "message",
+                        delay:  0,
+                        emits:  "message",
+                        guards: 0,
+                        params: []
+                    }]
+                },
                 caller:      null,
                 trigger:     null,
-                start:       null,
-                state:       null,
+                previous:    null,
+                state:       "before",
                 willTrigger: false
             },
             previous:    null,
             current:     0,
-            description: {},
             diffs:       [],
             errors:      [],
             children:    {},
             history:     [],
-            id:          null,
+            id:          "id",
             name:        "blub",
             revision:    0,
-            traces:      [{
+            description: {
+                message: {
+                    name:     "message",
+                    before:   [],
+                    cancel:   [],
+                    done:     [],
+                    error:    [],
+                    progress: [],
+                    unit:     "blub",
+                    triggers: [{
+                        action: "message",
+                        delay:  0,
+                        emits:  "message",
+                        guards: 0,
+                        params: []
+                    }]
+                }
+            },
+            traces: [{
                 id:       3,
                 parent:   null,
                 end:      null,
@@ -143,24 +211,56 @@ describe("InternalsTest", function() {
                     payload:  [],
                     resource: "/blub"
                 },
-                state:       null,
+                state:       "before",
                 willTrigger: false,
-                description: null,
-                caller:      null,
-                trigger:     null,
-                start:       null
+                description: {
+                    name:     "message",
+                    before:   [],
+                    cancel:   [],
+                    done:     [],
+                    error:    [],
+                    progress: [],
+                    unit:     "blub",
+                    triggers: [{
+                        action: "message",
+                        delay:  0,
+                        emits:  "message",
+                        guards: 0,
+                        params: []
+                    }]
+                },
+                caller:   null,
+                trigger:  null,
+                previous: null
             },
             previous:    null,
             current:     0,
-            description: {},
             diffs:       [],
             errors:      [],
             history:     [],
             children:    {},
-            id:          null,
+            id:          "id",
             name:        "blub",
             revision:    0,
-            traces:      [{
+            description: {
+                message: {
+                    name:     "message",
+                    before:   [],
+                    cancel:   [],
+                    done:     [],
+                    error:    [],
+                    progress: [],
+                    unit:     "blub",
+                    triggers: [{
+                        action: "message",
+                        delay:  0,
+                        emits:  "message",
+                        guards: 0,
+                        params: []
+                    }]
+                }
+            },
+            traces: [{
                 id:       3,
                 parent:   null,
                 end:      null,
@@ -196,7 +296,8 @@ describe("InternalsTest", function() {
 
     it("works with the error functions", function() {
         const internals = new Internals({
-            name: "Blub"
+            name: "Blub",
+            id:   "id"
         });
 
         expect(internals.hasErrored()).to.equal(false);
@@ -206,13 +307,15 @@ describe("InternalsTest", function() {
         expect(internals.error(new Error("huhu")).hasErrored()).to.equal(true);
         expect(internals.error(new Error("huhu")).isRecoverable()).to.equal(false);
 
-        const e = class Rec extends CoreComponentError {
+        const e = new (class Rec extends CoreComponentError {
             constructor() {
                 super("Rec");
             }
-        };
 
-        e.isRecoverable = () => true;
+            isRecoverable() {
+                return true;
+            }
+        })();
 
         expect(internals.error(e).isRecoverable()).to.equal(true);
     });

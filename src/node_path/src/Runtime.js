@@ -34,6 +34,7 @@ export default class Runtime extends Duplex {
     set:              (string, any) => Cursor; // eslint-disable-line
     messageReceived:  Message => Cursor;       // eslint-disable-line
     messageProcessed: () => Cursor;            // eslint-disable-line
+    get:              string => any            // eslint-disable-line
 
     static SetAction = curry(function(key, value) {
         return this.set(key, value);
@@ -158,7 +159,9 @@ export default class Runtime extends Duplex {
 
         const actions0 = Runtime
             .allActions(instance)
-            .map((x, key) => (instance: Object)[key] && (instance: Object)[key].__Action ? (instance: Object)[key].__Action : new Action(name, key, triggers, (instance: Object)[key] === Runtime.prototype.message ? null : (instance: Object)[key]));
+            .map((x, key) => (instance: Object)[key] && (instance: Object)[key].__Action ? (instance: Object)[key].__Action : new Action(name, key, triggers, (instance: Object)[key]));
+
+            // .map((x, key) => (instance: Object)[key] && (instance: Object)[key].__Action ? (instance: Object)[key].__Action : new Action(name, key, triggers, (instance: Object)[key] === Runtime.prototype.message ? null : (instance: Object)[key]));
 
         const actions = actions0
             .concat(triggers
@@ -270,6 +273,8 @@ export default class Runtime extends Duplex {
 
         return before
             // adde hier ne before zeit zum trace
+            // hier wird iwie messag noch nit richtig gesetzt,
+            // wg mismatch resource <-> action beim einstieg
             .then(x => this.message.call(x, x.currentMessage))
             // adde hier ne handle zeit zum trace
             .then(x => Runtime.diff(this, x))
@@ -294,14 +299,21 @@ export default class Runtime extends Duplex {
     }
 
     message(...args: Array<*>): Cursor {
-        assert(false, "Every unit needs to implement a 'message' action");
+        // assert(false, "Every unit needs to implement a 'message' action");
+
+        if(this instanceof Cursor) return this;
 
         console.log(args);
         return new Cursor({});
     }
 
     before(message: Message): Cursor {
-        return this.messageReceived(message);
+        if(!(this.get("_unit") instanceof Object)) return this.messageReceived(message);
+
+        return this
+            .messageReceived(message);
+            // hier muss als trigger message rein
+            // .before(this.get("_unit").description.get("message"), message);
     }
 
     done(diffs: Diffs): Cursor { // eslint-disable-line

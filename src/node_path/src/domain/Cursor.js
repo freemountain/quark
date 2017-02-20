@@ -14,6 +14,7 @@ import assert from "assert";
 import PendingAction from "./PendingAction";
 import type Action from "./Action";
 // import Internals from "./Internals";
+import { schedule } from "../Runloop";
 
 export type Diffs = List<{
     op:    string, // eslint-disable-line
@@ -89,23 +90,25 @@ class Cursor {
             writable: false
         }: Object));
 
-        inherited.prototype               = Object.create(Cursor.prototype);
-        inherited.prototype.constructor   = inherited;
-        inherited.prototype.__actionProto = {};
-        inherited.prototype.__inherited   = true;
+        inherited.prototype             = Object.create(Cursor.prototype);
+        inherited.prototype.constructor = inherited;
+        inherited.prototype.__actions   = {};
+        inherited.prototype.__inherited = true;
 
-        Object.assign(inherited.prototype.__actionProto, description.map((action, key) => function(...payload: Array<mixed>) {
+        // wirkt alles, wie hier ne race condition
+        Object.assign(inherited.prototype.__actions, description.map((action, key) => function(...payload: Array<mixed>) {
             const message = new Message(key, List(payload), this.__headers);
+            const func    = action.func.bind(this.__cursor.callerChanged(this.__caller), message);
 
-            return action.func.call(this.__cursor.callerChanged(this.__from), message, this.__from);
-        }).set("headers", function(headers: Object): { headers: Function, from: Function } {
+            return this.__delay ? schedule(func, this.__delay) : func();
+        }).set("headers", function(headers: Object): { headers: Function, after: Function } {
             this.__headers = Map(headers);
 
-            return this;
-        }).set("from", function(from: string): { headers: Function, from: Function } {
-            this.__from = from;
+            return Object.assign({}, this);
+        }).set("after", function(delay: number): { headers: Function, after: Function } {
+            this.__delay = delay;
 
-            return this;
+            return Object.assign({}, this);
         }).toJS());
 
         return inherited;
@@ -122,7 +125,6 @@ class Cursor {
         };
         this.__previous = previous;
         this.__next     = next;
-        this.__actions  = Object.assign({}, this.__actionProto);
 
         // needs to be copied, since we are mutating
         // the Function object otherwise
@@ -153,9 +155,11 @@ class Cursor {
         // blocking, the states of the cursor and this should be always
         // consistent, since we have effectively an access control mechanism
         // in place.
-        this.__actions.__cursor = this;
 
-        return this.__actions;
+        this.__actions.__cursor = this;
+        this.__actions.__caller = !this.currentAction ? this.__actions.__caller : `${this.currentAction.name}.${this.currentAction.state}`;
+
+        return Object.assign({}, this.__actions);
     }
 
     get size(): number {
@@ -164,18 +168,19 @@ class Cursor {
 
     // _message => _unit.action.message
     get message(): ?Message {
-        return this.currentAction ? this.currentAction.message.setCursor(this) : null;
+        return this.currentAction && this.currentAction.message instanceof Message ? this.currentAction.message.setCursor(this) : null;
     }
 
     // _action => _unit.action
     get currentAction(): ?PendingAction {
-        return this.__data.x.get("_unit").action
-            .cursorChanged(this);
+        const maybeAction = this.__data.x.get("_unit").action;
+
+        return maybeAction && maybeAction !== null ? maybeAction.cursorChanged(this) : maybeAction;
     }
 
     // _state => _unit.action.state
     get currentState(): ?string {
-        return this.currentAction ? this.currentAction.getState() : "waiting";
+        return this.currentAction ? this.currentAction.state : null;
     }
 
     // _debug.currentTrace => _unit.debug.currentTrace
@@ -251,6 +256,7 @@ class Cursor {
             .toList();
 
         const next = patched
+            .update("_unit", internals => internals.set("action", this.currentAction))
             .update("_unit", internals => internals.set("traces", updated))
             .update("_unit", internals => internals.update("errors", x => x.concat(patchSet.errors)));
 
@@ -308,6 +314,10 @@ class Cursor {
             .trace.error(e);
     }
 
+    defer(op: Function, delay?: number): Promise<*> {
+        return schedule(op, delay);
+    }
+
     toString(): string {
         return `${this.constructor.name}<${this.__data.x instanceof Collection ? this.__data.x.filter((_, key) => key !== "_unit").toString() : JSON.stringify(this.__data)}>`;
     }
@@ -315,35 +325,28 @@ class Cursor {
     // TODO: hier nur description, rest sollte da sein
     // .action.before(...)
     before(description: Action, message: Message): Cursor {
-        // die sind iwie anders noch?
-        //
-
-        const updated = this
-            // prev von this.currentAction holen
-            .update("_unit", internals => internals.actionBefore(description, message.setCursor(this)));
-
-        return updated.update("_unit", internals => internals.cursorChanged(updated));
+        return this
+            .update("_unit", internals => internals.actionBefore(message.setCursor(this), description));
     }
 
     done(): Cursor {
-        const updated = this
+        return this
             .update("_unit", internals => internals.actionDone());
-
-        return updated.update("_unit", internals => internals.cursorChanged(updated));
     }
 
     errored(): Cursor {
-        const updated = this
+        return this
             .update("_unit", internals => internals.actionError());
-
-        return updated.update("_unit", internals => internals.cursorChanged(updated));
     }
 
     triggers(): Cursor {
-        const updated = this
+        return this
             .update("_unit", internals => internals.actionTriggers());
+    }
 
-        return updated.update("_unit", internals => internals.cursorChanged(updated));
+    finish(error?: Error): Cursor {
+        return (error ? this.trace.error(error) : this.trace.end())
+            .update("_unit", internals => internals.actionFinished());
     }
 }
 

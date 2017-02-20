@@ -2,7 +2,7 @@
 
 import Cursor from "../Cursor";
 import { expect } from "chai";
-import { fromJS, List, Map } from "immutable";
+import { fromJS, List, Map, Set } from "immutable";
 import sinon from "sinon";
 import Action from "../Action";
 import Internals from "../Internals";
@@ -34,6 +34,7 @@ describe("CursorTest", function() { // eslint-disable-line
         const data   = fromJS({
             _unit: new Internals({
                 name:        "Unit",
+                id:          "id",
                 description: Map({
                     blub: action
                 }),
@@ -54,6 +55,7 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor.toJS()).to.eql({
             _unit: new Internals({
                 name:        "Unit",
+                id:          "id",
                 description: Map({
                     blub: action
                 }),
@@ -82,11 +84,11 @@ describe("CursorTest", function() { // eslint-disable-line
 
         const data    = fromJS({
             _unit: new Internals({
-                name:        "Unit",
-                description: Map(),
-                action:      new PendingAction({ message }),
-                errors:      List.of(error),
-                children:    children
+                name:     "Unit",
+                id:       "id",
+                action:   new PendingAction({ message }),
+                errors:   Set.of(error),
+                children: children
             })
         });
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
@@ -105,9 +107,9 @@ describe("CursorTest", function() { // eslint-disable-line
         const message = new Message("/test", List.of(1));
         const data    = fromJS({
             _unit: new Internals({
-                name:        "Unit",
-                description: Map(),
-                action:      message
+                name:   "Unit",
+                action: message,
+                id:     "id"
             })
         });
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
@@ -127,24 +129,56 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       null,
+                    state:       "before",
                     willTrigger: false,
                     caller:      null,
                     trigger:     null,
-                    start:       null,
-                    description: null
+                    previous:    null,
+                    description: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
                 },
                 previous:    null,
                 children:    {},
                 current:     0,
-                description: {},
                 diffs:       [],
                 errors:      [],
                 history:     [],
-                id:          null,
+                id:          "id",
                 name:        "Unit",
                 revision:    0,
-                traces:      [{
+                description: {
+                    message: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
+                },
+                traces: [{
                     id:       1,
                     parent:   null,
                     end:      null,
@@ -180,24 +214,56 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       null,
+                    state:       "before",
                     willTrigger: false,
-                    description: null,
                     caller:      null,
                     trigger:     null,
-                    start:       null
+                    previous:    null,
+                    description: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
                 },
                 previous:    null,
                 children:    {},
                 current:     0,
-                description: {},
                 diffs:       [],
                 errors:      [],
                 history:     [],
-                id:          null,
+                id:          "id",
                 name:        "Unit",
                 revision:    0,
-                traces:      [{
+                description: {
+                    message: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
+                },
+                traces: [{
                     id:       1,
                     parent:   null,
                     end:      null,
@@ -233,24 +299,56 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       null,
+                    state:       "before",
                     willTrigger: false,
-                    description: null,
                     caller:      null,
                     trigger:     null,
-                    start:       null
+                    previous:    null,
+                    description: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
                 },
                 previous:    null,
                 children:    {},
                 current:     0,
-                description: {},
                 diffs:       [],
                 errors:      [],
                 history:     [],
-                id:          null,
+                id:          "id",
                 name:        "Unit",
                 revision:    0,
-                traces:      [{
+                description: {
+                    message: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
+                },
+                traces: [{
                     id:       1,
                     parent:   null,
                     end:      null,
@@ -299,24 +397,56 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       null,
+                    state:       "before",
                     willTrigger: false,
-                    description: null,
                     caller:      null,
                     trigger:     null,
-                    start:       null
+                    previous:    null,
+                    description: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
                 },
                 previous:    null,
                 children:    {},
                 current:     0,
-                description: {},
                 diffs:       [],
                 errors:      [],
                 history:     [],
-                id:          null,
+                id:          "id",
                 name:        "Unit",
                 revision:    0,
-                traces:      [{
+                description: {
+                    message: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
+                },
+                traces: [{
                     id:       1,
                     parent:   null,
                     end:      null,
@@ -382,24 +512,56 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       null,
+                    state:       "before",
                     willTrigger: false,
-                    description: null,
                     caller:      null,
                     trigger:     null,
-                    start:       null
+                    previous:    null,
+                    description: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
                 },
                 previous:    null,
                 children:    {},
                 current:     0,
-                description: {},
                 diffs:       [],
                 errors:      [],
                 history:     [],
-                id:          null,
+                id:          "id",
                 name:        "Unit",
                 revision:    0,
-                traces:      [{
+                description: {
+                    message: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
+                },
+                traces: [{
                     id:       1,
                     parent:   null,
                     end:      null,
@@ -477,24 +639,56 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       null,
+                    state:       "before",
                     willTrigger: false,
-                    description: null,
                     caller:      null,
                     trigger:     null,
-                    start:       null
+                    previous:    null,
+                    description: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
                 },
                 previous:    null,
                 children:    {},
                 current:     0,
-                description: {},
                 diffs:       [],
                 errors:      [],
                 history:     [],
-                id:          null,
+                id:          "id",
                 name:        "Unit",
                 revision:    0,
-                traces:      [{
+                description: {
+                    message: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
+                },
+                traces: [{
                     id:       1,
                     parent:   null,
                     end:      null,
@@ -582,24 +776,56 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       null,
+                    state:       "before",
                     willTrigger: false,
-                    description: null,
                     caller:      null,
                     trigger:     null,
-                    start:       null
+                    previous:    null,
+                    description: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
                 },
                 previous:    null,
                 children:    {},
                 current:     0,
-                description: {},
                 diffs:       [],
                 errors:      [],
                 history:     [],
-                id:          null,
+                id:          "id",
                 name:        "Unit",
                 revision:    0,
-                traces:      [{
+                description: {
+                    message: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
+                },
+                traces: [{
                     id:       1,
                     parent:   null,
                     end:      null,
@@ -687,24 +913,56 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 action: {
                     message:     message.toJS(),
-                    state:       null,
+                    state:       "before",
                     willTrigger: false,
-                    description: null,
                     caller:      null,
                     trigger:     null,
-                    start:       null
+                    previous:    null,
+                    description: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
                 },
                 previous:    null,
                 children:    {},
                 current:     0,
-                description: {},
                 diffs:       [],
                 errors:      [],
                 history:     [],
-                id:          null,
+                id:          "id",
                 name:        "Unit",
                 revision:    0,
-                traces:      [{
+                description: {
+                    message: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
+                },
+                traces: [{
                     id:       1,
                     parent:   null,
                     end:      null,
@@ -795,23 +1053,55 @@ describe("CursorTest", function() { // eslint-disable-line
                 action:   null,
                 previous: {
                     message:     message.toJS(),
-                    state:       null,
+                    state:       "before",
                     willTrigger: false,
-                    description: null,
                     caller:      null,
                     trigger:     null,
-                    start:       null
+                    previous:    null,
+                    description: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
                 },
                 children:    {},
                 current:     0,
-                description: {},
                 diffs:       [],
                 errors:      [],
                 history:     [],
-                id:          null,
+                id:          "id",
                 name:        "Unit",
                 revision:    0,
-                traces:      [{
+                description: {
+                    message: {
+                        name:     "message",
+                        before:   [],
+                        cancel:   [],
+                        done:     [],
+                        error:    [],
+                        progress: [],
+                        unit:     "Unit",
+                        triggers: [{
+                            action: "message",
+                            delay:  0,
+                            emits:  "message",
+                            guards: 0,
+                            params: []
+                        }]
+                    }
+                },
+                traces: [{
                     id:       1,
                     parent:   null,
                     end:      12,
@@ -904,7 +1194,9 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: new Internals({
                 description: Map({
                     blub: action
-                })
+                }),
+                id:   "id",
+                name: "unit"
             }),
             test: "test"
         });
@@ -931,8 +1223,8 @@ describe("CursorTest", function() { // eslint-disable-line
         const message = new Message("/test", List.of(1));
         const data    = fromJS({
             _unit: (new Internals({
-                name:        "Unit",
-                description: Map()
+                name: "Unit",
+                id:   "id"
             })).messageReceived(message),
             test: "test"
         });
@@ -953,8 +1245,8 @@ describe("CursorTest", function() { // eslint-disable-line
     it("patches and diffs with a cursor", function() {
         const data = fromJS({
             _unit: (new Internals({
-                name:        "Unit",
-                description: Map()
+                name: "Unit",
+                id:   "id"
             })),
             test: "test"
         });
