@@ -34,7 +34,7 @@ class Test2 extends Runtime {
                 .or(() => false)
             .if(name => typeof name === "string" && name.indexOf("test") !== -1)
             .with(5)
-            .after(10)
+            .after(20)
     }
 
     static props = {
@@ -211,7 +211,7 @@ describe("ActionTest", function() {
             before:   [],
             triggers: [{
                 emits:  "message",
-                delay:  10,
+                delay:  20,
                 guards: 2,
                 params: [5],
                 action: "message"
@@ -936,7 +936,7 @@ describe("ActionTest", function() {
                                     id:       16,
                                     parent:   15,
                                     start:    25,
-                                    end:      34,
+                                    end:      35,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test2",
@@ -975,7 +975,7 @@ describe("ActionTest", function() {
                                     id:       19,
                                     parent:   15,
                                     start:    28,
-                                    end:      35,
+                                    end:      34,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test9",
@@ -1469,7 +1469,7 @@ describe("ActionTest", function() {
                                                 id:       27,
                                                 parent:   22,
                                                 start:    44,
-                                                end:      48,
+                                                end:      47,
                                                 guards:   0,
                                                 locked:   true,
                                                 name:     "Test::test4Error",
@@ -1482,7 +1482,7 @@ describe("ActionTest", function() {
                                                 id:       28,
                                                 parent:   22,
                                                 start:    45,
-                                                end:      49,
+                                                end:      48,
                                                 guards:   0,
                                                 locked:   true,
                                                 name:     "Test::test4Error2",
@@ -1506,7 +1506,7 @@ describe("ActionTest", function() {
                                                 traces:   [{
                                                     id:       30,
                                                     parent:   29,
-                                                    start:    47,
+                                                    start:    49,
                                                     end:      50,
                                                     guards:   0,
                                                     locked:   true,

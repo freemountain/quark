@@ -106,4 +106,8 @@ export default class PendingAction extends Record({
     get op(): ?Function {
         return this.description !== null ? this.description.op : null;
     }
+
+    get delay(): number {
+        return this.trigger !== null ? this.trigger.delay : 0;
+    }
 }

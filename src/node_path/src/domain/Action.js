@@ -71,8 +71,8 @@ class Action {
                 //  // dann muss nur en teil der autologik
                 //  // wahrscheinlich anders platziert werden
                 //  .then(cursor => cursor.send.before())
-                //  .then(cursor => cursor.send.handle())
-                //  .then(cursor => this.send[cursor.currentAction.errored ? "error" : "done"]()
+                //  .then(cursor => cursor.send.delay().handle())
+                //  .then(cursor => this.send.after())
                 //  .then(cursor => cursor.send.finish())
                 //  .catch(guarded.error(e))
                 const guarded = description.applyGuards(befored);
@@ -80,18 +80,19 @@ class Action {
                 return !guarded.shouldTrigger ? Promise.resolve(guarded) : description
                     // das in trigger() {} + guarded.message nehmen, dadurch message aus
                     // trigger() raus, dann vereinheitlichen
-                    // this.send.before()
+                    // this.send.before() -> this.send.triggers
                     .applyTriggers(guarded, y.setCursor(guarded))
                     .then(cursor => cursor.triggers())
-                    .then(cursor => cursor.defer(() => description.applyAction(cursor), cursor.currentAction.trigger.delay))
-                    // das muss noch in den cursor
+                    .then(cursor => description.applyAction(cursor))
+
+                    // das in cursor.after
                     .then(cursor => [cursor, cursor.hasRecentlyErrored ? cursor.currentError : null])
                     // diesen error durchschleifen auch durch den cursor jagen
                     .then(([cursor, error]) => [error ? cursor.errored() : cursor.done(), error])
                     .then(([cursor, error]) => Promise.all([description.applyTriggers(cursor, cursor.message), error]))
+                    // bis hier
+
                     .then(([cursor, error]) => cursor.finish(error))
-                    // .then(([cursor, error]) => error ? cursor.trace.error(error) : cursor.trace.end())
-                    // .then(cursor => cursor.update("_unit", internals => internals.actionFinished()))
                     .catch(e => guarded.error(e));
             } catch(e) {
                 return Promise.resolve(this.error(e));
@@ -131,6 +132,7 @@ class Action {
         Object.freeze(this);
     }
 
+    // action: guards
     applyGuards(cursor: Cursor): Cursor {
         if(!cursor.currentAction || cursor.currentAction === null) return cursor.error(new Error("no action"));
 
@@ -139,6 +141,7 @@ class Action {
         return x.shouldTrigger ? x.trace.triggered() : x.trace.end();
     }
 
+    // action: triggers
     applyTriggers(cursor: Cursor, message: Message): Promise<Cursor> {
         if(!(cursor.currentAction instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
 
@@ -148,14 +151,19 @@ class Action {
             .then(x => cursor.patch(...x));
     }
 
+    // action handle
     applyAction(cursor: Cursor): Promise<Cursor> { // eslint-disable-line
         if(!cursor.message)         return Promise.reject(new Error("fucking cursor"));
         if(!(cursor.currentAction)) return Promise.reject(new Error("fucking cursor"));
 
         try {
-            if(!cursor.currentAction.op) return Promise.resolve(cursor);
+            const delay   = cursor.currentAction.delay;
+            const op      = cursor.currentAction.op;
+            const payload = cursor.message.payload;
 
-            const result = cursor.currentAction.op.call(cursor, ...cursor.message.payload.toJS());
+            if(!op) return cursor.defer(() => cursor, delay);
+
+            const result = cursor.defer(op.bind(cursor, ...payload.toJS()), delay);
 
             return Action.onResult(cursor, result);
         } catch(e) {
