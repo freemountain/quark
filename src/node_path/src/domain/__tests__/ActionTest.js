@@ -14,6 +14,7 @@ import sinon from "sinon";
 import { schedule } from "../../Runloop";
 import GuardError from "../error/GuardError";
 import UnknownMessageError from "../error/UnknownMessageError";
+import PendingAction from "../PendingAction";
 
 const triggered = DeclaredAction.triggered;
 
@@ -225,6 +226,12 @@ describe("ActionTest", function() {
 
     it("applies an action", function() {
         const unit = new Test();
+
+        const message = (new Message("/actions/test", List.of("test")));
+        const descr   = new Action("Test", "test", unit.__triggers, function(name) {
+            return this.set("name", name);
+        });
+
         const data = Map({
             name:  "jupp",
             _unit: new Internals({
@@ -234,18 +241,19 @@ describe("ActionTest", function() {
             })
         });
 
-        const message  = (new Message("/actions/test", List.of("test")));
-        const cursor   = (new unit.__Cursor(data))
+        const cursor = (new unit.__Cursor(data))
             .update("_unit", internals => internals.messageReceived(message))
             .trace("message", message.get("payload"))
-            .trace.triggered();
-
-        const descr = new Action("Test", "test", unit.__triggers, function(name) {
-            return this.set("name", name);
-        });
+            .trace.triggered()
+            .update("_unit", internals => internals.set("action", new PendingAction({
+                message:     message,
+                state:       "triggers",
+                description: descr,
+                trigger:     descr.triggers.first()
+            })));
 
         return unit.ready()
-            .then(() => descr.applyAction(cursor, message.setCursor(cursor)))
+            .then(() => unit.handle.call(cursor, message.setCursor(cursor)))
             .then(x => { // eslint-disable-line
                 const result  = x
                     .trace.end()
@@ -722,6 +730,22 @@ describe("ActionTest", function() {
                 progress: [],
                 done:     [],
                 error:    []
+            },
+            handle: {
+                unit:     "Test3",
+                name:     "handle",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "handle",
+                    guards: 0,
+                    params: [],
+                    action: "handle"
+                }]
             },
             test3: {
                 unit:     "Test3",
@@ -1254,14 +1278,14 @@ describe("ActionTest", function() {
                         expect(filtered.toJS()).to.eql(cursor3.toJS());
                         expect(y.hasErrored).to.equal(true, "cursor should have errored");
                         expect(y.errors.toJS()).to.eql([
-                            new Error("an error3"),
                             new Error("an error2"),
+                            new Error("an error3"),
                             new GuardError("Test", "test5", 1, new Error("an error6")),
                             new Error("an error"),
-                            new GuardError("Test", "test7", 1, new Error("an error7")),
                             new Error("an error4"),
                             new Error("an error5"),
-                            new GuardError("Test", "test6", 1, new Error("an error8"))
+                            new GuardError("Test", "test7", 1, new Error("an error8")),
+                            new GuardError("Test", "test6", 1, new Error("an error7"))
                         ]);
 
                         expect(result.traces.toJS()).to.eql([{

@@ -37,16 +37,6 @@ class Action {
         !Action.ERROR(x)
     );
 
-    static onResult(cursor: Cursor, result: (Promise<Cursor> | Error | Cursor | void)): Promise<Cursor> { // eslint-disable-line
-        if(result instanceof Error)   return cursor.update("_unit", internals => internals.error(result));
-        if(result instanceof Promise) return result
-            .then(Action.onResult.bind(null, cursor))
-            .catch(Action.onResult.bind(null, cursor));
-
-        return Promise.resolve(result instanceof Cursor ? result : cursor);
-    }
-
-
     static Handler(description: Action): Handler {
         return function(z?: Message): Promise<Cursor> { // eslint-disable-line
             if(!(this instanceof Cursor)) return Promise.reject(new InvalidCursorError(this, description));
@@ -82,8 +72,7 @@ class Action {
                     // trigger() raus, dann vereinheitlichen
                     // this.send.before() -> this.send.triggers
                     .applyTriggers(guarded, y.setCursor(guarded))
-                    .then(cursor => cursor.triggers())
-                    .then(cursor => description.applyAction(cursor))
+                    .then(cursor => cursor.send.handle())
 
                     // das in cursor.after
                     .then(cursor => [cursor, cursor.hasRecentlyErrored ? cursor.currentError : null])
@@ -149,26 +138,6 @@ class Action {
         return Promise
             .all((this: Object)[cursor.currentAction.state].map(x => (cursor.send: Object)[x.emits](...message.payload)).toJS())
             .then(x => cursor.patch(...x));
-    }
-
-    // action handle
-    applyAction(cursor: Cursor): Promise<Cursor> { // eslint-disable-line
-        if(!cursor.message)         return Promise.reject(new Error("fucking cursor"));
-        if(!(cursor.currentAction)) return Promise.reject(new Error("fucking cursor"));
-
-        try {
-            const delay   = cursor.currentAction.delay;
-            const op      = cursor.currentAction.op;
-            const payload = cursor.message.payload;
-
-            if(!op) return cursor.defer(() => cursor, delay);
-
-            const result = cursor.defer(op.bind(cursor, ...payload.toJS()), delay);
-
-            return Action.onResult(cursor, result);
-        } catch(e) {
-            return Promise.resolve(cursor.update("_unit", internals => internals.error(e)));
-        }
     }
 
     willTrigger(cursor: Cursor, ...messages: Array<Message>): boolean { // eslint-disable-line

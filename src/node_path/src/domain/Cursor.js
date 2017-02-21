@@ -95,17 +95,17 @@ class Cursor {
         inherited.prototype.__actions   = {};
         inherited.prototype.__inherited = true;
 
-        // wirkt alles, wie hier ne race condition
         Object.assign(inherited.prototype.__actions, description.map((action, key) => function(...payload: Array<mixed>) {
             const message = new Message(key, List(payload), this.__headers);
-            const func    = action.func.bind(this.__cursor.callerChanged(this.__caller), message);
+            // hier das callerChanged muss noch in internals
+            const func    = action.func.bind(this.__cursor.callerChanged(), message);
 
             return this.__delay ? schedule(func, this.__delay) : func();
         }).set("headers", function(headers: Object): { headers: Function, after: Function } {
             this.__headers = Map(headers);
 
             return Object.assign({}, this);
-        }).set("after", function(delay: number): { headers: Function, after: Function } {
+        }).set("delay", function(delay: number): { headers: Function, after: Function } {
             this.__delay = delay;
 
             return Object.assign({}, this);
@@ -114,7 +114,7 @@ class Cursor {
         return inherited;
     }
 
-    constructor(data: any, previous?: Cursor, next?: Cursor) { // eslint-disable-line
+    constructor(data: any, previous?: Cursor, next?: Cursor) {
         if(data instanceof Cursor) return data;
         if(!this.__inherited)      throw new CursorAbstractError();
 
@@ -143,23 +143,14 @@ class Cursor {
         return mapper(this);
     }
 
+    get _unit() {
+        return this.__data.x.get("_unit");
+    }
+
     get send(): Object {
-        // naively this looks fine, but we are effectively
-        // mutating the prototype
-        // further thinking reveals potencial race conditions,
-        // where two instances of cursor could overwrite them-
-        // selfes when triggering actions in parallel, so it seems
-        // potencially really bad
-        // But since this is a getter and the only possibility to send
-        // an actions and every operation following this getter is also
-        // blocking, the states of the cursor and this should be always
-        // consistent, since we have effectively an access control mechanism
-        // in place.
-
-        this.__actions.__cursor = this;
-        this.__actions.__caller = !this.currentAction ? this.__actions.__caller : `${this.currentAction.name}.${this.currentAction.state}`;
-
-        return Object.assign({}, this.__actions);
+        return Object.assign({}, this.__actions, {
+            __cursor: this
+        });
     }
 
     get size(): number {
@@ -173,7 +164,7 @@ class Cursor {
 
     // _action => _unit.action
     get currentAction(): ?PendingAction {
-        const maybeAction = this.__data.x.get("_unit").action;
+        const maybeAction = this._unit.action;
 
         return maybeAction && maybeAction !== null ? maybeAction.cursorChanged(this) : maybeAction;
     }
@@ -190,7 +181,7 @@ class Cursor {
 
     // _debug.traces => _unit.debug.traces
     get traces(): List<Trace> {
-        return this.__data.x.get("_unit").traces;
+        return this._unit.traces;
     }
 
     // _state.currentError => _unit.action.state.currentError
@@ -201,7 +192,7 @@ class Cursor {
     // das hier müsste statisch im konstruktor gemacht werden
     // _unit.name
     get currentContext(): string {
-        return this.__data.x.get("_unit").name;
+        return this._unit.name;
     }
 
     // _action.shouldTrigger => _unit.action.shouldTrigger
@@ -211,27 +202,27 @@ class Cursor {
 
     // _state.errors => _unit.action.state.errors
     get errors(): List<Error> {
-        return this.__data.x.get("_unit").errors;
+        return this._unit.errors;
     }
 
     // _unit.children
     get children(): List<Runtime> {
-        return this.__data.x.get("_unit").children;
+        return this._unit.children;
     }
 
     // _state.hasErrored => _unit.action.state.hasErrored
     get hasErrored(): boolean {
-        return this.__data.x.get("_unit").hasErrored();
+        return this._unit.hasErrored();
     }
 
     // _state.isRecoverable => _unit.action.state.isRecoverable
     get isRecoverable(): boolean {
-        return this.__data.x.get("_unit").isRecoverable();
+        return this._unit.isRecoverable();
     }
 
     // _debug.isTracing -> besserer name => _unit.debug.isTracing
     get isTracing(): boolean {
-        return this.__data.x.get("_unit") && this.__data.x.get("_unit").isTracing();
+        return this._unit && this._unit.isTracing();
     }
 
     // _state.hasRecentlyErrored => _unit.action.state.hasRecentlyErrored
@@ -249,7 +240,7 @@ class Cursor {
         }, { diffs: Set(), traces: List(), errors: List() });
 
         const patched = patch(this.__data.x, patchSet.diffs.toList());
-        const updated = this.__data.x.get("_unit").traces
+        const updated = this._unit.traces
             .concat(patchSet.traces.filter(x => !x.locked))
             .groupBy(x => x.name)
             .map(x => x.first())
@@ -280,11 +271,11 @@ class Cursor {
 
     // _state.messageReceived
     messageReceived(message: Message): Cursor {
-        return this.update("_unit", internals => internals.messageReceived(message));
+        return this.update("_unit", internals => internals.messageReceived(message.setCursor(this)));
     }
 
-    callerChanged(caller: string): Cursor {
-        return this.update("_unit", internals => internals.callerChanged(caller));
+    callerChanged(): Cursor {
+        return this.update("_unit", internals => internals.callerChanged());
     }
 
     // _state.messageProcessed

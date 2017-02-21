@@ -1,12 +1,9 @@
-// @flow
-
 import { Duplex } from "stream";
 import assert from "assert";
 import diff from "immutablediff";
 import { Map, List, fromJS } from "immutable";
 // import Trigger from "./domain/Trigger";
 // import uuid from "uuid";
-// import Cursor from "./domain/Cursor";
 import curry from "lodash.curry";
 import Trigger from "./domain/Trigger";
 import Action from "./domain/Action";
@@ -20,6 +17,7 @@ import Internals from "./domain/Internals";
 import Message from "./Message";
 import type { Diffs } from "./domain/Cursor";
 import Trace from "./telemetry/Trace";
+import PendingAction from "./domain/PendingAction";
 
 export default class Runtime extends Duplex {
     id:               string;                  // eslint-disable-line
@@ -35,6 +33,7 @@ export default class Runtime extends Duplex {
     messageReceived:  Message => Cursor;       // eslint-disable-line
     messageProcessed: () => Cursor;            // eslint-disable-line
     get:              string => any            // eslint-disable-line
+    handle:           any => Cursor;           // eslint-disable-line
 
     static SetAction = curry(function(key, value) {
         return this.set(key, value);
@@ -118,6 +117,15 @@ export default class Runtime extends Duplex {
         });
     }
 
+    static onResult(cursor: Cursor, result: (Promise<Cursor> | Error | Cursor | void)): Promise<Cursor> { // eslint-disable-line
+        if(result instanceof Error)   return cursor.update("_unit", internals => internals.error(result));
+        if(result instanceof Promise) return result
+            .then(Runtime.onResult.bind(null, cursor))
+            .catch(Runtime.onResult.bind(null, cursor));
+
+        return Promise.resolve(result instanceof Cursor ? result : cursor);
+    }
+
     static allActions(x: Object, carry: Map<string, DeclaredAction> = Map()): Map<string, DeclaredAction> {
         const proto = Object.getPrototypeOf(x);
 
@@ -159,9 +167,19 @@ export default class Runtime extends Duplex {
 
         const actions0 = Runtime
             .allActions(instance)
-            .map((x, key) => (instance: Object)[key] && (instance: Object)[key].__Action ? (instance: Object)[key].__Action : new Action(name, key, triggers, (instance: Object)[key]));
+            .map((x, key) => {
+                const op = (instance: Object)[key];
 
-            // .map((x, key) => (instance: Object)[key] && (instance: Object)[key].__Action ? (instance: Object)[key].__Action : new Action(name, key, triggers, (instance: Object)[key] === Runtime.prototype.message ? null : (instance: Object)[key]));
+                // fieser hack, hier muss der konstruktor von
+                // action angepasst werden
+                if(key === "handle") {
+                    op.__Action = true;
+
+                    return new Action(name, key, triggers, op);
+                }
+
+                return op && op.__Action ? op.__Action : new Action(name, key, triggers, op);
+            });
 
         const actions = actions0
             .concat(triggers
@@ -296,6 +314,27 @@ export default class Runtime extends Duplex {
         assert(false, "Every unit needs to implement an 'init' action");
 
         return new Cursor({});
+    }
+
+    handle(): Promise<Cursor> { // eslint-disable-line
+        if(!(this instanceof Cursor))                      return Promise.reject(new Error("fucking cursor"));
+        if(!(this.message instanceof Message))             return Promise.reject(new Error("fucking cursor"));
+        if(!(this.currentAction instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
+
+        try {
+            const cursor  = this.triggers();
+            const delay   = cursor.currentAction.delay;
+            const op      = cursor.currentAction.op;
+            const payload = cursor.message.payload;
+
+            if(!op) return cursor.defer(() => cursor, delay);
+
+            const result = cursor.defer(op.bind(cursor, ...payload.toJS()), delay);
+
+            return Runtime.onResult(cursor, result);
+        } catch(e) {
+            return Promise.resolve(this.update("_unit", internals => internals.error(e)));
+        }
     }
 
     message(...args: Array<*>): Cursor {

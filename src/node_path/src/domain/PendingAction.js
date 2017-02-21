@@ -40,18 +40,19 @@ export default class PendingAction extends Record({
     // die müssen alle ne action kriegen
     // dann kann actionChanged weg
     before(action: Action, message: Message, caller?: ?PendingAction): PendingAction { // eslint-disable-line
-        // const prev2   = this.description ? `${this.description.name}.${this.state}` : action.name;
+        const prev2   = this.description ? `${this.description.name}.${this.state}` : action.name;
         const prev    = !caller || caller === null || !caller.caller || caller.caller === null ? (action instanceof Action ? action.name : "message") : caller.caller; // eslint-disable-line
         const trigger = action.triggerFor(prev);
 
-        // Hier da stimmt noch stuff nich
-        // if(prev !== prev2) console.log(prev, prev2, this.description);
+        // hier muss prev2 === prev sein, dann kann caller raus
+        // und wahrscheinlich ich auch callerChanged bei internals
+        if(prev2 !== prev) console.log("huhu", prev, prev2);
         return this
             .set("message", message.preparePayload(trigger))
             .set("trigger", trigger)
             .set("description", action || null)
             .set("previous", this.description)
-            .set("caller", this.getState())
+            .set("caller", prev)
             .changeState("before");
     }
 
@@ -85,14 +86,6 @@ export default class PendingAction extends Record({
     changeState(state: State): PendingAction {
         // oder hslt einfach hier
         return this.set("state", state);
-    }
-
-    // get state()
-    getState(): ?string { // eslint-disable-line
-        if(this.description !== null) return this.description.name;
-        if(this.state === null)       return this.state;
-
-        return `${this.message.currentDir}.${this.state}`;
     }
 
     get name(): string { // eslint-disable-line

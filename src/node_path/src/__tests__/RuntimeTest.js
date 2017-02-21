@@ -1,5 +1,3 @@
-// @flow
-
 import Runtime from "../Runtime";
 import { expect } from "chai";
 import TestUnit from "./mocks/TestUnit";
@@ -55,6 +53,7 @@ describe("RuntimeTest", function() {
 
         expect(methods.keySeq().toJS()).to.eql([
             "init",
+            "handle",
             "message",
             "action",
             "children",
@@ -189,6 +188,23 @@ describe("RuntimeTest", function() {
                     guards: 1,
                     params: [],
                     action: "message.before"
+                }]
+            },
+
+            handle: {
+                unit:     "TestUnit",
+                name:     "handle",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "handle",
+                    guards: 0,
+                    params: [],
+                    action: "handle"
                 }]
             },
 

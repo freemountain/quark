@@ -10,6 +10,7 @@ import Cursor from "../Cursor";
 import Internals from "../Internals";
 import Message from "../../Message";
 import Uuid from "../../util/Uuid";
+import Runtime from "../../Runtime";
 
 describe("TriggerTest", function() {
     beforeEach(function() {
@@ -47,10 +48,11 @@ describe("TriggerTest", function() {
         const data = fromJS({
             _unit: (new Internals({
                 id:          "id",
-                name:        "unit",
+                name:        "Test",
                 actions:     fromJS([[]]),
                 description: Map({
-                    blub: action
+                    blub:   action,
+                    handle: new Action("Test", "handle", List(), Runtime.prototype.handle)
                 })
             })).messageReceived(message),
             value: 2
@@ -61,7 +63,10 @@ describe("TriggerTest", function() {
 
         return action.func
             .call(cursor, new Message("/blub", List([1, "huhu"])))
-            .then(x => expect(x.get("x")).to.equal(9));
+            .then(x => {
+                expect(x.errors.toJS()).to.eql([]);
+                expect(x.get("x")).to.equal(9);
+            });
     });
 
     it("merges two triggers", function() {

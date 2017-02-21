@@ -9,6 +9,7 @@ import Internals from "../Internals";
 import Message from "../../Message";
 import Uuid from "../../util/Uuid";
 import PendingAction from "../PendingAction";
+import Runtime from "../../Runtime";
 
 describe("CursorTest", function() { // eslint-disable-line
     beforeEach(function() {
@@ -28,6 +29,7 @@ describe("CursorTest", function() { // eslint-disable-line
 
     it("creates a cursor for a unit", function() {
         const func = function(a) {
+            console.log("func", a);
             return this.update("test", x => x.length + 2 + a);
         };
         const action = new Action("Test", "blub", List(), func);
@@ -36,7 +38,8 @@ describe("CursorTest", function() { // eslint-disable-line
                 name:        "Unit",
                 id:          "id",
                 description: Map({
-                    blub: action
+                    blub:   action,
+                    handle: new Action("Unit", "handle", List(), Runtime.prototype.handle)
                 }),
                 children: Map({
                     test: Map()
@@ -57,7 +60,8 @@ describe("CursorTest", function() { // eslint-disable-line
                 name:        "Unit",
                 id:          "id",
                 description: Map({
-                    blub: action
+                    blub:   action,
+                    handle: new Action("Unit", "handle", List(), Runtime.prototype.handle)
                 }),
                 children: Map({
                     test: Map()
@@ -69,10 +73,22 @@ describe("CursorTest", function() { // eslint-disable-line
             test: {}
         });
         expect(cursor.send.blub).to.be.a("function");
+
+        const message = (new Message("/actions/test", List.of(1)));
+
         return cursor
-            .messageReceived(new Message("/test", List.of(1)))
+            .messageReceived(message)
+            .update("_unit", internals => internals.set("action", new PendingAction({
+                message:     message,
+                state:       "triggers",
+                description: action,
+                trigger:     action.triggers.first()
+            })))
             .send.headers({ test: "test" }).blub(1)
-            .then(x => expect(x.get("test")).to.equal(7));
+            .then(x => {
+                expect(x.errors.toJS()).to.eql([]);
+                expect(x.get("test")).to.equal(7);
+            });
     });
 
     it("checks some methods on a cursor", function() {

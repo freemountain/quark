@@ -135,7 +135,7 @@ export default class Internals extends Record({
 
     actionBefore(y: Message, descr?: ?Action): Internals { // eslint-disable-line
         const description = descr instanceof Action ? descr : this.description.get("message");
-        const updated     = this.update("action", action => action instanceof PendingAction ? action.before(description, y, this.action) : new PendingAction({ message: y, description }));
+        const updated     = this.callerChanged().update("action", action => action instanceof PendingAction ? action.before(description, y, this.action) : new PendingAction({ message: y, description }));
         const name        = !(descr instanceof Action) ? `Message<${y.resource}>` : description.name;
         const trigger     = !this.action || this.action === null ? undefined : this.action.caller;    // eslint-disable-line
         const guards      = updated.action.trigger !== null ? updated.action.trigger.guards.size : 0;
@@ -144,26 +144,36 @@ export default class Internals extends Record({
     }
 
     actionDone(): Internals {
-        return this.update("action", action => action instanceof PendingAction ? action.done() : action);
+        return this
+            .callerChanged()
+            .update("action", action => action instanceof PendingAction ? action.done() : action);
     }
 
     actionError(): Internals {
-        return this.update("action", action => action instanceof PendingAction ? action.error() : action);
+        return this
+            .callerChanged()
+            .update("action", action => action instanceof PendingAction ? action.error() : action);
     }
 
     actionTriggers(): Internals {
-        return this.update("action", action => action instanceof PendingAction ? action.triggers() : action);
+        return this
+            .callerChanged()
+            .update("action", action => action instanceof PendingAction ? action.triggers() : action);
     }
 
     actionWillTrigger(): Internals {
-        return this.update("action", action => action.set("willTrigger", true));
+        return this
+            .callerChanged()
+            .update("action", action => action.set("willTrigger", true));
     }
 
     actionWontTrigger(): Internals {
-        return this.update("action", action => action.set("willTrigger", false));
+        return this
+            .callerChanged()
+            .update("action", action => action.set("willTrigger", false));
     }
 
-    callerChanged(caller: string) {
-        return this.update("action", action => action instanceof PendingAction ? action.set("caller", caller) : action);
+    callerChanged() {
+        return this.update("action", action => action instanceof PendingAction ? action.set("caller", !this.action ? this.action : `${this.action.name}.${this.action.state}`) : action);
     }
 }
