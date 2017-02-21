@@ -337,7 +337,6 @@ describe("ActionTest", function() {
                     .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
-                expect(x.hasErrored).to.equal(true);
                 expect(x.errors.toJS()).to.eql([new UnknownMessageError("Test", "test", "huhu")]);
                 expect(result.traces.toJS()).to.eql([{
                     id:       4,
@@ -412,6 +411,8 @@ describe("ActionTest", function() {
                 const filtered = result
                     .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
+                expect(cursor.errors.toJS()).to.eql([]);
+                // hier gehen iwie die bindings verloren
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
                 expect(result.traces.toJS()).to.eql([{
                     id:       4,
@@ -709,6 +710,54 @@ describe("ActionTest", function() {
                 done:     [],
                 error:    []
             },
+            after: {
+                unit:     "Test3",
+                name:     "after",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "after",
+                    guards: 0,
+                    params: [],
+                    action: "after"
+                }]
+            },
+            before: {
+                unit:     "Test3",
+                name:     "before",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "before",
+                    guards: 0,
+                    params: [],
+                    action: "before"
+                }]
+            },
+            guards: {
+                unit:     "Test3",
+                name:     "guards",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "guards",
+                    guards: 0,
+                    params: [],
+                    action: "guards"
+                }]
+            },
             test2: {
                 unit:     "Test3",
                 name:     "test2",
@@ -960,7 +1009,7 @@ describe("ActionTest", function() {
                                     id:       16,
                                     parent:   15,
                                     start:    25,
-                                    end:      35,
+                                    end:      34,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test2",
@@ -999,7 +1048,7 @@ describe("ActionTest", function() {
                                     id:       19,
                                     parent:   15,
                                     start:    28,
-                                    end:      34,
+                                    end:      35,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test9",
@@ -1012,7 +1061,7 @@ describe("ActionTest", function() {
                                     id:       20,
                                     parent:   15,
                                     start:    29,
-                                    end:      32,
+                                    end:      33,
                                     guards:   1,
                                     locked:   true,
                                     name:     "Test::init",
@@ -1021,10 +1070,10 @@ describe("ActionTest", function() {
                                     error:    null,
                                     trigger:  "before",
                                     traces:   [{
-                                        id:       21,
+                                        id:       22,
                                         parent:   20,
-                                        start:    30,
-                                        end:      31,
+                                        start:    31,
+                                        end:      32,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::init<Guard1>",
@@ -1035,9 +1084,9 @@ describe("ActionTest", function() {
                                         traces:   []
                                     }]
                                 }, {
-                                    id:       22,
+                                    id:       21,
                                     parent:   15,
-                                    start:    33,
+                                    start:    30,
                                     end:      36,
                                     guards:   0,
                                     locked:   true,
@@ -1172,7 +1221,7 @@ describe("ActionTest", function() {
                                     id:       20,
                                     parent:   15,
                                     start:    29,
-                                    end:      32,
+                                    end:      33,
                                     guards:   1,
                                     locked:   true,
                                     name:     "Test::init",
@@ -1181,10 +1230,10 @@ describe("ActionTest", function() {
                                     error:    null,
                                     trigger:  "before",
                                     traces:   [{
-                                        id:       21,
+                                        id:       22,
                                         parent:   20,
-                                        start:    30,
-                                        end:      31,
+                                        start:    31,
+                                        end:      32,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::init<Guard1>",
@@ -1195,9 +1244,9 @@ describe("ActionTest", function() {
                                         traces:   []
                                     }]
                                 }, {
-                                    id:       22,
+                                    id:       21,
                                     parent:   15,
-                                    start:    33,
+                                    start:    30,
                                     end:      36,
                                     guards:   0,
                                     locked:   true,
@@ -1276,16 +1325,15 @@ describe("ActionTest", function() {
                             .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
                         expect(filtered.toJS()).to.eql(cursor3.toJS());
-                        expect(y.hasErrored).to.equal(true, "cursor should have errored");
                         expect(y.errors.toJS()).to.eql([
+                            new GuardError("Test", "test5", 1, new Error("an error6")),
                             new Error("an error2"),
                             new Error("an error3"),
-                            new GuardError("Test", "test5", 1, new Error("an error6")),
                             new Error("an error"),
+                            new GuardError("Test", "test6", 1, new Error("an error7")),
                             new Error("an error4"),
                             new Error("an error5"),
-                            new GuardError("Test", "test7", 1, new Error("an error8")),
-                            new GuardError("Test", "test6", 1, new Error("an error7"))
+                            new GuardError("Test", "test7", 1, new Error("an error8"))
                         ]);
 
                         expect(result.traces.toJS()).to.eql([{
@@ -1316,7 +1364,7 @@ describe("ActionTest", function() {
                                     id:       11,
                                     parent:   10,
                                     start:    15,
-                                    end:      18,
+                                    end:      19,
                                     guards:   1,
                                     locked:   true,
                                     name:     "Test::init",
@@ -1325,10 +1373,10 @@ describe("ActionTest", function() {
                                     error:    null,
                                     trigger:  "before",
                                     traces:   [{
-                                        id:       12,
+                                        id:       13,
                                         parent:   11,
-                                        start:    16,
-                                        end:      17,
+                                        start:    17,
+                                        end:      18,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::init<Guard1>",
@@ -1339,9 +1387,9 @@ describe("ActionTest", function() {
                                         traces:   []
                                     }]
                                 }, {
-                                    id:       13,
+                                    id:       12,
                                     parent:   10,
-                                    start:    19,
+                                    start:    16,
                                     end:      54,
                                     guards:   1,
                                     locked:   true,
@@ -1350,7 +1398,7 @@ describe("ActionTest", function() {
                                     triggers: true,
                                     traces:   [{
                                         id:       14,
-                                        parent:   13,
+                                        parent:   12,
                                         start:    20,
                                         end:      21,
                                         guards:   0,
@@ -1363,7 +1411,7 @@ describe("ActionTest", function() {
                                         traces:   []
                                     }, {
                                         id:       15,
-                                        parent:   13,
+                                        parent:   12,
                                         start:    22,
                                         end:      33,
                                         guards:   0,
@@ -1389,7 +1437,7 @@ describe("ActionTest", function() {
                                         error:   new Error("an error2")
                                     }, {
                                         id:       16,
-                                        parent:   13,
+                                        parent:   12,
                                         start:    23,
                                         end:      31,
                                         guards:   0,
@@ -1402,7 +1450,7 @@ describe("ActionTest", function() {
                                         error:    new Error("an error3")
                                     }, {
                                         id:       17,
-                                        parent:   13,
+                                        parent:   12,
                                         start:    24,
                                         end:      29,
                                         guards:   3,
@@ -1441,7 +1489,7 @@ describe("ActionTest", function() {
                                         error:   null
                                     }, {
                                         id:       21,
-                                        parent:   13,
+                                        parent:   12,
                                         start:    34,
                                         end:      53,
                                         guards:   0,
@@ -1467,7 +1515,7 @@ describe("ActionTest", function() {
                                                 id:       25,
                                                 parent:   22,
                                                 start:    40,
-                                                end:      43,
+                                                end:      46,
                                                 guards:   1,
                                                 locked:   true,
                                                 name:     "Test::test7",
@@ -1476,10 +1524,10 @@ describe("ActionTest", function() {
                                                 error:    null,
                                                 trigger:  "error",
                                                 traces:   [{
-                                                    id:       26,
+                                                    id:       29,
                                                     parent:   25,
-                                                    start:    41,
-                                                    end:      42,
+                                                    start:    44,
+                                                    end:      45,
                                                     guards:   0,
                                                     locked:   true,
                                                     name:     "Test::test7<Guard1>",
@@ -1490,10 +1538,10 @@ describe("ActionTest", function() {
                                                     traces:   []
                                                 }]
                                             }, {
-                                                id:       27,
+                                                id:       26,
                                                 parent:   22,
-                                                start:    44,
-                                                end:      47,
+                                                start:    41,
+                                                end:      48,
                                                 guards:   0,
                                                 locked:   true,
                                                 name:     "Test::test4Error",
@@ -1503,10 +1551,10 @@ describe("ActionTest", function() {
                                                 trigger:  "error",
                                                 traces:   []
                                             }, {
-                                                id:       28,
+                                                id:       27,
                                                 parent:   22,
-                                                start:    45,
-                                                end:      48,
+                                                start:    42,
+                                                end:      49,
                                                 guards:   0,
                                                 locked:   true,
                                                 name:     "Test::test4Error2",
@@ -1516,9 +1564,9 @@ describe("ActionTest", function() {
                                                 trigger:  "error",
                                                 traces:   []
                                             }, {
-                                                id:       29,
+                                                id:       28,
                                                 parent:   22,
-                                                start:    46,
+                                                start:    43,
                                                 end:      51,
                                                 guards:   0,
                                                 locked:   true,
@@ -1529,8 +1577,8 @@ describe("ActionTest", function() {
                                                 trigger:  "error",
                                                 traces:   [{
                                                     id:       30,
-                                                    parent:   29,
-                                                    start:    49,
+                                                    parent:   28,
+                                                    start:    47,
                                                     end:      50,
                                                     guards:   0,
                                                     locked:   true,

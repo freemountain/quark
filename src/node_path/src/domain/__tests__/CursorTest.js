@@ -39,7 +39,9 @@ describe("CursorTest", function() { // eslint-disable-line
                 id:          "id",
                 description: Map({
                     blub:   action,
-                    handle: new Action("Unit", "handle", List(), Runtime.prototype.handle)
+                    handle: new Action("Unit", "handle", List(), Runtime.prototype.handle),
+                    guards: new Action("Unit", "guards", List(), Runtime.prototype.guards),
+                    before: new Action("Unit", "guards", List(), Runtime.prototype.before)
                 }),
                 children: Map({
                     test: Map()
@@ -61,7 +63,9 @@ describe("CursorTest", function() { // eslint-disable-line
                 id:          "id",
                 description: Map({
                     blub:   action,
-                    handle: new Action("Unit", "handle", List(), Runtime.prototype.handle)
+                    handle: new Action("Unit", "handle", List(), Runtime.prototype.handle),
+                    guards: new Action("Unit", "guards", List(), Runtime.prototype.guards),
+                    before: new Action("Unit", "guards", List(), Runtime.prototype.before)
                 }),
                 children: Map({
                     test: Map()
@@ -115,7 +119,6 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor.errors.toJS()).to.eql([error]);
         expect(cursor.currentError).to.equal(error);
         expect(cursor.currentContext).to.equal("Unit");
-        expect(cursor.hasErrored).to.equal(true);
         expect(cursor.children).to.equal(children);
     });
 
@@ -1252,8 +1255,7 @@ describe("CursorTest", function() { // eslint-disable-line
         const cursor2 = cursor.error(new Error("huhu"));
 
         expect(cursor.currentError).to.equal(null);
-        expect(cursor.hasErrored).to.equal(false);
-        expect(cursor2.hasErrored).to.equal(true);
+        expect(cursor.errors.toJS()).to.eql([]);
         expect(cursor2.errors.toJS()).to.eql([new Error("huhu")]);
         expect(cursor2.currentError).to.eql(new Error("huhu"));
     });

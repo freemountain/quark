@@ -52,7 +52,9 @@ describe("TriggerTest", function() {
                 actions:     fromJS([[]]),
                 description: Map({
                     blub:   action,
-                    handle: new Action("Test", "handle", List(), Runtime.prototype.handle)
+                    handle: new Action("Test", "handle", List(), Runtime.prototype.handle),
+                    guards: new Action("Test", "guards", List(), Runtime.prototype.guards),
+                    before: new Action("Test", "guards", List(), Runtime.prototype.before)
                 })
             })).messageReceived(message),
             value: 2

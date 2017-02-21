@@ -52,13 +52,16 @@ describe("RuntimeTest", function() {
         const methods = Runtime.allActions(new TestUnit());
 
         expect(methods.keySeq().toJS()).to.eql([
-            "init",
-            "handle",
             "message",
-            "action",
-            "children",
+            "handle",
             "diffs",
-            "props"
+            "guards",
+            "init",
+            "props",
+            "action",
+            "after",
+            "children",
+            "before"
         ]);
     });
 
@@ -208,6 +211,57 @@ describe("RuntimeTest", function() {
                 }]
             },
 
+            before: {
+                unit:     "TestUnit",
+                name:     "before",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "before",
+                    guards: 0,
+                    params: [],
+                    action: "before"
+                }]
+            },
+
+            guards: {
+                unit:     "TestUnit",
+                name:     "guards",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "guards",
+                    guards: 0,
+                    params: [],
+                    action: "guards"
+                }]
+            },
+
+            after: {
+                unit:     "TestUnit",
+                name:     "after",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "after",
+                    guards: 0,
+                    params: [],
+                    action: "after"
+                }]
+            },
+
             children: {
                 unit:     "TestUnit",
                 name:     "children",
@@ -324,7 +378,7 @@ describe("RuntimeTest", function() {
         expect(message2.get("payload").first()).to.equal(payload.first());
 
         return unit.message.call(cursor, message2).then(x => {
-            expect(x.hasErrored).to.equal(false, x.currentError !== null ? x.currentError.message : "");
+            expect(x.errors.toJS()).to.eql([]);
             expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql({
                 name: "jupp"
             });

@@ -69,11 +69,9 @@ export default class Runtime extends Duplex {
         return (
             x.indexOf("_") === -1 &&
             x !== "constructor" &&
-            x !== "done" &&
-            x !== "error" &&
             x !== "cancel" &&
             x !== "progress" &&
-            x !== "before" &&
+            x !== "receive" &&
             x !== "trigger" &&
             x !== "ready" &&
             x !== "state" &&
@@ -85,7 +83,8 @@ export default class Runtime extends Duplex {
             x !== "trace" &&
             x !== "onError" &&
             x !== "shouldThrow" &&
-            x !== "toJS"
+            x !== "toJS" &&
+            x !== "finish"
         );
     }
 
@@ -124,6 +123,15 @@ export default class Runtime extends Duplex {
             .catch(Runtime.onResult.bind(null, cursor));
 
         return Promise.resolve(result instanceof Cursor ? result : cursor);
+    }
+
+    static applyTriggers(cursor: Cursor, message: Message): Promise<Cursor> {
+        if(!(cursor.currentAction instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
+
+        // hier muss jetz noch das this weg
+        return Promise
+            .all((this: Object)[cursor.currentAction.state].map(x => (cursor.send: Object)[x.emits](...message.payload)).toJS())
+            .then(x => cursor.patch(...x));
     }
 
     static allActions(x: Object, carry: Map<string, DeclaredAction> = Map()): Map<string, DeclaredAction> {
@@ -167,12 +175,20 @@ export default class Runtime extends Duplex {
 
         const actions0 = Runtime
             .allActions(instance)
-            .map((x, key) => {
+            .map((x, key) => { // eslint-disable-line
                 const op = (instance: Object)[key];
 
                 // fieser hack, hier muss der konstruktor von
                 // action angepasst werden
-                if(key === "handle") {
+                if(
+                    key === "handle" ||
+                    key === "after" ||
+                    key === "error" ||
+                    key === "done" ||
+                    key === "finish" ||
+                    key === "before" ||
+                    key === "guards"
+                ) {
                     op.__Action = true;
 
                     return new Action(name, key, triggers, op);
@@ -281,24 +297,12 @@ export default class Runtime extends Duplex {
         const message = new Message(data);
         const cursor  = defaults(this.cursor).to(new this.__Cursor(message.payload.first(), this));
 
-        const before = new Promise(resolve => {
-            try {
-                return resolve(this.before.call(cursor, message.setCursor(cursor)));
-            } catch(e) {
-                return resolve(e);
-            }
-        });
-
-        return before
-            // adde hier ne before zeit zum trace
-            // hier wird iwie messag noch nit richtig gesetzt,
-            // wg mismatch resource <-> action beim einstieg
+        return this.receive.call(cursor, message.setCursor(cursor))
             .then(x => this.message.call(x, x.currentMessage))
-            // adde hier ne handle zeit zum trace
+            // adde das diffen kann in ne action, wenn der cursor die history
+            // kennt (property __start adden bei messagereceived)
             .then(x => Runtime.diff(this, x))
-            // adde hier ne diff zeit zum trace
-            .then(update => !update.cursor.hasErrored ? this.done.call(update.cursor, update.diffs) : this.error.call(update.cursor))
-            // adde hier ne diff zeit zum trace
+            .then(update => this.finish.call(update.cursor))
             .then(x => {
                 if(x.isRecoverable) return Runtime.update(this, x);
 
@@ -323,13 +327,12 @@ export default class Runtime extends Duplex {
 
         try {
             const cursor  = this.triggers();
-            const delay   = cursor.currentAction.delay;
             const op      = cursor.currentAction.op;
             const payload = cursor.message.payload;
 
-            if(!op) return cursor.defer(() => cursor, delay);
+            if(!op) return Promise.resolve(cursor);
 
-            const result = cursor.defer(op.bind(cursor, ...payload.toJS()), delay);
+            const result = op.call(cursor, ...payload.toJS());
 
             return Runtime.onResult(cursor, result);
         } catch(e) {
@@ -337,30 +340,51 @@ export default class Runtime extends Duplex {
         }
     }
 
-    message(...args: Array<*>): Cursor {
-        // assert(false, "Every unit needs to implement a 'message' action");
+    before(): Promise<Cursor> {
+        return Promise.resolve(this);
 
-        if(this instanceof Cursor) return this;
+        /*
+         * hier dat muckt iwie
+         * const action  = data.payload.first();
+        const message = data.payload.get(1);
 
-        console.log(args);
-        return new Cursor({});
+        // TODO: hier nur description, rest sollte da
+        // sein
+        // .action.before(...)
+        return Promise.resolve(this
+         .update("_unit", internals => internals.actionBefore(message.setCursor(this), action)));*/
     }
 
-    before(message: Message): Cursor {
-        if(!(this.get("_unit") instanceof Object)) return this.messageReceived(message);
+    message(): Promise<Cursor> {
+        if(!(this instanceof Cursor)) return Promise.reject(new Error("fucking Cursor"));
 
-        return this
-            .messageReceived(message);
+        return Promise.resolve(this);
+    }
+
+    receive(message: Message): Promise<Cursor> {
+        if(!(this.get("_unit") instanceof Object)) return Promise.reject(new Error("unit not present"));
+
+        return Promise.resolve(this.messageReceived(message));
             // hier muss als trigger message rein
             // .before(this.get("_unit").description.get("message"), message);
     }
 
-    done(diffs: Diffs): Cursor { // eslint-disable-line
-        return this.messageProcessed();
+    after(): Promise<Cursor> {
+        return Promise.resolve(this.hasRecentlyErrored ? this.done() : this.errored());
     }
 
-    error(): Cursor {
-        return this.messageProcessed();
+    guards(): Promise<Cursor> {
+        if(!(this instanceof Cursor))                      return Promise.reject(new Error("fucking cursor"));
+        if(!(this.currentAction instanceof PendingAction)) return Promise.resolve(this.error(new Error("no action")));
+
+        const x = this.currentAction.trigger.shouldTrigger(this, this.message ? this.message.payload : List());
+
+        return Promise.resolve(x.shouldTrigger ? x.trace.triggered() : x.trace.end());
+    }
+
+
+    finish(): Promise<Cursor> {
+        return Promise.resolve(this.messageProcessed());
     }
 
     // muss man sehn, ob das nötig is,

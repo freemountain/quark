@@ -47,6 +47,7 @@ export default class PendingAction extends Record({
         // hier muss prev2 === prev sein, dann kann caller raus
         // und wahrscheinlich ich auch callerChanged bei internals
         if(prev2 !== prev) console.log("huhu", prev, prev2);
+        console.log("Pending.before", prev, trigger.emits, action.triggers.map(x => [x.emits, x.params.get(0)]).toJS());
         return this
             .set("message", message.preparePayload(trigger))
             .set("trigger", trigger)

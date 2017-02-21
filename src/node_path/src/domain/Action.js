@@ -49,42 +49,64 @@ class Action {
 
             // hier das ganze in der message funktion mqchen
             try {
-                const befored = this.before(description, y);
-
-                // const guarded = befored
-                //    .send.guard()
+                 //  Cursor promise aware machen, sodass
                 //
-                // if(!guarded.shouldTrigger) return...
+                //  cursor
+                //      .send.message
+                //      .set()
+                //      .send... geht
                 //
-                // return guarded
-                //  // eigtl gehören hier die messages rein,
-                //  // dann muss nur en teil der autologik
-                //  // wahrscheinlich anders platziert werden
-                //  .then(cursor => cursor.send.before())
-                //  .then(cursor => cursor.send.delay().handle())
-                //  .then(cursor => this.send.after())
-                //  .then(cursor => cursor.send.finish())
+                //  parallel:
+                //
+                //  cursor.send
+                //      .message()
+                //      .handle()
+                //
+                //  => das hängt im kern auch mit den computed props zusammen
+                //
+                // return cursor
+                //      .send.before())
+                //      // delay muss für defer auch automatisch gesetzt werden
+                //      .send.delay(befored.currentAction instanceof PendingAction ? befored.currentAction.delay : 0).handle())
+                //      .send.after())
                 //  .catch(guarded.error(e))
-                const guarded = description.applyGuards(befored);
 
-                return !guarded.shouldTrigger ? Promise.resolve(guarded) : description
-                    // das in trigger() {} + guarded.message nehmen, dadurch message aus
-                    // trigger() raus, dann vereinheitlichen
-                    // this.send.before() -> this.send.triggers
-                    .applyTriggers(guarded, y.setCursor(guarded))
-                    .then(cursor => cursor.send.handle())
+                // before():
+                //
+                // this
+                //  .before(description, y)
+                //  .send.guards()
+                //
+                // soll eigentlich raus: siehe runtime.before
+                const befored = this.update("_unit", internals => internals.actionBefore(y.setCursor(this), description));
 
-                    // das in cursor.after
-                    .then(cursor => [cursor, cursor.hasRecentlyErrored ? cursor.currentError : null])
-                    // diesen error durchschleifen auch durch den cursor jagen
-                    .then(([cursor, error]) => [error ? cursor.errored() : cursor.done(), error])
-                    .then(([cursor, error]) => Promise.all([description.applyTriggers(cursor, cursor.message), error]))
-                    // bis hier
+                return befored.send.before(description, y)
+                    .then(x => {
+                        console.log("after send", x.currentAction.trigger.emits, x.currentAction.trigger.params.get(0));
+                        return x;
+                    })
+                    .then(x => x.send.guards())
+                    .then(x => {
+                        const delay = x.currentAction instanceof PendingAction ? x.currentAction.delay : 0;
 
-                    .then(([cursor, error]) => cursor.finish(error))
-                    .catch(e => guarded.error(e));
+                        return !x.shouldTrigger ? x : description.applyTriggers(x, y.setCursor(x))
+                            .then(cursor => cursor.send.delay(delay).handle())
+                            // .then(([cursor, error]) => [cursor.send.after(), error])
+                            // hier muss dieser errorwichs in action rein (cursor.currentAction.error)
+                            .then(cursor => [cursor, cursor.hasRecentlyErrored ? cursor.currentError : null])
+                            .then(([cursor, error]) => [cursor.hasRecentlyErrored ? cursor.errored() : cursor.done(), error])
+                            .then(([cursor, error]) => Promise.all([description.applyTriggers(cursor, cursor.message), error]))
+                            .then(([cursor, error]) => cursor.finish(error))
+                            // bis hier
+                            .catch(e => x.error(e));
+                    })
+                    .catch(e => this
+                        .trace(description.name, List(), this.currentState)
+                        .error(e));
             } catch(e) {
-                return Promise.resolve(this.error(e));
+                return Promise.resolve(this
+                    .trace(description.name, List(), this.currentState)
+                    .error(e));
             }
         };
     }
@@ -119,15 +141,6 @@ class Action {
             .concat(own ? [] : [new Trigger(name, new DeclaredTrigger(name))]);
 
         Object.freeze(this);
-    }
-
-    // action: guards
-    applyGuards(cursor: Cursor): Cursor {
-        if(!cursor.currentAction || cursor.currentAction === null) return cursor.error(new Error("no action"));
-
-        const x = cursor.currentAction.trigger.shouldTrigger(cursor, cursor.message ? cursor.message.payload : List());
-
-        return x.shouldTrigger ? x.trace.triggered() : x.trace.end();
     }
 
     // action: triggers

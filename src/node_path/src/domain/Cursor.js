@@ -12,7 +12,6 @@ import CursorAbstractError from "./error/CursorAbstractError";
 import UnknownMethodError from "./error/UnknownMethodError";
 import assert from "assert";
 import PendingAction from "./PendingAction";
-import type Action from "./Action";
 // import Internals from "./Internals";
 import { schedule } from "../Runloop";
 
@@ -100,7 +99,8 @@ class Cursor {
             // hier das callerChanged muss noch in internals
             const func    = action.func.bind(this.__cursor.callerChanged(), message);
 
-            return this.__delay ? schedule(func, this.__delay) : func();
+            // hier muss en cursor rauskommen der das alles abwartet
+            return this.__delay ? this.__cursor.defer(func, this.__delay) : func();
         }).set("headers", function(headers: Object): { headers: Function, after: Function } {
             this.__headers = Map(headers);
 
@@ -211,10 +211,6 @@ class Cursor {
     }
 
     // _state.hasErrored => _unit.action.state.hasErrored
-    get hasErrored(): boolean {
-        return this._unit.hasErrored();
-    }
-
     // _state.isRecoverable => _unit.action.state.isRecoverable
     get isRecoverable(): boolean {
         return this._unit.isRecoverable();
@@ -311,13 +307,6 @@ class Cursor {
 
     toString(): string {
         return `${this.constructor.name}<${this.__data.x instanceof Collection ? this.__data.x.filter((_, key) => key !== "_unit").toString() : JSON.stringify(this.__data)}>`;
-    }
-
-    // TODO: hier nur description, rest sollte da sein
-    // .action.before(...)
-    before(description: Action, message: Message): Cursor {
-        return this
-            .update("_unit", internals => internals.actionBefore(message.setCursor(this), description));
     }
 
     done(): Cursor {

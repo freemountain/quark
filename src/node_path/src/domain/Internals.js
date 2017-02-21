@@ -137,9 +137,10 @@ export default class Internals extends Record({
         const description = descr instanceof Action ? descr : this.description.get("message");
         const updated     = this.callerChanged().update("action", action => action instanceof PendingAction ? action.before(description, y, this.action) : new PendingAction({ message: y, description }));
         const name        = !(descr instanceof Action) ? `Message<${y.resource}>` : description.name;
-        const trigger     = !this.action || this.action === null ? undefined : this.action.caller;    // eslint-disable-line
+        const trigger     = !(this.action instanceof PendingAction) ? undefined : this.action.caller;    // eslint-disable-line
         const guards      = updated.action.trigger !== null ? updated.action.trigger.guards.size : 0;
 
+        console.log(name, this.action instanceof PendingAction ? this.action.name : null);
         return updated.trace(name, updated.action.message.payload, trigger, guards);
     }
 
