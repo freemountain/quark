@@ -135,7 +135,7 @@ export default class Internals extends Record({
 
     actionBefore(y: Message, descr?: ?Action): Internals { // eslint-disable-line
         const description = descr instanceof Action ? descr : this.description.get("message");
-        const updated     = this.callerChanged().update("action", action => action instanceof PendingAction ? action.before(description, y) : new PendingAction({ message: y, description }));
+        const updated     = this.update("action", action => action instanceof PendingAction ? action.before(description, y) : new PendingAction({ message: y, description }));
         const name        = !(descr instanceof Action) ? `Message<${y.resource}>` : description.name;
         const trigger     = !(this.action instanceof PendingAction) || description.name === "message" ? undefined : this.action.state; // eslint-disable-line
         const guards      = updated.action.trigger !== null ? updated.action.trigger.guards.size : 0;
@@ -145,35 +145,26 @@ export default class Internals extends Record({
 
     actionDone(): Internals {
         return this
-            .callerChanged()
             .update("action", action => action instanceof PendingAction ? action.done() : action);
     }
 
     actionError(): Internals {
         return this
-            .callerChanged()
             .update("action", action => action instanceof PendingAction ? action.error(this.errors.last()) : action);
     }
 
     actionTriggers(): Internals {
         return this
-            .callerChanged()
             .update("action", action => action instanceof PendingAction ? action.triggers() : action);
     }
 
     actionWillTrigger(): Internals {
         return this
-            .callerChanged()
             .update("action", action => action.set("willTrigger", true));
     }
 
     actionWontTrigger(): Internals {
         return this
-            .callerChanged()
             .update("action", action => action.set("willTrigger", false));
-    }
-
-    callerChanged() {
-        return this.update("action", action => action instanceof PendingAction ? action.callerChanged() : action);
     }
 }

@@ -10,7 +10,6 @@ type PendingActionData = {
     message:      Message, // eslint-disable-line
     state?:       ?State,  // eslint-disable-line
     willTrigger?: boolean,
-    caller?:      Action,  // eslint-disable-line
     description?: ?Action, // eslint-disable-line
     previous?:    ?Action, // eslint-disable-line
     error?:       ?Error   // eslint-disable-line
@@ -22,7 +21,6 @@ export default class PendingAction extends Record({
     willTrigger: false,
     description: null,
     trigger:     null,
-    caller:      null,
     previous:    null,
     error:       null
 }) {
@@ -33,15 +31,12 @@ export default class PendingAction extends Record({
     finish(): PendingAction {
         return this
             .set("description", null)
-            .set("caller", null)
             .set("trigger", null)
             .set("previous", null)
             .set("error", null)
             .changeState("finished");
     }
 
-    // die müssen alle ne action kriegen
-    // dann kann actionChanged weg
     before(action: Action, message: Message): PendingAction { // eslint-disable-line
         const prev0   = this.description ? `${this.name}.${this.state}` : action.name;
         const prev    = this.description.name === action.name ? prev0.replace(".before", "") : prev0;
@@ -50,9 +45,8 @@ export default class PendingAction extends Record({
         return this
             .set("message", message.preparePayload(trigger))
             .set("trigger", trigger)
-            .set("description", action || null)
+            .set("description", action)
             .set("previous", this.description)
-            .set("caller", prev)
             .changeState("before");
     }
 
@@ -82,13 +76,7 @@ export default class PendingAction extends Record({
     }
 
     changeState(state: State): PendingAction {
-        return this
-            .set("state", state)
-            .callerChanged();
-    }
-
-    callerChanged() {
-        return this.set("caller", `${this.name}.${this.state}`);
+        return this.set("state", state);
     }
 
     get name(): string { // eslint-disable-line

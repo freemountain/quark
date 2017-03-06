@@ -270,10 +270,6 @@ class Cursor {
         return this.update("_unit", internals => internals.messageReceived(message.setCursor(this)));
     }
 
-    callerChanged(): Cursor {
-        return this.update("_unit", internals => internals.callerChanged());
-    }
-
     // _state.messageProcessed
     messageProcessed(): Cursor {
         return this.update("_unit", internals => internals.messageProcessed());

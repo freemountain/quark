@@ -344,6 +344,7 @@ export default class Runtime extends Duplex {
         const action  = data.payload.first();
         const message = data.payload.get(1);
 
+        if(action.name === "message") console.log("before", message.originalPayload);
         return Promise.resolve(this
             .update("_unit", internals => internals.actionBefore(message.setCursor(this), action)));
     }
@@ -361,6 +362,7 @@ export default class Runtime extends Duplex {
         if(!(action instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
         if(!(message instanceof Message))      return Promise.reject(new Error("fucking cursor"));
 
+        if(action.description.name === "message" && action.state === "before") console.log("triggers", message.originalPayload);
         return Promise
             // hier muss der payload iwie noch korrekt reverted werden
             .all((action.description: Object)[action.state]
@@ -386,10 +388,12 @@ export default class Runtime extends Duplex {
             .then(cursor => cursor.finish(error));
     }
 
-    guards(): Promise<Cursor> {
+    guards(): Promise<Cursor> { // eslint-disable-line
         if(!(this instanceof Cursor))                      return Promise.reject(new Error("fucking cursor"));
         if(!(this.currentAction instanceof PendingAction)) return Promise.resolve(this.error(new Error("no action")));
 
+        // das zu this.shouldTrigger, dass das dann called
+        if(this.currentAction.description.name === "message") console.log("guards", this.message.originalPayload);
         const x = this.currentAction.trigger.shouldTrigger(this, this.message ? this.message.payload : List());
 
         return Promise.resolve(x.shouldTrigger ? x.trace.triggered() : x.trace.end());

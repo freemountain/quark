@@ -32,8 +32,8 @@ export default class Message extends Record({
         return data;
     }
 
-    constructor(resource: (string | Message | { resource: string, payload?: ?List<*>, headers?: ?Map<string, *> }), payload?: ?List<*>, headers?: Map<string, *> = Map(), _cursor?: ?Cursor = null) { // eslint-disable-line
-        const data = fromJS(typeof resource === "string" ? { resource, payload, headers, _cursor, _initial: payload } : resource);
+    constructor(resource: (string | Message | { resource: string, payload?: ?List<*>, headers?: ?Map<string, *> }), payload?: ?List<*>, headers?: Map<string, *> = Map()) { // eslint-disable-line
+        const data = fromJS(typeof resource === "string" ? { resource, payload, headers, _initial: payload } : resource);
 
         super(data);
 
@@ -80,7 +80,8 @@ export default class Message extends Record({
     }
 
     setCursor(cursor: Cursor): Message {
-        return new Message(this.resource, this.payload, this.headers, cursor);
+        return this.set("_cursor", cursor);
+        // new Message(this.resource, this.payload, this.headers, cursor);
     }
 
     get path(): List<string> {

@@ -140,7 +140,6 @@ describe("InternalsTest", function() {
                         params: []
                     }]
                 },
-                caller:      null,
                 trigger:     null,
                 previous:    null,
                 error:       null,
@@ -230,7 +229,6 @@ describe("InternalsTest", function() {
                         params: []
                     }]
                 },
-                caller:   null,
                 trigger:  null,
                 error:    null,
                 previous: null
