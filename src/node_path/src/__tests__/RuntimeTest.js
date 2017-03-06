@@ -52,13 +52,16 @@ describe("RuntimeTest", function() {
         const methods = Runtime.allActions(new TestUnit());
 
         expect(methods.keySeq().toJS()).to.eql([
+            "done",
             "message",
+            "error",
             "handle",
             "diffs",
             "guards",
             "init",
             "props",
             "action",
+            "triggers",
             "after",
             "children",
             "before"
@@ -208,6 +211,57 @@ describe("RuntimeTest", function() {
                     guards: 0,
                     params: [],
                     action: "handle"
+                }]
+            },
+
+            done: {
+                unit:     "TestUnit",
+                name:     "done",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "done",
+                    guards: 0,
+                    params: [],
+                    action: "done"
+                }]
+            },
+
+            error: {
+                unit:     "TestUnit",
+                name:     "error",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "error",
+                    guards: 0,
+                    params: [],
+                    action: "error"
+                }]
+            },
+
+            triggers: {
+                unit:     "TestUnit",
+                name:     "triggers",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "triggers",
+                    guards: 0,
+                    params: [],
+                    action: "triggers"
                 }]
             },
 

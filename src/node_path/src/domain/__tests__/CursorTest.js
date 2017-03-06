@@ -37,11 +37,14 @@ describe("CursorTest", function() { // eslint-disable-line
                 name:        "Unit",
                 id:          "id",
                 description: Map({
-                    blub:   action,
-                    handle: new Action("Unit", "handle", List(), Runtime.prototype.handle),
-                    guards: new Action("Unit", "guards", List(), Runtime.prototype.guards),
-                    before: new Action("Unit", "before", List(), Runtime.prototype.before),
-                    after:  new Action("Unit", "after", List(), Runtime.prototype.after)
+                    blub:     action,
+                    handle:   new Action("Unit", "handle", List(), Runtime.prototype.handle),
+                    guards:   new Action("Unit", "guards", List(), Runtime.prototype.guards),
+                    before:   new Action("Unit", "before", List(), Runtime.prototype.before),
+                    after:    new Action("Unit", "after", List(), Runtime.prototype.after),
+                    done:     new Action("Unit", "done", List(), Runtime.prototype.done),
+                    error:    new Action("Unit", "error", List(), Runtime.prototype.error),
+                    triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers)
                 }),
                 children: Map({
                     test: Map()
@@ -62,12 +65,14 @@ describe("CursorTest", function() { // eslint-disable-line
                 name:        "Unit",
                 id:          "id",
                 description: Map({
-                    blub:   action,
-                    handle: new Action("Unit", "handle", List(), Runtime.prototype.handle),
-                    guards: new Action("Unit", "guards", List(), Runtime.prototype.guards),
-                    before: new Action("Unit", "before", List(), Runtime.prototype.before),
-                    after:  new Action("Unit", "after", List(), Runtime.prototype.after)
-
+                    blub:     action,
+                    handle:   new Action("Unit", "handle", List(), Runtime.prototype.handle),
+                    guards:   new Action("Unit", "guards", List(), Runtime.prototype.guards),
+                    before:   new Action("Unit", "before", List(), Runtime.prototype.before),
+                    after:    new Action("Unit", "after", List(), Runtime.prototype.after),
+                    done:     new Action("Unit", "done", List(), Runtime.prototype.done),
+                    error:    new Action("Unit", "error", List(), Runtime.prototype.error),
+                    triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers)
                 }),
                 children: Map({
                     test: Map()
@@ -155,6 +160,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     caller:      null,
                     trigger:     null,
                     previous:    null,
+                    error:       null,
                     description: {
                         name:     "message",
                         before:   [],
@@ -240,6 +246,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     caller:      null,
                     trigger:     null,
                     previous:    null,
+                    error:       null,
                     description: {
                         name:     "message",
                         before:   [],
@@ -325,6 +332,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     caller:      null,
                     trigger:     null,
                     previous:    null,
+                    error:       null,
                     description: {
                         name:     "message",
                         before:   [],
@@ -423,6 +431,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     caller:      null,
                     trigger:     null,
                     previous:    null,
+                    error:       null,
                     description: {
                         name:     "message",
                         before:   [],
@@ -538,6 +547,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     caller:      null,
                     trigger:     null,
                     previous:    null,
+                    error:       null,
                     description: {
                         name:     "message",
                         before:   [],
@@ -665,6 +675,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     caller:      null,
                     trigger:     null,
                     previous:    null,
+                    error:       null,
                     description: {
                         name:     "message",
                         before:   [],
@@ -802,6 +813,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     caller:      null,
                     trigger:     null,
                     previous:    null,
+                    error:       null,
                     description: {
                         name:     "message",
                         before:   [],
@@ -939,6 +951,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     caller:      null,
                     trigger:     null,
                     previous:    null,
+                    error:       null,
                     description: {
                         name:     "message",
                         before:   [],
@@ -1079,6 +1092,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     caller:      null,
                     trigger:     null,
                     previous:    null,
+                    error:       null,
                     description: {
                         name:     "message",
                         before:   [],

@@ -396,7 +396,7 @@ describe("ActionTest", function() {
         const cursor   = (new unit.__Cursor(data))
             .update("_unit", internals => internals.messageReceived(message));
 
-        return unit.ready().then(y => y.message.call(cursor, message.setCursor(cursor)))
+        return unit.ready().then(y => y.message.call(cursor, message))
             .then(x => {
                 const result  = x.messageProcessed();
                 const cursor2 = cursor
@@ -741,6 +741,54 @@ describe("ActionTest", function() {
                     action: "before"
                 }]
             },
+            triggers: {
+                unit:     "Test3",
+                name:     "triggers",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "triggers",
+                    guards: 0,
+                    params: [],
+                    action: "triggers"
+                }]
+            },
+            done: {
+                unit:     "Test3",
+                name:     "done",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "done",
+                    guards: 0,
+                    params: [],
+                    action: "done"
+                }]
+            },
+            error: {
+                unit:     "Test3",
+                name:     "error",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "error",
+                    guards: 0,
+                    params: [],
+                    action: "error"
+                }]
+            },
             guards: {
                 unit:     "Test3",
                 name:     "guards",
@@ -960,7 +1008,7 @@ describe("ActionTest", function() {
                     .trace("message", message.get("payload"))
                     .trace.triggered();
 
-                return descr.applyTriggers(cursor2, message.setCursor(cursor))
+                return unit.triggers.call(cursor2)
                     .then(x => {
                         const result = x
                             .trace.end()

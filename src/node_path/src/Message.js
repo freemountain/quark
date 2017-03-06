@@ -66,11 +66,9 @@ export default class Message extends Record({
 
         const payload = trigger.action.indexOf(".error") !== -1 ? this.payload.unshift(cursor.currentError) : this.payload;
 
-        return this.set("payload", payload.concat(trigger.params));
-    }
-
-    revertPayload(): Message {
-        return this.set("payload", this._initial);
+        return this
+            .set("_initial", payload)
+            .set("payload", payload.concat(trigger.params));
     }
 
     setAction(action: string) {
@@ -91,6 +89,10 @@ export default class Message extends Record({
 
     get currentDir(): string {
         return this.path.last();
+    }
+
+    get originalPayload(): List<*> {
+        return this._initial;
     }
 
     toJS(): Object {

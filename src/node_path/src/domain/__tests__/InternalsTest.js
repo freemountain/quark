@@ -143,6 +143,7 @@ describe("InternalsTest", function() {
                 caller:      null,
                 trigger:     null,
                 previous:    null,
+                error:       null,
                 state:       "before",
                 willTrigger: false
             },
@@ -231,6 +232,7 @@ describe("InternalsTest", function() {
                 },
                 caller:   null,
                 trigger:  null,
+                error:    null,
                 previous: null
             },
             previous:    null,

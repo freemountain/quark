@@ -152,7 +152,7 @@ export default class Internals extends Record({
     actionError(): Internals {
         return this
             .callerChanged()
-            .update("action", action => action instanceof PendingAction ? action.error() : action);
+            .update("action", action => action instanceof PendingAction ? action.error(this.errors.last()) : action);
     }
 
     actionTriggers(): Internals {

@@ -64,34 +64,17 @@ class Action {
                 //
                 //  => das hängt im kern auch mit den computed props zusammen
                 //
-                // return cursor
-                //      .send.before())
-                //      // delay muss für defer auch automatisch gesetzt werden
-                //      .send.delay(befored.currentAction instanceof PendingAction ? befored.currentAction.delay : 0).handle())
-                //      .send.after())
-                //  .catch(guarded.error(e))
-
                 // before():
                 //
                 // this
                 //  .before(description, y)
                 //  .send.guards()
                 //
-                //
-                // vmtl wird durch diese virtual actions da der state des cursors in irgend
-                // einer form fibickt, wahrscheinlich bei send?
-                //
-
                 return this.send.before(description, y)
                     .then(x => x.send.guards())
-                    .then(x => !x.shouldTrigger ? x : description.applyTriggers(x, y.setCursor(x))
+                    .then(x => !x.shouldTrigger ? x : x.send.triggers()
                         .then(cursor => cursor.send.delay(x.currentAction instanceof PendingAction ? x.currentAction.delay : 0).handle())
-                         // hier muss dieser errorwichs in action rein (cursor.currentAction.error)
-                        .then(cursor => Promise.all([cursor.send.after(), cursor.hasRecentlyErrored ? cursor.currentError : null]))
-                        .then(([cursor, error]) => [error instanceof Error ? cursor.errored() : cursor.done(), error])
-                        .then(([cursor, error]) => Promise.all([description.applyTriggers(cursor, cursor.message), error]))
-                        .then(([cursor, error]) => cursor.finish(error))
-                        // bis hier
+                        .then(cursor => cursor.send.after())
                         .catch(e => x.error(e)))
                     .catch(e => this
                         .trace(description.name, List(), this.currentState)
@@ -134,21 +117,6 @@ class Action {
             .concat(own ? [] : [new Trigger(name, new DeclaredTrigger(name))]);
 
         Object.freeze(this);
-    }
-
-    // action: triggers
-    applyTriggers(cursor: Cursor, message: Message): Promise<Cursor> {
-        const action  = cursor.currentAction;
-        // hier kackt ein test ab aus irgend nem grund,
-        // es muss auch die rawe message genommen werden
-        // const message = cursor.message;
-
-        if(!(action instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
-        if(!(message instanceof Message))      return Promise.reject(new Error("fucking cursor"));
-
-        return Promise
-            .all((action.description: Object)[action.state].map(x => (cursor.send: Object)[x.emits](...message.payload)).toJS())
-            .then(x => cursor.patch(...x));
     }
 
     willTrigger(cursor: Cursor, ...messages: Array<Message>): boolean { // eslint-disable-line

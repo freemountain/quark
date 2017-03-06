@@ -8,11 +8,12 @@ export type State = "before" | "triggers" | "error" | "done" | "cancel" | "progr
 
 type PendingActionData = {
     message:      Message, // eslint-disable-line
-    state?:       ?State,   // eslint-disable-line
+    state?:       ?State,  // eslint-disable-line
     willTrigger?: boolean,
     caller?:      Action,  // eslint-disable-line
-    description?: ?Action,  // eslint-disable-line
-    previous?:    ?Action  // eslint-disable-line
+    description?: ?Action, // eslint-disable-line
+    previous?:    ?Action, // eslint-disable-line
+    error?:       ?Error   // eslint-disable-line
 };
 
 export default class PendingAction extends Record({
@@ -22,7 +23,8 @@ export default class PendingAction extends Record({
     description: null,
     trigger:     null,
     caller:      null,
-    previous:    null
+    previous:    null,
+    error:       null
 }) {
     constructor(data: PendingActionData) {
         super(data);
@@ -34,6 +36,7 @@ export default class PendingAction extends Record({
             .set("caller", null)
             .set("trigger", null)
             .set("previous", null)
+            .set("error", null)
             .changeState("finished");
     }
 
@@ -63,8 +66,10 @@ export default class PendingAction extends Record({
     // hier den error rein un das errohandling hierhin bauen
     // das hier kann auch die traces halten, dann kann man hier die ganzen
     // trace handler reinballern
-    error(): PendingAction {
-        return this.changeState("error");
+    error(error?: ?Error = null): PendingAction {
+        return this
+            .set("error", error)
+            .changeState("error");
     }
 
     triggers(): PendingAction {

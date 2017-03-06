@@ -96,7 +96,7 @@ class Cursor {
 
         Object.assign(inherited.prototype.__actions, description.map((action, key) => function(...payload: Array<mixed>) {
             const message = new Message(key, List(payload), this.__headers);
-            const cursor  = this.__cursor.callerChanged();
+            const cursor  = this.__cursor;
             const func    = action.func.bind(cursor, message);
 
             // hier muss en cursor rauskommen der das alles abwartet, damit das chainbar wird

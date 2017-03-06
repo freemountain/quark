@@ -88,13 +88,6 @@ export default class Runtime extends Duplex {
         );
     }
 
-    static update(instance: Runtime, cursor: Cursor): Runtime {
-        instance.cursor = cursor;
-        instance.locked = false;
-
-        return instance;
-    }
-
     static diff(instance: Runtime, updated: Cursor): Promise<{ cursor: Cursor, diffs: Diffs}> {
         return new Promise((resolve, reject) => {
             try {
@@ -187,7 +180,8 @@ export default class Runtime extends Duplex {
                     key === "done" ||
                     key === "finish" ||
                     key === "before" ||
-                    key === "guards"
+                    key === "guards" ||
+                    key === "triggers"
                 ) {
                     op.__Action = true;
 
@@ -221,10 +215,14 @@ export default class Runtime extends Duplex {
     static triggers = {
         init: DeclaredAction.triggered
             .by("message.before")
-            .if((_, unit) => (
-                unit.message.isAction() &&
-                unit.message.resource.indexOf("/actions/init") === 0
-            ))
+            .if((...args) => {
+                const unit = args[args.length - 1];
+
+                return (
+                    unit.message.isAction() &&
+                    unit.message.resource.indexOf("/actions/init") === 0
+                );
+            })
     };
 
     constructor(bindings?: ?Object) { // eslint-disable-line
@@ -304,12 +302,14 @@ export default class Runtime extends Duplex {
             .then(x => Runtime.diff(this, x))
             .then(update => this.finish.call(update.cursor))
             .then(x => {
-                if(x.isRecoverable) return Runtime.update(this, x);
+                if(!x.isRecoverable) return this.emit("error", x.currentError);
 
-                this.emit("error", x.currentError);
+                this.cursor = cursor;
+                this.locked = false;
 
                 return this;
-            });
+            })
+            .then(() => this);
     }
 
     init(): Cursor {
@@ -354,6 +354,20 @@ export default class Runtime extends Duplex {
         return Promise.resolve(this);
     }
 
+    triggers(): Promise<Cursor> {
+        const action  = this.currentAction;
+        const message = this.message;
+
+        if(!(action instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
+        if(!(message instanceof Message))      return Promise.reject(new Error("fucking cursor"));
+
+        return Promise
+            // hier muss der payload iwie noch korrekt reverted werden
+            .all((action.description: Object)[action.state]
+                .map(x => (this.send: Object)[x.emits](...message.originalPayload.toJS())))
+            .then(x => this.patch(...x));
+    }
+
     receive(message: Message): Promise<Cursor> {
         if(!(this.get("_unit") instanceof Object)) return Promise.reject(new Error("unit not present"));
 
@@ -361,8 +375,15 @@ export default class Runtime extends Duplex {
     }
 
     after(): Promise<Cursor> {
-        return Promise.resolve(this);
-        // return Promise.resolve(this.hasRecentlyErrored ? this.done() : this.errored());
+        const hasRecentlyErrored = this.hasRecentlyErrored;
+        const error              = hasRecentlyErrored ? this.currentError : null;
+
+        return (hasRecentlyErrored ? this.send.done() : this.send.error())
+            // die zeile hier sollte eigtl weg könne, aber dann klappt da was nich
+            // cursor checken!
+            .then(cursor => error instanceof Error ? cursor.errored() : cursor.done())
+            .then(cursor => cursor.send.triggers())
+            .then(cursor => cursor.finish(error));
     }
 
     guards(): Promise<Cursor> {
@@ -374,6 +395,13 @@ export default class Runtime extends Duplex {
         return Promise.resolve(x.shouldTrigger ? x.trace.triggered() : x.trace.end());
     }
 
+    done() {
+        return Promise.resolve(this.done());
+    }
+
+    error() {
+        return Promise.resolve(this.errored());
+    }
 
     finish(): Promise<Cursor> {
         return Promise.resolve(this.messageProcessed());
