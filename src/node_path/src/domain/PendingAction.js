@@ -39,15 +39,11 @@ export default class PendingAction extends Record({
 
     // die müssen alle ne action kriegen
     // dann kann actionChanged weg
-    before(action: Action, message: Message, caller?: ?PendingAction): PendingAction { // eslint-disable-line
-        const prev2   = this.description ? `${this.description.name}.${this.state}` : action.name;
-        const prev    = !caller || caller === null || !caller.caller || caller.caller === null ? (action instanceof Action ? action.name : "message") : caller.caller; // eslint-disable-line
+    before(action: Action, message: Message): PendingAction { // eslint-disable-line
+        const prev0   = this.description ? `${this.name}.${this.state}` : action.name;
+        const prev    = this.description.name === action.name ? prev0.replace(".before", "") : prev0;
         const trigger = action.triggerFor(prev);
 
-        // hier muss prev2 === prev sein, dann kann caller raus
-        // und wahrscheinlich ich auch callerChanged bei internals
-        if(prev2 !== prev) console.log("huhu", prev, prev2);
-        console.log("Pending.before", prev, trigger.emits, action.triggers.map(x => [x.emits, x.params.get(0)]).toJS());
         return this
             .set("message", message.preparePayload(trigger))
             .set("trigger", trigger)
@@ -61,21 +57,17 @@ export default class PendingAction extends Record({
     done(): PendingAction {
         // hier muss der caller geändert werden
         return this
-            .changeState("done")
-            .set("description", this.previous)
-            .set("previous", null);
+            .changeState("done");
     }
 
     // hier den error rein un das errohandling hierhin bauen
     // das hier kann auch die traces halten, dann kann man hier die ganzen
     // trace handler reinballern
     error(): PendingAction {
-        // hier muss der caller geändert werden
         return this.changeState("error");
     }
 
     triggers(): PendingAction {
-        // hier muss der caller geändert werden
         return this.changeState("triggers");
     }
 
@@ -85,8 +77,13 @@ export default class PendingAction extends Record({
     }
 
     changeState(state: State): PendingAction {
-        // oder hslt einfach hier
-        return this.set("state", state);
+        return this
+            .set("state", state)
+            .callerChanged();
+    }
+
+    callerChanged() {
+        return this.set("caller", `${this.name}.${this.state}`);
     }
 
     get name(): string { // eslint-disable-line

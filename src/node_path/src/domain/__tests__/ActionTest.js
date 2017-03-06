@@ -412,7 +412,6 @@ describe("ActionTest", function() {
                     .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
                 expect(cursor.errors.toJS()).to.eql([]);
-                // hier gehen iwie die bindings verloren
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
                 expect(result.traces.toJS()).to.eql([{
                     id:       4,
@@ -1326,14 +1325,14 @@ describe("ActionTest", function() {
 
                         expect(filtered.toJS()).to.eql(cursor3.toJS());
                         expect(y.errors.toJS()).to.eql([
-                            new GuardError("Test", "test5", 1, new Error("an error6")),
-                            new Error("an error2"),
                             new Error("an error3"),
+                            new Error("an error2"),
+                            new GuardError("Test", "test5", 1, new Error("an error6")),
                             new Error("an error"),
                             new GuardError("Test", "test6", 1, new Error("an error7")),
                             new Error("an error4"),
-                            new Error("an error5"),
-                            new GuardError("Test", "test7", 1, new Error("an error8"))
+                            new GuardError("Test", "test7", 1, new Error("an error8")),
+                            new Error("an error5")
                         ]);
 
                         expect(result.traces.toJS()).to.eql([{

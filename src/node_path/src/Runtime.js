@@ -340,19 +340,12 @@ export default class Runtime extends Duplex {
         }
     }
 
-    before(): Promise<Cursor> {
-        return Promise.resolve(this);
-
-        /*
-         * hier dat muckt iwie
-         * const action  = data.payload.first();
+    before(data): Promise<Cursor> {
+        const action  = data.payload.first();
         const message = data.payload.get(1);
 
-        // TODO: hier nur description, rest sollte da
-        // sein
-        // .action.before(...)
         return Promise.resolve(this
-         .update("_unit", internals => internals.actionBefore(message.setCursor(this), action)));*/
+            .update("_unit", internals => internals.actionBefore(message.setCursor(this), action)));
     }
 
     message(): Promise<Cursor> {
@@ -365,12 +358,11 @@ export default class Runtime extends Duplex {
         if(!(this.get("_unit") instanceof Object)) return Promise.reject(new Error("unit not present"));
 
         return Promise.resolve(this.messageReceived(message));
-            // hier muss als trigger message rein
-            // .before(this.get("_unit").description.get("message"), message);
     }
 
     after(): Promise<Cursor> {
-        return Promise.resolve(this.hasRecentlyErrored ? this.done() : this.errored());
+        return Promise.resolve(this);
+        // return Promise.resolve(this.hasRecentlyErrored ? this.done() : this.errored());
     }
 
     guards(): Promise<Cursor> {

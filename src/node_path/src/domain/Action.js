@@ -77,29 +77,22 @@ class Action {
                 //  .before(description, y)
                 //  .send.guards()
                 //
-                // soll eigentlich raus: siehe runtime.before
-                const befored = this.update("_unit", internals => internals.actionBefore(y.setCursor(this), description));
+                //
+                // vmtl wird durch diese virtual actions da der state des cursors in irgend
+                // einer form fibickt, wahrscheinlich bei send?
+                //
 
-                return befored.send.before(description, y)
-                    .then(x => {
-                        console.log("after send", x.currentAction.trigger.emits, x.currentAction.trigger.params.get(0));
-                        return x;
-                    })
+                return this.send.before(description, y)
                     .then(x => x.send.guards())
-                    .then(x => {
-                        const delay = x.currentAction instanceof PendingAction ? x.currentAction.delay : 0;
-
-                        return !x.shouldTrigger ? x : description.applyTriggers(x, y.setCursor(x))
-                            .then(cursor => cursor.send.delay(delay).handle())
-                            // .then(([cursor, error]) => [cursor.send.after(), error])
-                            // hier muss dieser errorwichs in action rein (cursor.currentAction.error)
-                            .then(cursor => [cursor, cursor.hasRecentlyErrored ? cursor.currentError : null])
-                            .then(([cursor, error]) => [cursor.hasRecentlyErrored ? cursor.errored() : cursor.done(), error])
-                            .then(([cursor, error]) => Promise.all([description.applyTriggers(cursor, cursor.message), error]))
-                            .then(([cursor, error]) => cursor.finish(error))
-                            // bis hier
-                            .catch(e => x.error(e));
-                    })
+                    .then(x => !x.shouldTrigger ? x : description.applyTriggers(x, y.setCursor(x))
+                        .then(cursor => cursor.send.delay(x.currentAction instanceof PendingAction ? x.currentAction.delay : 0).handle())
+                         // hier muss dieser errorwichs in action rein (cursor.currentAction.error)
+                        .then(cursor => Promise.all([cursor.send.after(), cursor.hasRecentlyErrored ? cursor.currentError : null]))
+                        .then(([cursor, error]) => [error instanceof Error ? cursor.errored() : cursor.done(), error])
+                        .then(([cursor, error]) => Promise.all([description.applyTriggers(cursor, cursor.message), error]))
+                        .then(([cursor, error]) => cursor.finish(error))
+                        // bis hier
+                        .catch(e => x.error(e)))
                     .catch(e => this
                         .trace(description.name, List(), this.currentState)
                         .error(e));
@@ -145,11 +138,16 @@ class Action {
 
     // action: triggers
     applyTriggers(cursor: Cursor, message: Message): Promise<Cursor> {
-        if(!(cursor.currentAction instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
+        const action  = cursor.currentAction;
+        // hier kackt ein test ab aus irgend nem grund,
+        // es muss auch die rawe message genommen werden
+        // const message = cursor.message;
 
-        // hier muss jetz noch das this weg
+        if(!(action instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
+        if(!(message instanceof Message))      return Promise.reject(new Error("fucking cursor"));
+
         return Promise
-            .all((this: Object)[cursor.currentAction.state].map(x => (cursor.send: Object)[x.emits](...message.payload)).toJS())
+            .all((action.description: Object)[action.state].map(x => (cursor.send: Object)[x.emits](...message.payload)).toJS())
             .then(x => cursor.patch(...x));
     }
 

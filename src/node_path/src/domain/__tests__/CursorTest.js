@@ -29,7 +29,6 @@ describe("CursorTest", function() { // eslint-disable-line
 
     it("creates a cursor for a unit", function() {
         const func = function(a) {
-            console.log("func", a);
             return this.update("test", x => x.length + 2 + a);
         };
         const action = new Action("Test", "blub", List(), func);
@@ -41,7 +40,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     blub:   action,
                     handle: new Action("Unit", "handle", List(), Runtime.prototype.handle),
                     guards: new Action("Unit", "guards", List(), Runtime.prototype.guards),
-                    before: new Action("Unit", "guards", List(), Runtime.prototype.before)
+                    before: new Action("Unit", "before", List(), Runtime.prototype.before),
+                    after:  new Action("Unit", "after", List(), Runtime.prototype.after)
                 }),
                 children: Map({
                     test: Map()
@@ -65,7 +65,9 @@ describe("CursorTest", function() { // eslint-disable-line
                     blub:   action,
                     handle: new Action("Unit", "handle", List(), Runtime.prototype.handle),
                     guards: new Action("Unit", "guards", List(), Runtime.prototype.guards),
-                    before: new Action("Unit", "guards", List(), Runtime.prototype.before)
+                    before: new Action("Unit", "before", List(), Runtime.prototype.before),
+                    after:  new Action("Unit", "after", List(), Runtime.prototype.after)
+
                 }),
                 children: Map({
                     test: Map()

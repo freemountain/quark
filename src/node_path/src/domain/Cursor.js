@@ -96,11 +96,11 @@ class Cursor {
 
         Object.assign(inherited.prototype.__actions, description.map((action, key) => function(...payload: Array<mixed>) {
             const message = new Message(key, List(payload), this.__headers);
-            // hier das callerChanged muss noch in internals
-            const func    = action.func.bind(this.__cursor.callerChanged(), message);
+            const cursor  = this.__cursor.callerChanged();
+            const func    = action.func.bind(cursor, message);
 
-            // hier muss en cursor rauskommen der das alles abwartet
-            return this.__delay ? this.__cursor.defer(func, this.__delay) : func();
+            // hier muss en cursor rauskommen der das alles abwartet, damit das chainbar wird
+            return this.__delay ? cursor.defer(func, this.__delay) : func();
         }).set("headers", function(headers: Object): { headers: Function, after: Function } {
             this.__headers = Map(headers);
 
