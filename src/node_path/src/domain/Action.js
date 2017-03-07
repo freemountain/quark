@@ -13,6 +13,19 @@ import PendingAction from "./PendingAction";
 type Kind    = "before" | "cancel" | "progress" | "done" | "error"; // eslint-disable-line
 type Handler = (y?: Message) => Promise<Cursor>;
 
+type ActionInput = {
+    unit:     string,        // eslint-disable-line
+    name:     string,        // eslint-disable-line
+    op:       any,           // eslint-disable-line
+    before:   List<Trigger>, // eslint-disable-line
+    progress: List<Trigger>,
+    cancel:   List<Trigger>, // eslint-disable-line
+    done:     List<Trigger>, // eslint-disable-line
+    error:    List<Trigger>, // eslint-disable-line
+    triggers: List<Trigger>,
+    func:     Handler,       // eslint-disable-line
+};
+
 class Action {
     name:     string;         // eslint-disable-line
     op:       ?(* => Cursor); // eslint-disable-line
@@ -23,8 +36,7 @@ class Action {
     cancel:   List<Trigger>;  // eslint-disable-line
     progress: List<Trigger>;
     unit:     string;         // eslint-disable-line
-    func:     (y: any, prev?: string) => Promise<Cursor>; // eslint-disable-line
-    message:  ?Message;        // eslint-disable-line
+    func:     Handler;        // eslint-disable-line
 
     static BEFORE   = x => x.action.indexOf(".before") !== -1;   // eslint-disable-line
     static PROGRESS = x => x.action.indexOf(".progress") !== -1;
@@ -38,18 +50,18 @@ class Action {
     );
 
     static Handler(description: Action): Handler {
-        return function(z?: Message): Promise<Cursor> { // eslint-disable-line
+        return function(data?: Message): Promise<Cursor> { // eslint-disable-line
             if(!(this instanceof Cursor)) return Promise.reject(new InvalidCursorError(this, description));
 
-            const y = z instanceof Message ? z : this.message;
+            const message = data instanceof Message ? data : this.message;
 
-            if(!Message.is(y))            return Promise.resolve(this
-                .trace(description.name, List(), this.currentState)
-                .error(new UnknownMessageError(description.unit, description.name, y)));
+            if(!Message.is(message))            return Promise.resolve(this
+                .trace(description.name, List(), this.action.state)
+                .error(new UnknownMessageError(description.unit, description.name, message)));
 
             // hier das ganze in der message funktion mqchen
             try {
-                 //  Cursor promise aware machen, sodass
+                //  Cursor promise aware machen, sodass
                 //
                 //  cursor
                 //      .send.message
@@ -70,24 +82,41 @@ class Action {
                 //  .before(description, y)
                 //  .send.guards()
                 //
-                return this.send.before(description, y)
+                return this.send.before(description, message)
                     .then(x => x.send.guards())
                     .then(x => !x.shouldTrigger ? x : x.send.triggers()
-                        .then(cursor => cursor.send.delay(x.currentAction instanceof PendingAction ? x.currentAction.delay : 0).handle())
+                        .then(cursor => cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle())
                         .then(cursor => cursor.send.after())
                         .catch(e => x.error(e)))
                     .catch(e => this
-                        .trace(description.name, List(), this.currentState)
+                        .trace(description.name, List(), this.action.state)
                         .error(e));
             } catch(e) {
                 return Promise.resolve(this
-                    .trace(description.name, List(), this.currentState)
+                    .trace(description.name, List(), this.action.state)
                     .error(e));
             }
         };
     }
 
-    constructor(unit: string, name: string, declarativeTriggers: List<Trigger>, op: any = null) { // eslint-disable-line
+    static shouldWrap(key, op) { // eslint-disable-line
+        return (
+            (!op || !op.__Action) &&
+            key !== "handle" &&
+            key !== "handle" &&
+            key !== "after" &&
+            key !== "error" &&
+            key !== "done" &&
+            key !== "finish" &&
+            key !== "before" &&
+            key !== "guards" &&
+            key !== "triggers"
+        );
+    }
+
+    constructor(unit: string | ActionInput, name?: string = "", declarativeTriggers?: List<Trigger> = List(), op: any = null) { // eslint-disable-line
+        if(typeof unit !== "string") return Object.freeze(Object.assign(this, unit));
+
         const filtered = declarativeTriggers
             .filter(trigger => trigger.action.split(".")[0] === name);
 
@@ -97,7 +126,7 @@ class Action {
         const ownTriggers = declarativeTriggers
             .filter(trigger => trigger.emits === name);
 
-        const func = op && op.__Action ? op : Action.Handler(this);
+        const func = Action.shouldWrap(name, op) ? Action.Handler(this) : op;
 
         func.__Action = this;
         func.cancel   = Action.cancel.bind(this, func);
@@ -117,6 +146,10 @@ class Action {
             .concat(own ? [] : [new Trigger(name, new DeclaredTrigger(name))]);
 
         Object.freeze(this);
+    }
+
+    setUnit(unit: string): Action {
+        return new Action(Object.assign({}, this, { unit }));
     }
 
     willTrigger(cursor: Cursor, ...messages: Array<Message>): boolean { // eslint-disable-line

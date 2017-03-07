@@ -125,7 +125,6 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor.set("action", message).message).to.be.an.instanceOf(Message);
         expect(cursor.errors.toJS()).to.eql([error]);
         expect(cursor.currentError).to.equal(error);
-        expect(cursor.currentContext).to.equal("Unit");
         expect(cursor.children).to.equal(children);
     });
 

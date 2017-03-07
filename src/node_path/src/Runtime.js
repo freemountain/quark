@@ -88,6 +88,7 @@ export default class Runtime extends Duplex {
         );
     }
 
+    // das noch zu ner action
     static diff(instance: Runtime, updated: Cursor): Promise<{ cursor: Cursor, diffs: Diffs}> {
         return new Promise((resolve, reject) => {
             try {
@@ -116,15 +117,6 @@ export default class Runtime extends Duplex {
             .catch(Runtime.onResult.bind(null, cursor));
 
         return Promise.resolve(result instanceof Cursor ? result : cursor);
-    }
-
-    static applyTriggers(cursor: Cursor, message: Message): Promise<Cursor> {
-        if(!(cursor.currentAction instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
-
-        // hier muss jetz noch das this weg
-        return Promise
-            .all((this: Object)[cursor.currentAction.state].map(x => (cursor.send: Object)[x.emits](...message.payload)).toJS())
-            .then(x => cursor.patch(...x));
     }
 
     static allActions(x: Object, carry: Map<string, DeclaredAction> = Map()): Map<string, DeclaredAction> {
@@ -171,24 +163,7 @@ export default class Runtime extends Duplex {
             .map((x, key) => { // eslint-disable-line
                 const op = (instance: Object)[key];
 
-                // fieser hack, hier muss der konstruktor von
-                // action angepasst werden
-                if(
-                    key === "handle" ||
-                    key === "after" ||
-                    key === "error" ||
-                    key === "done" ||
-                    key === "finish" ||
-                    key === "before" ||
-                    key === "guards" ||
-                    key === "triggers"
-                ) {
-                    op.__Action = true;
-
-                    return new Action(name, key, triggers, op);
-                }
-
-                return op && op.__Action ? op.__Action : new Action(name, key, triggers, op);
+                return op && op.__Action ? op.__Action.setUnit(name) : new Action(name, key, triggers, op);
             });
 
         const actions = actions0
@@ -321,13 +296,13 @@ export default class Runtime extends Duplex {
     }
 
     handle(): Promise<Cursor> { // eslint-disable-line
-        if(!(this instanceof Cursor))                      return Promise.reject(new Error("fucking cursor"));
-        if(!(this.message instanceof Message))             return Promise.reject(new Error("fucking cursor"));
-        if(!(this.currentAction instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
+        if(!(this instanceof Cursor))                return Promise.reject(new Error("fucking cursor"));
+        if(!(this.message instanceof Message))       return Promise.reject(new Error("fucking cursor"));
+        if(!(this.action instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
 
         try {
             const cursor  = this.triggers();
-            const op      = cursor.currentAction.op;
+            const op      = cursor.action.op;
             const payload = cursor.message.payload;
 
             if(!op) return Promise.resolve(cursor);
@@ -344,7 +319,6 @@ export default class Runtime extends Duplex {
         const action  = data.payload.first();
         const message = data.payload.get(1);
 
-        if(action.name === "message") console.log("before", message.originalPayload);
         return Promise.resolve(this
             .update("_unit", internals => internals.actionBefore(message.setCursor(this), action)));
     }
@@ -356,15 +330,13 @@ export default class Runtime extends Duplex {
     }
 
     triggers(): Promise<Cursor> {
-        const action  = this.currentAction;
+        const action  = this.action;
         const message = this.message;
 
         if(!(action instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
         if(!(message instanceof Message))      return Promise.reject(new Error("fucking cursor"));
 
-        if(action.description.name === "message" && action.state === "before") console.log("triggers", message.originalPayload);
         return Promise
-            // hier muss der payload iwie noch korrekt reverted werden
             .all((action.description: Object)[action.state]
                 .map(x => (this.send: Object)[x.emits](...message.originalPayload.toJS())))
             .then(x => this.patch(...x));
@@ -388,13 +360,11 @@ export default class Runtime extends Duplex {
             .then(cursor => cursor.finish(error));
     }
 
-    guards(): Promise<Cursor> { // eslint-disable-line
-        if(!(this instanceof Cursor))                      return Promise.reject(new Error("fucking cursor"));
-        if(!(this.currentAction instanceof PendingAction)) return Promise.resolve(this.error(new Error("no action")));
+    guards(): Promise<Cursor> {
+        if(!(this instanceof Cursor))                return Promise.reject(new Error("fucking cursor"));
+        if(!(this.action instanceof PendingAction)) return Promise.resolve(this.error(new Error("no action")));
 
-        // das zu this.shouldTrigger, dass das dann called
-        if(this.currentAction.description.name === "message") console.log("guards", this.message.originalPayload);
-        const x = this.currentAction.trigger.shouldTrigger(this, this.message ? this.message.payload : List());
+        const x = this.action.shouldTrigger(this, this.message ? this.message.payload : List());
 
         return Promise.resolve(x.shouldTrigger ? x.trace.triggered() : x.trace.end());
     }

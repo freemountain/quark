@@ -62,7 +62,7 @@ export default class Trigger {
             } catch(e) {
                 return tracing
                     .update("_unit", internals => internals.actionWontTrigger())
-                    .error(new GuardError(tracing.currentContext, this.emits, i + 1, e));
+                    .error(new GuardError(tracing._unit.name, this.emits, i + 1, e));
             }
         }
 

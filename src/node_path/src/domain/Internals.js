@@ -7,7 +7,6 @@ import NoMessageError from "./error/NoMessageError";
 import AlreadyReceivedError from "./error/AlreadyReceivedError";
 import NotStartedError from "./error/NotStartedError";
 import PendingAction from "./PendingAction";
-import type Cursor from "./Cursor";
 import Action from "./Action";
 import type Runtime from "../Runtime";
 import Trigger from "./Trigger";
@@ -99,9 +98,6 @@ export default class Internals extends Record({
         if(this.action !== null) throw new AlreadyReceivedError();
 
         return this
-            // .set("action", new PendingAction({ message }))
-            // .trace(`Message<${message.resource}>`, message.payload)
-            // das muss hiermit klappen
             .actionBefore(message)
             .updateCurrentTrace(trace => trace.triggered());
     }
@@ -123,10 +119,6 @@ export default class Internals extends Record({
 
     isRecoverable(): boolean {
         return this.errors.every(x => x.isRecoverable && x.isRecoverable());
-    }
-
-    cursorChanged(cursor: Cursor): Internals {
-        return this.update("action", action => action instanceof PendingAction ? action.cursorChanged(cursor) : action);
     }
 
     actionFinished(): Internals {

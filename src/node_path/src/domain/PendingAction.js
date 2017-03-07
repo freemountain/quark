@@ -1,8 +1,8 @@
 // @flow
 import { Record } from "immutable";
 import Message from "../Message";
-import type Cursor from "./Cursor";
 import Action from "./Action";
+import Trigger from "./Trigger";
 
 export type State = "before" | "triggers" | "error" | "done" | "cancel" | "progress" | "finished" | "waiting";
 
@@ -37,7 +37,7 @@ export default class PendingAction extends Record({
             .changeState("finished");
     }
 
-    before(action: Action, message: Message): PendingAction { // eslint-disable-line
+    before(action: Action, message: Message): PendingAction {
         const prev0   = this.description ? `${this.name}.${this.state}` : action.name;
         const prev    = this.description.name === action.name ? prev0.replace(".before", "") : prev0;
         const trigger = action.triggerFor(prev);
@@ -50,9 +50,7 @@ export default class PendingAction extends Record({
             .changeState("before");
     }
 
-    // hier en result rein
     done(): PendingAction {
-        // hier muss der caller geändert werden
         return this
             .changeState("done");
     }
@@ -60,7 +58,7 @@ export default class PendingAction extends Record({
     // hier den error rein un das errohandling hierhin bauen
     // das hier kann auch die traces halten, dann kann man hier die ganzen
     // trace handler reinballern
-    error(error?: ?Error = null): PendingAction {
+    error(error: Error): PendingAction {
         return this
             .set("error", error)
             .changeState("error");
@@ -70,28 +68,26 @@ export default class PendingAction extends Record({
         return this.changeState("triggers");
     }
 
-    cursorChanged(cursor: Cursor): PendingAction {
-        return this
-            .update("message", message => message instanceof Message ? message.setCursor(cursor) : message);
-    }
-
     changeState(state: State): PendingAction {
         return this.set("state", state);
     }
 
-    get name(): string { // eslint-disable-line
-        if(this.trigger && this.trigger !== null)         return this.trigger.emits;
-        if(this.previous && this.previous !== null)       return this.previous.name;
-        if(this.description && this.description !== null) return this.description.name;
+    shouldTrigger(...args: Array<*>): boolean {
+        return this.trigger.shouldTrigger(...args);
+    }
+
+    get name(): string {
+        if(this.trigger instanceof Trigger)    return this.trigger.emits;
+        if(this.description instanceof Action) return this.description.name;
 
         return this.message.currentDir;
     }
 
     get op(): ?Function {
-        return this.description !== null ? this.description.op : null;
+        return this.description instanceof Action ? this.description.op : null;
     }
 
     get delay(): number {
-        return this.trigger !== null ? this.trigger.delay : 0;
+        return this.trigger instanceof Trigger ? this.trigger.delay : 0;
     }
 }

@@ -157,21 +157,14 @@ class Cursor {
         return this.__data.x.size;
     }
 
-    // _message => _unit.action.message
     get message(): ?Message {
-        return this.currentAction && this.currentAction.message instanceof Message ? this.currentAction.message.setCursor(this) : null;
+        return this.action && this.action.message instanceof Message ? this.action.message : null;
     }
 
-    // _action => _unit.action
-    get currentAction(): ?PendingAction {
+    get action(): ?PendingAction {
         const maybeAction = this._unit.action;
 
-        return maybeAction && maybeAction !== null ? maybeAction.cursorChanged(this) : maybeAction;
-    }
-
-    // _state => _unit.action.state
-    get currentState(): ?string {
-        return this.currentAction ? this.currentAction.state : null;
+        return maybeAction instanceof PendingAction ? maybeAction.update("message", message => message instanceof Message ? message.setCursor(this) : message) : maybeAction;
     }
 
     // _debug.currentTrace => _unit.debug.currentTrace
@@ -184,20 +177,14 @@ class Cursor {
         return this._unit.traces;
     }
 
-    // _state.currentError => _unit.action.state.currentError
+    // _state.currentError => _unit.action.currentError
     get currentError(): ?Error {
         return this.errors.last() || null;
     }
 
-    // das hier müsste statisch im konstruktor gemacht werden
-    // _unit.name
-    get currentContext(): string {
-        return this._unit.name;
-    }
-
     // _action.shouldTrigger => _unit.action.shouldTrigger
     get shouldTrigger(): boolean {
-        return !this.hasRecentlyErrored && this.currentAction instanceof PendingAction ? this.currentAction.willTrigger : false;
+        return !this.hasRecentlyErrored && this.action instanceof PendingAction ? this.action.willTrigger : false;
     }
 
     // _state.errors => _unit.action.state.errors
@@ -243,7 +230,7 @@ class Cursor {
             .toList();
 
         const next = patched
-            .update("_unit", internals => internals.set("action", this.currentAction))
+            .update("_unit", internals => internals.set("action", this.action))
             .update("_unit", internals => internals.set("traces", updated))
             .update("_unit", internals => internals.update("errors", x => x.concat(patchSet.errors)));
 
