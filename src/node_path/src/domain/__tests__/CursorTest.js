@@ -10,6 +10,7 @@ import Message from "../../Message";
 import Uuid from "../../util/Uuid";
 import PendingAction from "../PendingAction";
 import Runtime from "../../Runtime";
+import State from "../State";
 
 describe("CursorTest", function() { // eslint-disable-line
     beforeEach(function() {
@@ -97,7 +98,7 @@ describe("CursorTest", function() { // eslint-disable-line
             })))
             .send.headers({ test: "test" }).blub(1)
             .then(x => {
-                expect(x.errors.toJS()).to.eql([]);
+                expect(x.action.state.errors.toJS()).to.eql([]);
                 expect(x.get("test")).to.equal(7);
             });
     });
@@ -113,8 +114,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: new Internals({
                 name:     "Unit",
                 id:       "id",
-                action:   new PendingAction({ message }),
-                errors:   Set.of(error),
+                action:   new PendingAction({ message, state: new State({ errors: Set.of(error) }) }),
                 children: children
             })
         });
@@ -123,8 +123,8 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor.message.toJS()).to.eql(message.setCursor(cursor).toJS());
         expect(cursor.set("action", message).message).to.be.an.instanceOf(Message);
-        expect(cursor.errors.toJS()).to.eql([error]);
-        expect(cursor.currentError).to.equal(error);
+        expect(cursor.action.state.errors.toJS()).to.eql([error]);
+        expect(cursor.action.state.error).to.equal(error);
         expect(cursor.children).to.equal(children);
     });
 
@@ -153,8 +153,11 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor2.toJS()).to.eql({
             _unit: {
                 action: {
-                    message:     message.toJS(),
-                    state:       "before",
+                    message: message.toJS(),
+                    state:   {
+                        type:   "before",
+                        errors: []
+                    },
                     willTrigger: false,
                     trigger:     null,
                     previous:    null,
@@ -176,11 +179,7 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                previous:    null,
                 children:    {},
-                current:     0,
-                diffs:       [],
-                errors:      [],
                 history:     [],
                 id:          "id",
                 name:        "Unit",
@@ -238,8 +237,11 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor3.toJS()).to.eql({
             _unit: {
                 action: {
-                    message:     message.toJS(),
-                    state:       "before",
+                    message: message.toJS(),
+                    state:   {
+                        type:   "before",
+                        errors: []
+                    },
                     willTrigger: false,
                     trigger:     null,
                     previous:    null,
@@ -261,11 +263,7 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                previous:    null,
                 children:    {},
-                current:     0,
-                diffs:       [],
-                errors:      [],
                 history:     [],
                 id:          "id",
                 name:        "Unit",
@@ -323,8 +321,11 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor4.toJS()).to.eql({
             _unit: {
                 action: {
-                    message:     message.toJS(),
-                    state:       "before",
+                    message: message.toJS(),
+                    state:   {
+                        type:   "before",
+                        errors: []
+                    },
                     willTrigger: false,
                     trigger:     null,
                     previous:    null,
@@ -346,11 +347,7 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                previous:    null,
                 children:    {},
-                current:     0,
-                diffs:       [],
-                errors:      [],
                 history:     [],
                 id:          "id",
                 name:        "Unit",
@@ -421,8 +418,11 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor5.toJS()).to.eql({
             _unit: {
                 action: {
-                    message:     message.toJS(),
-                    state:       "before",
+                    message: message.toJS(),
+                    state:   {
+                        type:   "before",
+                        errors: []
+                    },
                     willTrigger: false,
                     trigger:     null,
                     previous:    null,
@@ -444,11 +444,7 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                previous:    null,
                 children:    {},
-                current:     0,
-                diffs:       [],
-                errors:      [],
                 history:     [],
                 id:          "id",
                 name:        "Unit",
@@ -536,8 +532,11 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor6.toJS()).to.eql({
             _unit: {
                 action: {
-                    message:     message.toJS(),
-                    state:       "before",
+                    message: message.toJS(),
+                    state:   {
+                        type:   "before",
+                        errors: []
+                    },
                     willTrigger: false,
                     trigger:     null,
                     previous:    null,
@@ -559,11 +558,7 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                previous:    null,
                 children:    {},
-                current:     0,
-                diffs:       [],
-                errors:      [],
                 history:     [],
                 id:          "id",
                 name:        "Unit",
@@ -663,8 +658,11 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor7.toJS()).to.eql({
             _unit: {
                 action: {
-                    message:     message.toJS(),
-                    state:       "before",
+                    message: message.toJS(),
+                    state:   {
+                        type:   "before",
+                        errors: []
+                    },
                     willTrigger: false,
                     trigger:     null,
                     previous:    null,
@@ -686,11 +684,7 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                previous:    null,
                 children:    {},
-                current:     0,
-                diffs:       [],
-                errors:      [],
                 history:     [],
                 id:          "id",
                 name:        "Unit",
@@ -800,8 +794,11 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor8.toJS()).to.eql({
             _unit: {
                 action: {
-                    message:     message.toJS(),
-                    state:       "before",
+                    message: message.toJS(),
+                    state:   {
+                        type:   "before",
+                        errors: []
+                    },
                     willTrigger: false,
                     trigger:     null,
                     previous:    null,
@@ -823,11 +820,7 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                previous:    null,
                 children:    {},
-                current:     0,
-                diffs:       [],
-                errors:      [],
                 history:     [],
                 id:          "id",
                 name:        "Unit",
@@ -937,8 +930,11 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor9.toJS()).to.eql({
             _unit: {
                 action: {
-                    message:     message.toJS(),
-                    state:       "before",
+                    message: message.toJS(),
+                    state:   {
+                        type:   "before",
+                        errors: []
+                    },
                     willTrigger: false,
                     trigger:     null,
                     previous:    null,
@@ -960,11 +956,7 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                previous:    null,
                 children:    {},
-                current:     0,
-                diffs:       [],
-                errors:      [],
                 history:     [],
                 id:          "id",
                 name:        "Unit",
@@ -1075,35 +1067,8 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor10.toJS()).to.eql({
             _unit: {
-                action:   null,
-                previous: {
-                    message:     message.toJS(),
-                    state:       "before",
-                    willTrigger: false,
-                    trigger:     null,
-                    previous:    null,
-                    error:       null,
-                    description: {
-                        name:     "message",
-                        before:   [],
-                        cancel:   [],
-                        done:     [],
-                        error:    [],
-                        progress: [],
-                        unit:     "Unit",
-                        triggers: [{
-                            action: "message",
-                            delay:  0,
-                            emits:  "message",
-                            guards: 0,
-                            params: []
-                        }]
-                    }
-                },
+                action:      null,
                 children:    {},
-                current:     0,
-                diffs:       [],
-                errors:      [],
                 history:     [],
                 id:          "id",
                 name:        "Unit",
@@ -1260,10 +1225,10 @@ describe("CursorTest", function() { // eslint-disable-line
 
         const cursor2 = cursor.error(new Error("huhu"));
 
-        expect(cursor.currentError).to.equal(null);
-        expect(cursor.errors.toJS()).to.eql([]);
-        expect(cursor2.errors.toJS()).to.eql([new Error("huhu")]);
-        expect(cursor2.currentError).to.eql(new Error("huhu"));
+        expect(cursor.action.state.error).to.equal(null);
+        expect(cursor.action.state.errors.toJS()).to.eql([]);
+        expect(cursor2.action.state.errors.toJS()).to.eql([new Error("huhu")]);
+        expect(cursor2.action.state.error).to.eql(new Error("huhu"));
     });
 
     it("patches and diffs with a cursor", function() {

@@ -167,6 +167,19 @@ class Cursor {
         return maybeAction instanceof PendingAction ? maybeAction.update("message", message => message instanceof Message ? message.setCursor(this) : message) : maybeAction;
     }
 
+    // das hier iwie ganz weg, durch _start
+    // _state.hasRecentlyErrored => _unit.action.state.hasRecentlyErrored
+    get hasRecentlyErrored(): boolean {
+        const action1 = this.action;
+        const action2 = this.undo().action;
+
+        return (
+            action1 instanceof PendingAction &&
+            action2 instanceof PendingAction &&
+            action1.state.error !== action2.state.error
+        );
+    }
+
     // _debug.currentTrace => _unit.debug.currentTrace
     get currentTrace(): ?Trace {
         return this.traces.first();
@@ -175,11 +188,6 @@ class Cursor {
     // _debug.traces => _unit.debug.traces
     get traces(): List<Trace> {
         return this._unit.traces;
-    }
-
-    // _state.currentError => _unit.action.currentError
-    get currentError(): ?Error {
-        return this.errors.last() || null;
     }
 
     // _action.shouldTrigger => _unit.action.shouldTrigger
@@ -197,20 +205,9 @@ class Cursor {
         return this._unit.children;
     }
 
-    // _state.hasErrored => _unit.action.state.hasErrored
-    // _state.isRecoverable => _unit.action.state.isRecoverable
-    get isRecoverable(): boolean {
-        return this._unit.isRecoverable();
-    }
-
     // _debug.isTracing -> besserer name => _unit.debug.isTracing
     get isTracing(): boolean {
         return this._unit && this._unit.isTracing();
-    }
-
-    // _state.hasRecentlyErrored => _unit.action.state.hasRecentlyErrored
-    get hasRecentlyErrored(): boolean {
-        return this.currentError !== this.undo().currentError;
     }
 
     patch(...results: Array<Cursor>): Cursor {
@@ -218,7 +215,7 @@ class Cursor {
             return Object.assign(dest, {
                 diffs:  dest.diffs.concat(this.diff(y)),
                 traces: dest.traces.concat(y.traces),
-                errors: dest.errors.concat(y.errors)
+                errors: dest.errors.concat(y.action instanceof PendingAction ? y.action.state.errors : Set())
             });
         }, { diffs: Set(), traces: List(), errors: List() });
 
@@ -229,10 +226,12 @@ class Cursor {
             .map(x => x.first())
             .toList();
 
+        const action = !(this.action instanceof PendingAction) ? this.action : this.action
+            .update("state", state => state.set("errors", patchSet.errors));
+
         const next = patched
-            .update("_unit", internals => internals.set("action", this.action))
-            .update("_unit", internals => internals.set("traces", updated))
-            .update("_unit", internals => internals.update("errors", x => x.concat(patchSet.errors)));
+            .update("_unit", internals => internals.set("action", action))
+            .update("_unit", internals => internals.set("traces", updated));
 
         return new this.constructor(next);
     }

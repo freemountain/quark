@@ -274,12 +274,15 @@ export default class Runtime extends Duplex {
             .then(x => this.message.call(x, x.currentMessage))
             // adde das diffen kann in ne action, wenn der cursor die history
             // kennt (property __start adden bei messagereceived)
+            .then(x => {
+                if(!x.action.state.isRecoverable) return this.emit("error", x.action.state.error);
+
+                return x;
+            })
             .then(x => Runtime.diff(this, x))
             .then(update => this.finish.call(update.cursor))
             .then(x => {
-                if(!x.isRecoverable) return this.emit("error", x.currentError);
-
-                this.cursor = cursor;
+                this.cursor = x;
                 this.locked = false;
 
                 return this;
@@ -296,8 +299,8 @@ export default class Runtime extends Duplex {
     }
 
     handle(): Promise<Cursor> { // eslint-disable-line
-        if(!(this instanceof Cursor))                return Promise.reject(new Error("fucking cursor"));
-        if(!(this.message instanceof Message))       return Promise.reject(new Error("fucking cursor"));
+        if(!(this instanceof Cursor))               return Promise.reject(new Error("fucking cursor"));
+        if(!(this.message instanceof Message))      return Promise.reject(new Error("fucking cursor"));
         if(!(this.action instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
 
         try {
@@ -337,7 +340,7 @@ export default class Runtime extends Duplex {
         if(!(message instanceof Message))      return Promise.reject(new Error("fucking cursor"));
 
         return Promise
-            .all((action.description: Object)[action.state]
+            .all((action.description: Object)[action.state.type]
                 .map(x => (this.send: Object)[x.emits](...message.originalPayload.toJS())))
             .then(x => this.patch(...x));
     }
@@ -350,7 +353,7 @@ export default class Runtime extends Duplex {
 
     after(): Promise<Cursor> {
         const hasRecentlyErrored = this.hasRecentlyErrored;
-        const error              = hasRecentlyErrored ? this.currentError : null;
+        const error              = hasRecentlyErrored ? this.action.state.error : null;
 
         return (hasRecentlyErrored ? this.send.done() : this.send.error())
             // die zeile hier sollte eigtl weg könne, aber dann klappt da was nich

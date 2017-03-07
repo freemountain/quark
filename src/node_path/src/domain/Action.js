@@ -56,7 +56,7 @@ class Action {
             const message = data instanceof Message ? data : this.message;
 
             if(!Message.is(message))            return Promise.resolve(this
-                .trace(description.name, List(), this.action.state)
+                .trace(description.name, List(), this.action.state.type)
                 .error(new UnknownMessageError(description.unit, description.name, message)));
 
             // hier das ganze in der message funktion mqchen
@@ -89,11 +89,11 @@ class Action {
                         .then(cursor => cursor.send.after())
                         .catch(e => x.error(e)))
                     .catch(e => this
-                        .trace(description.name, List(), this.action.state)
+                        .trace(description.name, List(), this.action.state.type)
                         .error(e));
             } catch(e) {
                 return Promise.resolve(this
-                    .trace(description.name, List(), this.action.state)
+                    .trace(description.name, List(), this.action.state.type)
                     .error(e));
             }
         };

@@ -64,7 +64,7 @@ export default class Message extends Record({
 
         if(!(cursor instanceof Cursor)) throw new NoCursorError("Message::preparePayload");
 
-        const payload = trigger.action.indexOf(".error") !== -1 ? this.payload.unshift(cursor.currentError) : this.payload;
+        const payload = trigger.action.indexOf(".error") !== -1 ? this.payload.unshift(cursor.action.state.error) : this.payload;
 
         return this
             .set("_initial", payload)

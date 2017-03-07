@@ -337,7 +337,7 @@ describe("ActionTest", function() {
                     .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
-                expect(x.errors.toJS()).to.eql([new UnknownMessageError("Test", "test", "huhu")]);
+                expect(x.action.state.errors.toJS()).to.eql([new UnknownMessageError("Test", "test", "huhu")]);
                 expect(result.traces.toJS()).to.eql([{
                     id:       4,
                     parent:   null,
@@ -411,7 +411,7 @@ describe("ActionTest", function() {
                 const filtered = result
                     .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
-                expect(cursor.errors.toJS()).to.eql([]);
+                expect(cursor.action.state.errors.toJS()).to.eql([]);
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
                 expect(result.traces.toJS()).to.eql([{
                     id:       4,

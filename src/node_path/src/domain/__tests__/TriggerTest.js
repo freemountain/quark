@@ -70,7 +70,7 @@ describe("TriggerTest", function() {
         return action.func
             .call(cursor, new Message("/blub", List([1, "huhu"])))
             .then(x => {
-                expect(x.errors.toJS()).to.eql([]);
+                expect(x.action.state.errors.toJS()).to.eql([]);
                 expect(x.get("x")).to.equal(9);
             });
     });

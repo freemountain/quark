@@ -432,7 +432,7 @@ describe("RuntimeTest", function() {
         expect(message2.get("payload").first()).to.equal(payload.first());
 
         return unit.message.call(cursor, message2).then(x => {
-            expect(x.errors.toJS()).to.eql([]);
+            expect(x.action.state.errors.toJS()).to.eql([]);
             expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql({
                 name: "jupp"
             });
