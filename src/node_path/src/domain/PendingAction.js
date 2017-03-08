@@ -10,7 +10,7 @@ type PendingActionData = {
     state?:       State,   // eslint-disable-line
     willTrigger?: boolean,
     description?: ?Action, // eslint-disable-line
-    previous?:    ?Action, // eslint-disable-line
+    previous?:    ?PendingAction, // eslint-disable-line
     error?:       ?Error   // eslint-disable-line
 };
 
@@ -47,7 +47,7 @@ export default class PendingAction extends Record({
             .set("message", message.preparePayload(trigger))
             .set("trigger", trigger)
             .set("description", action)
-            .set("previous", this.description)
+            .set("previous", this)
             .changeState("before");
     }
 
@@ -95,4 +95,12 @@ export default class PendingAction extends Record({
     get delay(): number {
         return this.trigger instanceof Trigger ? this.trigger.delay : 0;
     }
+
+    get hasRecentlyErrored(): boolean {
+        return (
+            this.previous instanceof PendingAction &&
+            this.state.error !== this.previous.state.error
+        );
+    }
+
 }

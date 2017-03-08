@@ -111,7 +111,7 @@ export default class Runtime extends Duplex {
     }
 
     static onResult(cursor: Cursor, result: (Promise<Cursor> | Error | Cursor | void)): Promise<Cursor> { // eslint-disable-line
-        if(result instanceof Error)   return cursor.update("_unit", internals => internals.error(result));
+        if(result instanceof Error)   return cursor.pushError(result);
         if(result instanceof Promise) return result
             .then(Runtime.onResult.bind(null, cursor))
             .catch(Runtime.onResult.bind(null, cursor));
@@ -314,7 +314,7 @@ export default class Runtime extends Duplex {
 
             return Runtime.onResult(cursor, result);
         } catch(e) {
-            return Promise.resolve(this.update("_unit", internals => internals.error(e)));
+            return Promise.resolve(this.pushError(e));
         }
     }
 
@@ -352,7 +352,7 @@ export default class Runtime extends Duplex {
     }
 
     after(): Promise<Cursor> {
-        const hasRecentlyErrored = this.hasRecentlyErrored;
+        const hasRecentlyErrored = this.action.hasRecentlyErrored;
         const error              = hasRecentlyErrored ? this.action.state.error : null;
 
         return (hasRecentlyErrored ? this.send.done() : this.send.error())

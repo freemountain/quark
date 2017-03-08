@@ -85,9 +85,9 @@ class Action {
                 return this.send.before(description, message)
                     .then(x => x.send.guards())
                     .then(x => !x.shouldTrigger ? x : x.send.triggers()
-                        .then(cursor => cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle())
-                        .then(cursor => cursor.send.after())
-                        .catch(e => x.error(e)))
+                            .then(cursor => cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle())
+                            .then(cursor => cursor.send.after())
+                            .catch(e => x.error(e)))
                     .catch(e => this
                         .trace(description.name, List(), this.action.state.type)
                         .error(e));

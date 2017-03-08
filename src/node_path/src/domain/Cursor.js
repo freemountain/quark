@@ -167,19 +167,6 @@ class Cursor {
         return maybeAction instanceof PendingAction ? maybeAction.update("message", message => message instanceof Message ? message.setCursor(this) : message) : maybeAction;
     }
 
-    // das hier iwie ganz weg, durch _start
-    // _state.hasRecentlyErrored => _unit.action.state.hasRecentlyErrored
-    get hasRecentlyErrored(): boolean {
-        const action1 = this.action;
-        const action2 = this.undo().action;
-
-        return (
-            action1 instanceof PendingAction &&
-            action2 instanceof PendingAction &&
-            action1.state.error !== action2.state.error
-        );
-    }
-
     // _debug.currentTrace => _unit.debug.currentTrace
     get currentTrace(): ?Trace {
         return this.traces.first();
@@ -192,7 +179,7 @@ class Cursor {
 
     // _action.shouldTrigger => _unit.action.shouldTrigger
     get shouldTrigger(): boolean {
-        return !this.hasRecentlyErrored && this.action instanceof PendingAction ? this.action.willTrigger : false;
+        return this.action instanceof PendingAction && !this.action.hasRecentlyErrored ? this.action.willTrigger : false;
     }
 
     // _state.errors => _unit.action.state.errors
@@ -211,13 +198,11 @@ class Cursor {
     }
 
     patch(...results: Array<Cursor>): Cursor {
-        const patchSet = results.reduce((dest, y) => {
-            return Object.assign(dest, {
-                diffs:  dest.diffs.concat(this.diff(y)),
-                traces: dest.traces.concat(y.traces),
-                errors: dest.errors.concat(y.action instanceof PendingAction ? y.action.state.errors : Set())
-            });
-        }, { diffs: Set(), traces: List(), errors: List() });
+        const patchSet = results.reduce((dest, y) => Object.assign(dest, {
+            diffs:  dest.diffs.concat(this.diff(y)),
+            traces: dest.traces.concat(y.traces),
+            errors: dest.errors.concat(y.action instanceof PendingAction ? y.action.state.errors : [])
+        }), { diffs: Set(), traces: List(), errors: Set() });
 
         const patched = patch(this.__data.x, patchSet.diffs.toList());
         const updated = this._unit.traces
@@ -228,6 +213,8 @@ class Cursor {
 
         const action = !(this.action instanceof PendingAction) ? this.action : this.action
             .update("state", state => state.set("errors", patchSet.errors));
+
+        console.log("patch", this.action instanceof PendingAction ? this.action.name : "", patchSet.errors.size);
 
         const next = patched
             .update("_unit", internals => internals.set("action", action))
@@ -277,10 +264,17 @@ class Cursor {
     }
 
     // __state.error
+    //
+    // der hier muss weg (trace.error manuell) und dann das pushError zu error()
     error(e: Error): Cursor {
         return this
-            .update("_unit", internals => internals.error(e))
+            .pushError(e)
             .trace.error(e);
+    }
+
+    pushError(e: Error): Cursor {
+        return this
+            .update("_unit", internals => internals.set("action", internals.action.addError(e)));
     }
 
     defer(op: Function, delay?: number): Promise<*> {
