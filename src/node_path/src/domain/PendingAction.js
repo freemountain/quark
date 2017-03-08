@@ -78,7 +78,11 @@ export default class PendingAction extends Record({
     }
 
     shouldTrigger(...args: Array<*>): boolean {
-        return this.trigger.shouldTrigger(...args);
+        try {
+            return this.trigger.shouldTrigger(...args);
+        } catch(e) {
+            return false;
+        }
     }
 
     get name(): string {

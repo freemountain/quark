@@ -212,9 +212,11 @@ class Cursor {
             .toList();
 
         const action = !(this.action instanceof PendingAction) ? this.action : this.action
-            .update("state", state => state.set("errors", patchSet.errors));
+            .update("state", state => state.set("errors", state.errors.concat(patchSet.errors)));
+            // .update("state", state => state.set("errors", state.errors.concat(patchSet.errors)));
 
-        console.log("patch", this.action instanceof PendingAction ? this.action.name : "", patchSet.errors.size);
+        // das hier is eigtl die richtige variante, aber rejected dann irgend ne promise???
+        // .update("state", state => state.set("errors", state.errors.concat(patchSet.errors)));
 
         const next = patched
             .update("_unit", internals => internals.set("action", action))
@@ -268,11 +270,11 @@ class Cursor {
     // der hier muss weg (trace.error manuell) und dann das pushError zu error()
     error(e: Error): Cursor {
         return this
-            .pushError(e)
+            .addError(e)
             .trace.error(e);
     }
 
-    pushError(e: Error): Cursor {
+    addError(e: Error): Cursor {
         return this
             .update("_unit", internals => internals.set("action", internals.action.addError(e)));
     }

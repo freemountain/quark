@@ -102,7 +102,9 @@ class Test4 extends Runtime {
     static triggers = {
         test: triggered
             .by("message.before")
-            .if((name, x) => x.message.resource === "/actions/init" ? false : name.indexOf("lulu") === -1),
+            .if((name, x) => {
+                return typeof name !== "string" || x.message.resource === "/actions/init" ? false : name.indexOf("lulu") === -1;
+            }),
 
         test2: triggered.by("test.before"),
         test3: triggered.by("test.before"),
@@ -1373,16 +1375,16 @@ describe("ActionTest", function() {
 
                         expect(filtered.toJS()).to.eql(cursor3.toJS());
 
-                        /* expect(y.action.state.errors.toJS()).to.eql([
-                            new Error("an error3"),
+                        expect(y.action.state.errors.toJS()).to.eql([
                             new Error("an error2"),
+                            new Error("an error3"),
                             new GuardError("Test", "test5", 1, new Error("an error6")),
                             new Error("an error"),
-                            new Error("an error5"),
                             new Error("an error4"),
                             new GuardError("Test", "test7", 1, new Error("an error8")),
+                            new Error("an error5"),
                             new GuardError("Test", "test6", 1, new Error("an error7"))
-                        ]);*/
+                        ]);
 
                         expect(result.traces.toJS()).to.eql([{
                             id:       9,

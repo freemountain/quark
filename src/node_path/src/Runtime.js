@@ -111,7 +111,7 @@ export default class Runtime extends Duplex {
     }
 
     static onResult(cursor: Cursor, result: (Promise<Cursor> | Error | Cursor | void)): Promise<Cursor> { // eslint-disable-line
-        if(result instanceof Error)   return cursor.pushError(result);
+        if(result instanceof Error)   return cursor.addError(result);
         if(result instanceof Promise) return result
             .then(Runtime.onResult.bind(null, cursor))
             .catch(Runtime.onResult.bind(null, cursor));
@@ -314,7 +314,7 @@ export default class Runtime extends Duplex {
 
             return Runtime.onResult(cursor, result);
         } catch(e) {
-            return Promise.resolve(this.pushError(e));
+            return Promise.resolve(this.addError(e));
         }
     }
 
@@ -363,8 +363,8 @@ export default class Runtime extends Duplex {
             .then(cursor => cursor.finish(error));
     }
 
-    guards(): Promise<Cursor> {
-        if(!(this instanceof Cursor))                return Promise.reject(new Error("fucking cursor"));
+    guards(): Promise<Cursor> { // eslint-disable-line
+        if(!(this instanceof Cursor))               return Promise.reject(new Error("fucking cursor"));
         if(!(this.action instanceof PendingAction)) return Promise.resolve(this.error(new Error("no action")));
 
         const x = this.action.shouldTrigger(this, this.message ? this.message.payload : List());

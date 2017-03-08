@@ -41,8 +41,8 @@ export default class Trigger {
     }
 
     shouldTrigger(cursor: Cursor, params: List<any>): Cursor { // eslint-disable-line
-        let result  = true;
-        let tracing = cursor;
+        let result  = true;   // eslint-disable-line
+        let tracing = cursor; // eslint-disable-line
 
         // for loop to be able to return instantly
         // if some guard does not trigger or errors
@@ -54,6 +54,7 @@ export default class Trigger {
             try {
                 const guard = this.guards.get(i);
 
+                console.log(tracing.action.name, params.toJS());
                 result  = guard(...(params.toJS()), tracing);
                 tracing = tracing.trace.end();
 
@@ -66,6 +67,6 @@ export default class Trigger {
             }
         }
 
-        return tracing.update("_unit", internals => internals.actionWillTrigger());
+        return tracing.update("_unit", internals => internals.actionWillTrigger()); // eslint-disable-line
     }
 }
