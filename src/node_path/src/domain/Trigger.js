@@ -54,7 +54,6 @@ export default class Trigger {
             try {
                 const guard = this.guards.get(i);
 
-                console.log(tracing.action.name, params.toJS());
                 result  = guard(...(params.toJS()), tracing);
                 tracing = tracing.trace.end();
 

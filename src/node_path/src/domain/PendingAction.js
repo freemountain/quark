@@ -103,6 +103,7 @@ export default class PendingAction extends Record({
     get hasRecentlyErrored(): boolean {
         return (
             this.previous instanceof PendingAction &&
+            this.previous.description.name !== this.description.name &&
             this.state.error !== this.previous.state.error
         );
     }

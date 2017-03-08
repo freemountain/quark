@@ -112,7 +112,7 @@ export default class Internals extends Record({
 
     actionBefore(y: Message, descr?: ?Action): Internals { // eslint-disable-line
         const description = descr instanceof Action ? descr : this.description.get("message");
-        const updated     = this.update("action", action => action instanceof PendingAction ? action.before(description, y) : new PendingAction({ message: y, description, previous: this.action }));
+        const updated     = this.update("action", action => action instanceof PendingAction ? action.before(description, y) : new PendingAction({ message: y, description }));
         const name        = !(descr instanceof Action) ? `Message<${y.resource}>` : description.name;
         const trigger     = !(this.action instanceof PendingAction) || description.name === "message" ? undefined : this.action.state.type; // eslint-disable-line
         const guards      = updated.action.trigger !== null ? updated.action.trigger.guards.size : 0;
