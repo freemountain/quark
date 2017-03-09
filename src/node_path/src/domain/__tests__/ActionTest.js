@@ -243,8 +243,8 @@ describe("ActionTest", function() {
             })
         });
 
-        const cursor = (new unit.__Cursor(data))
-            .update("_unit", internals => internals.messageReceived(message))
+        const cursor = (new unit.__Cursor(data))._unit
+            .messageReceived(message)
             .trace("message", message.get("payload"))
             .trace.triggered()
             .update("_unit", internals => internals.set("action", new PendingAction({
@@ -259,11 +259,11 @@ describe("ActionTest", function() {
             .then(x => { // eslint-disable-line
                 const result  = x
                     .trace.end()
-                    .messageProcessed();
+                    ._unit.messageProcessed();
 
                 const cursor2 = cursor
                         .trace.end()
-                        .messageProcessed()
+                        ._unit.messageProcessed()
                         .set("name", "test")
                         .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
@@ -271,7 +271,7 @@ describe("ActionTest", function() {
                     .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
-                expect(result.traces.toJS()).to.eql([{
+                expect(result.debug.traces.toJS()).to.eql([{
                     id:       4,
                     parent:   null,
                     start:    2,
@@ -313,8 +313,8 @@ describe("ActionTest", function() {
         });
 
         const message  = (new Message("/actions/test", List.of("test")));
-        const cursor   = (new unit.__Cursor(data))
-            .update("_unit", internals => internals.messageReceived(message))
+        const cursor   = (new unit.__Cursor(data))._unit
+            .messageReceived(message)
             .trace("message", message.get("payload"))
             .trace.triggered()
             .update("_unit", internals => internals.update("action", action => action.set("message", null)));
@@ -328,11 +328,11 @@ describe("ActionTest", function() {
             .then(x => { // eslint-disable-line
                 const result = x
                     .trace.end()
-                    .messageProcessed();
+                    ._unit.messageProcessed();
 
                 const cursor2 = cursor
                         .trace.end()
-                        .messageProcessed()
+                        ._unit.messageProcessed()
                         .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
                 const filtered = result
@@ -340,7 +340,7 @@ describe("ActionTest", function() {
 
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
                 expect(x.action.state.errors.toJS()).to.eql([new UnknownMessageError("Test", "test", "huhu")]);
-                expect(result.traces.toJS()).to.eql([{
+                expect(result.debug.traces.toJS()).to.eql([{
                     id:       4,
                     parent:   null,
                     start:    2,
@@ -395,17 +395,17 @@ describe("ActionTest", function() {
         });
 
         const message  = (new Message("/actions/test", List.of("test")));
-        const cursor   = (new unit.__Cursor(data))
-            .update("_unit", internals => internals.messageReceived(message));
+        const cursor   = (new unit.__Cursor(data))._unit
+            .messageReceived(message);
 
         return unit.ready().then(y => y.message.call(cursor, message))
             .then(x => {
-                const result  = x.messageProcessed();
+                const result  = x._unit.messageProcessed();
                 const cursor2 = cursor
                     .trace("message", message.get("payload"))
                     .trace.triggered()
                     .trace.end()
-                    .messageProcessed()
+                    ._unit.messageProcessed()
                     .set("name", "test")
                     .set("value", 5)
                     .filter((_, key) => key !== "_unit"); // eslint-disable-line
@@ -415,7 +415,7 @@ describe("ActionTest", function() {
 
                 expect(cursor.action.state.errors.toJS()).to.eql([]);
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
-                expect(result.traces.toJS()).to.eql([{
+                expect(result.debug.traces.toJS()).to.eql([{
                     id:       4,
                     parent:   null,
                     start:    2,
@@ -1014,12 +1014,12 @@ describe("ActionTest", function() {
                     .then(x => {
                         const result = x
                             .trace.end()
-                            .messageProcessed();
+                            ._unit.messageProcessed();
 
                         const cursor3 = cursor2
                             .trace.triggered()
                             .trace.end()
-                            .messageProcessed()
+                            ._unit.messageProcessed()
                             .filter((_, key) => key !== "_unit") // eslint-disable-line
                             .set("test1", "test1")
                             .set("test21", "test21")
@@ -1030,7 +1030,7 @@ describe("ActionTest", function() {
                             .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
                         expect(filtered.toJS()).to.eql(cursor3.toJS());
-                        expect(result.traces.toJS()).to.eql([{
+                        expect(result.debug.traces.toJS()).to.eql([{
                             id:       14,
                             start:    23,
                             parent:   null,
@@ -1172,12 +1172,12 @@ describe("ActionTest", function() {
 
                 return x.message.call(cursor2, message.setCursor(cursor))
                     .then(y => {
-                        const result  = y.messageProcessed();
+                        const result  = y._unit.messageProcessed();
                         const cursor3 = cursor2
                             .trace("message", message.get("payload"))
                             .trace.triggered()
                             .trace.end()
-                            .messageProcessed()
+                            ._unit.messageProcessed()
                             .filter((_, key) => key !== "_unit") // eslint-disable-line
                             .set("name", "test")
                             .set("test1", "test1")
@@ -1190,7 +1190,7 @@ describe("ActionTest", function() {
                             .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
                         expect(filtered.toJS()).to.eql(cursor3.toJS());
-                        expect(result.traces.toJS()).to.eql([{
+                        expect(result.debug.traces.toJS()).to.eql([{
                             id:       14,
                             start:    23,
                             parent:   null,
@@ -1358,12 +1358,12 @@ describe("ActionTest", function() {
 
                 return x.message.call(cursor2, message.setCursor(cursor))
                     .then(y => {
-                        const result  = y.messageProcessed();
+                        const result  = y._unit.messageProcessed();
                         const cursor3 = cursor2
                             .trace("message", message.get("payload"))
                             .trace.triggered()
                             .trace.end()
-                            .messageProcessed()
+                            ._unit.messageProcessed()
                             .set("test", new Error("an error"))
                             .set("test2", new Error("an error2"))
                             .set("test4", new Error("an error4"))
@@ -1386,7 +1386,7 @@ describe("ActionTest", function() {
                             new GuardError("Test", "test6", 1, new Error("an error7"))
                         ]);
 
-                        expect(result.traces.toJS()).to.eql([{
+                        expect(result.debug.traces.toJS()).to.eql([{
                             id:       9,
                             start:    13,
                             parent:   null,

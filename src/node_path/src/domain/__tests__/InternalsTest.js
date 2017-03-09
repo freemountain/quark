@@ -32,6 +32,7 @@ describe("InternalsTest", function() {
         });
 
         expect(internals.toJS()).to.eql({
+            _cursor:     null,
             name:        "Blub",
             history:     [],
             children:    {},
@@ -116,7 +117,8 @@ describe("InternalsTest", function() {
 
         expect(internals2.debug.isTracing).to.equal(true);
         expect(internals2.toJS()).to.eql({
-            action: {
+            _cursor: null,
+            action:  {
                 _cursor: null,
                 message: {
                     headers:  {},
@@ -205,7 +207,8 @@ describe("InternalsTest", function() {
         const internals3 = internals2.updateCurrentTrace(x => x.errored(new Error("blub")));
 
         expect(internals3.toJS()).to.eql({
-            action: {
+            _cursor: null,
+            action:  {
                 _cursor: null,
                 message: {
                     headers:  {},

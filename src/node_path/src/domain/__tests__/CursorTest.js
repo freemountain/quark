@@ -88,7 +88,7 @@ describe("CursorTest", function() { // eslint-disable-line
 
         const message = (new Message("/actions/test", List.of(1)));
 
-        return cursor
+        return cursor._unit
             .messageReceived(message)
             .update("_unit", internals => internals.set("action", new PendingAction({
                 message:     message,
@@ -152,7 +152,8 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor2.toJS()).to.eql({
             _unit: {
-                action: {
+                _cursor: null,
+                action:  {
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -239,7 +240,8 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor3.toJS()).to.eql({
             _unit: {
-                action: {
+                _cursor: null,
+                action:  {
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -326,7 +328,8 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor4.toJS()).to.eql({
             _unit: {
-                action: {
+                _cursor: null,
+                action:  {
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -426,7 +429,8 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor5.toJS()).to.eql({
             _unit: {
-                action: {
+                _cursor: null,
+                action:  {
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -543,7 +547,8 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor6.toJS()).to.eql({
             _unit: {
-                action: {
+                _cursor: null,
+                action:  {
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -672,7 +677,8 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor7.toJS()).to.eql({
             _unit: {
-                action: {
+                _cursor: null,
+                action:  {
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -811,7 +817,8 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor8.toJS()).to.eql({
             _unit: {
-                action: {
+                _cursor: null,
+                action:  {
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -950,7 +957,8 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor9.toJS()).to.eql({
             _unit: {
-                action: {
+                _cursor: null,
+                action:  {
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -1087,10 +1095,11 @@ describe("CursorTest", function() { // eslint-disable-line
 
         const cursor10 = cursor9
             .trace.end()
-            .messageProcessed();
+            ._unit.messageProcessed();
 
         expect(cursor10.toJS()).to.eql({
             _unit: {
+                _cursor:     null,
                 action:      null,
                 children:    {},
                 history:     [],
@@ -1199,7 +1208,7 @@ describe("CursorTest", function() { // eslint-disable-line
             }
         });
 
-        expect(cursor10.traces.first().toString()).to.equal("                                          \u001b[7m\u001b[32m Unit::Message</test>(1) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m11ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m\n                                                                                      |\n                                             \u001b[7m\u001b[32m Unit::test(false) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m9ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m\n                                                                                      |\n                                          \u001b[7m\u001b[31m #ERROR Unit::test2(1) - \u001b[39m\u001b[27m\u001b[7m\u001b[31m7ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m\n                                                                                      |\n                                               \u001b[7m\u001b[32m Unit::test3(2) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m5ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m____\n                                              /                                                                                   \\\n  \u001b[7m\u001b[31m #ERROR Unit::test4(3) - \u001b[39m\u001b[27m\u001b[7m\u001b[31m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m  \u001b[7m\u001b[32m Unit::test5(4) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m");
+        expect(cursor10.debug.traces.first().toString()).to.equal("                                          \u001b[7m\u001b[32m Unit::Message</test>(1) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m11ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m\n                                                                                      |\n                                             \u001b[7m\u001b[32m Unit::test(false) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m9ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m\n                                                                                      |\n                                          \u001b[7m\u001b[31m #ERROR Unit::test2(1) - \u001b[39m\u001b[27m\u001b[7m\u001b[31m7ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m\n                                                                                      |\n                                               \u001b[7m\u001b[32m Unit::test3(2) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m5ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m____\n                                              /                                                                                   \\\n  \u001b[7m\u001b[31m #ERROR Unit::test4(3) - \u001b[39m\u001b[27m\u001b[7m\u001b[31m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[31m # \u001b[39m\u001b[27m  \u001b[7m\u001b[32m Unit::test5(4) - \u001b[39m\u001b[27m\u001b[7m\u001b[32m1ms\u001b[39m\u001b[27m\u001b[7m\u001b[32m \u001b[39m\u001b[27m");
     });
 
     it("creates some cursors", function() {

@@ -6,6 +6,7 @@ import Trigger from "./Trigger";
 import State from "./State";
 import Cursor from "./Cursor";
 import InvalidCursorError from "./error/InvalidCursorError";
+import assert from "assert";
 
 type PendingActionData = {
     message:      Message,        // eslint-disable-line
@@ -33,15 +34,6 @@ export default class PendingAction extends Record({
         }));
     }
 
-    finish(): PendingAction {
-        return this
-            .set("description", null)
-            .set("trigger", null)
-            .set("previous", null)
-            .set("error", null)
-            .changeState("finished");
-    }
-
     before(action: Action, message: Message): PendingAction {
         const prev0   = this.description ? `${this.name}.${this.state.type}` : action.name;
         const prev    = this.description.name === action.name ? prev0.replace(".before", "") : prev0;
@@ -53,7 +45,17 @@ export default class PendingAction extends Record({
             .set("description", action)
             .set("previous", this)
             .set("_triggers", false)
-            .changeState("before");
+            .update("state", state => state.change("before"));
+    }
+
+    triggered(): PendingAction {
+        return this.changeState("triggers");
+    }
+
+    errored(): PendingAction {
+        return this
+            .set("error", this.state.errors.last())
+            .changeState("error");
     }
 
     done(): PendingAction {
@@ -61,22 +63,38 @@ export default class PendingAction extends Record({
             .changeState("done");
     }
 
+    finished(): PendingAction {
+        return this
+            .set("description", null)
+            .set("trigger", null)
+            .set("previous", null)
+            .set("error", null)
+            .changeState("finished");
+    }
+
+    progress(): Cursor {
+        assert(false, "PendingAction.progress: implement!");
+
+        // hier soll der progress wert hochgesetzt werden um den gegebenen param
+        return this;
+    }
+
+    cancel(): Cursor {
+        assert(false, "PendingAction.cancel: implement (use Action.cancel)!");
+
+        // hiermit soll die aktuelle action gecanceled, werden + state revert
+        return this;
+    }
+
     addError(e: Error): PendingAction {
         return this.update("state", state => state.addError(e));
     }
 
-    error(): PendingAction {
-        return this
-            .set("error", this.state.errors.last())
-            .changeState("error");
-    }
-
-    triggers(): PendingAction {
-        return this.changeState("triggers");
-    }
-
     changeState(type: string): PendingAction {
-        return this.update("state", state => state.change(type));
+        if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
+
+        return this._cursor
+            .update("_unit", internals => internals.set("action", this.update("state", state => state.change(type))));
     }
 
     guards(): Cursor {
@@ -118,7 +136,7 @@ export default class PendingAction extends Record({
         );
     }
 
-    get shouldTrigger(): boolean {
+    get triggers(): boolean {
         return !this.hasRecentlyErrored && this._triggers;
     }
 

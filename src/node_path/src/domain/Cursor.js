@@ -5,15 +5,12 @@ import { fromJS, Map, List, OrderedSet, OrderedMap, Iterable, Seq, Set, Collecti
 import ImmutableMethods from "../util/ImmutableMethods";
 import patch from "immutablepatch";
 import diff from "immutablediff";
-// import Runtime from "../Runtime";
-import Trace from "../telemetry/Trace";
 import Message from "../Message";
 import CursorAbstractError from "./error/CursorAbstractError";
 import UnknownMethodError from "./error/UnknownMethodError";
-import assert from "assert";
 import PendingAction from "./PendingAction";
-// import Internals from "./Internals";
 import { schedule } from "../Runloop";
+import type Debug from "./Debug";
 
 export type Diffs = List<{
     op:    string, // eslint-disable-line
@@ -36,11 +33,12 @@ class Cursor {
     __actionProto: Object;
 
     static assertTraceStarted(cursor: Cursor, caller: string): void {
-        if(!cursor._unit.debug.isTracing) throw new TraceNotStartedError(`You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
+        if(!cursor.debug.isTracing) throw new TraceNotStartedError(`You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
     }
 
+    // >>>>> in debug
     static trace(cursor: Cursor, ...args: *): Cursor {
-        if(!cursor._unit.debug.isTracing) throw new TraceNotStartedError("You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
+        if(!cursor.debug.isTracing) throw new TraceNotStartedError("You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
 
         const data = cursor.__data.x.update("_unit", internals => internals.trace(...args));
 
@@ -73,6 +71,7 @@ class Cursor {
 
         return new cursor.constructor(data);
     }
+    // >>> in debug
 
     static for(instance: Object, description: Map<*, *>) {
         const inherited = function(...args) {
@@ -144,7 +143,7 @@ class Cursor {
     }
 
     get _unit() {
-        return this.__data.x.get("_unit");
+        return this.__data.x.get("_unit").setCursor(this);
     }
 
     get send(): Object {
@@ -162,30 +161,22 @@ class Cursor {
     }
 
     get action(): ?PendingAction {
-        const maybeAction = this._unit.action;
-
-        return maybeAction instanceof PendingAction ? maybeAction.setCursor(this) : maybeAction;
+        return this._unit.action;
     }
 
-    // _debug.traces => _unit.debug.traces
-    get traces(): List<Trace> {
-        return this._unit.debug.traces;
-    }
-
-    // _action.shouldTrigger => _unit.action.shouldTrigger
-    get shouldTrigger(): boolean {
-        return this.action instanceof PendingAction ? this.action.shouldTrigger : false;
+    get debug(): Debug {
+        return this._unit.debug;
     }
 
     patch(...results: Array<Cursor>): Cursor {
         const patchSet = results.reduce((dest, y) => Object.assign(dest, {
             diffs:  dest.diffs.concat(this.diff(y)),
-            traces: dest.traces.concat(y.traces),
+            traces: dest.traces.concat(y.debug.traces),
             errors: dest.errors.concat(y.action instanceof PendingAction ? y.action.state.errors : [])
         }), { diffs: Set(), traces: List(), errors: Set() });
 
         const patched = patch(this.__data.x, patchSet.diffs.toList());
-        const updated = this._unit.debug.traces
+        const updated = this.debug.traces
             .concat(patchSet.traces.filter(x => !x.locked))
             .groupBy(x => x.name)
             .map(x => x.first())
@@ -194,7 +185,7 @@ class Cursor {
         const action = !(this.action instanceof PendingAction) ? this.action : this.action
             .update("state", state => state.set("errors", state.errors.concat(patchSet.errors)));
 
-        const debug = this._unit.debug.set("traces", updated);
+        const debug = this.debug.set("traces", updated);
         const next  = patched
             .update("_unit", internals => internals.set("action", action))
             .update("_unit", internals => internals.set("debug", debug));
@@ -210,30 +201,6 @@ class Cursor {
         return cursor instanceof this.constructor && this.__data.x === cursor.__data.x;
     }
 
-    progress(): Cursor {
-        assert(false, "Cursor.progress: implement!");
-
-        // hier soll der progress wert hochgesetzt werden um den gegebenen param
-        return this;
-    }
-
-    // _unit.messageReceived
-    messageReceived(message: Message): Cursor {
-        return this.update("_unit", internals => internals.messageReceived(message.setCursor(this)));
-    }
-
-    // _unit.messageProcessed
-    messageProcessed(): Cursor {
-        return this.update("_unit", internals => internals.messageProcessed());
-    }
-
-    cancel(): Cursor {
-        assert(false, "Cursor.cancel: implement (use Action.cancel)!");
-
-        // hiermit soll die aktuelle action gecanceled, werden + state revert
-        return this;
-    }
-
     undo(): Cursor {
         return this.__previous ? new this.constructor(this.__previous.__data.x, this.__previous.__previous, this) : this;
     }
@@ -242,20 +209,17 @@ class Cursor {
         return this.__next ? this.__next : this;
     }
 
-    // __state.error
-    //
-    // der hier muss weg (trace.error manuell) und dann das pushError zu error()
     error(e: Error): Cursor {
         return this
             .addError(e)
             .trace.error(e);
     }
 
+    // das hier noch rausbekommen, durch trace.error conditional argument error
     addError(e: Error): Cursor {
         return this
             .update("_unit", internals => internals.set("action", internals.action.addError(e)));
     }
-    // error un addError zusammenbekommen (trace.error mit error maybe, dann den letzten error verwenden
 
     defer(op: Function, delay?: number): Promise<*> {
         return schedule(op, delay);
@@ -264,28 +228,6 @@ class Cursor {
     toString(): string {
         return `${this.constructor.name}<${this.__data.x instanceof Collection ? this.__data.x.filter((_, key) => key !== "_unit").toString() : JSON.stringify(this.__data)}>`;
     }
-
-    // >>>> in action rein mit setcursor
-    done(): Cursor {
-        return this
-            .update("_unit", internals => internals.actionDone());
-    }
-
-    errored(): Cursor {
-        return this
-            .update("_unit", internals => internals.actionError());
-    }
-
-    triggers(): Cursor {
-        return this
-            .update("_unit", internals => internals.actionTriggers());
-    }
-
-    finish(error?: Error): Cursor {
-        return (error ? this.trace.error(error) : this.trace.end())
-            .update("_unit", internals => internals.actionFinished());
-    }
-    // >>>>>
 }
 
 // das bei cursor.for machen je nach props

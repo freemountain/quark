@@ -242,6 +242,7 @@ export default class Runtime extends Duplex {
         return unit;
     }
 
+    // zu gettern
     ready(): Promise<Runtime> {
         return this.readyPromise;
     }
@@ -257,10 +258,9 @@ export default class Runtime extends Duplex {
     }
 
     traces(): List<Trace> {
-        return !(this.cursor instanceof Cursor) ? List() : this.cursor
-            .get("_unit")
-            .get("traces");
+        return !(this.cursor instanceof Cursor) ? List() : this.cursor.debug.traces;
     }
+    //
 
     trigger(data: Object): Promise<Runtime> {
         if(this.locked || (!this.isReady && data.resource !== "/actions/init")) return schedule(() => this.trigger(data));
@@ -290,6 +290,7 @@ export default class Runtime extends Duplex {
             .then(() => this);
     }
 
+    // checken, ob die überhaupt aufgerufen wird
     init(): Cursor {
         if(this instanceof Cursor) return this;
 
@@ -304,7 +305,7 @@ export default class Runtime extends Duplex {
         if(!(this.action instanceof PendingAction)) return Promise.reject(new Error("fucking cursor"));
 
         try {
-            const cursor  = this.triggers();
+            const cursor  = this.action.triggered();
             const op      = cursor.action.op;
             const payload = cursor.message.payload;
 
@@ -322,8 +323,7 @@ export default class Runtime extends Duplex {
         const action  = data.payload.first();
         const message = data.payload.get(1);
 
-        return Promise.resolve(this
-            .update("_unit", internals => internals.actionBefore(message.setCursor(this), action)));
+        return Promise.resolve(this._unit.before(message, action));
     }
 
     message(): Promise<Cursor> {
@@ -348,7 +348,7 @@ export default class Runtime extends Duplex {
     receive(message: Message): Promise<Cursor> {
         if(!(this.get("_unit") instanceof Object)) return Promise.reject(new Error("unit not present"));
 
-        return Promise.resolve(this.messageReceived(message));
+        return Promise.resolve(this._unit.messageReceived(message));
     }
 
     after(): Promise<Cursor> {
@@ -357,28 +357,29 @@ export default class Runtime extends Duplex {
 
         return (hasRecentlyErrored ? this.send.error() : this.send.done())
             .then(cursor => cursor.send.triggers())
-            .then(cursor => cursor.finish(error));
+            .then(cursor => error ? cursor.trace.error(error) : cursor.trace.end())
+            .then(cursor => cursor.action.finished());
     }
 
-    guards(): Promise<Cursor> { // eslint-disable-line
+    guards(): Promise<Cursor> {
         if(!(this instanceof Cursor))               return Promise.reject(new Error("fucking cursor"));
         if(!(this.action instanceof PendingAction)) return Promise.resolve(this.error(new Error("no action")));
 
         const cursor = this.action.guards();
 
-        return Promise.resolve(cursor.shouldTrigger ? cursor.trace.triggered() : cursor.trace.end());
+        return Promise.resolve(cursor.action.triggers ? cursor.trace.triggered() : cursor.trace.end());
     }
 
     done() {
-        return Promise.resolve(this.done());
+        return Promise.resolve(this.action.done());
     }
 
     error() {
-        return Promise.resolve(this.errored());
+        return Promise.resolve(this.action.errored());
     }
 
     finish(): Promise<Cursor> {
-        return Promise.resolve(this.messageProcessed());
+        return Promise.resolve(this._unit.messageProcessed());
     }
 
     // muss man sehn, ob das nötig is,
