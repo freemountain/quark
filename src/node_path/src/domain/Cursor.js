@@ -5,7 +5,7 @@ import { fromJS, Map, List, OrderedSet, OrderedMap, Iterable, Seq, Set, Collecti
 import ImmutableMethods from "../util/ImmutableMethods";
 import patch from "immutablepatch";
 import diff from "immutablediff";
-import Runtime from "../Runtime";
+// import Runtime from "../Runtime";
 import Trace from "../telemetry/Trace";
 import Message from "../Message";
 import CursorAbstractError from "./error/CursorAbstractError";
@@ -36,11 +36,11 @@ class Cursor {
     __actionProto: Object;
 
     static assertTraceStarted(cursor: Cursor, caller: string): void {
-        if(!cursor.isTracing) throw new TraceNotStartedError(`You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
+        if(!cursor._unit.debug.isTracing) throw new TraceNotStartedError(`You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
     }
 
     static trace(cursor: Cursor, ...args: *): Cursor {
-        if(!cursor.isTracing) throw new TraceNotStartedError("You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
+        if(!cursor._unit.debug.isTracing) throw new TraceNotStartedError("You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
 
         const data = cursor.__data.x.update("_unit", internals => internals.trace(...args));
 
@@ -158,43 +158,23 @@ class Cursor {
     }
 
     get message(): ?Message {
-        return this.action && this.action.message instanceof Message ? this.action.message : null;
+        return this.action ? this.action.message : null;
     }
 
     get action(): ?PendingAction {
         const maybeAction = this._unit.action;
 
-        return maybeAction instanceof PendingAction ? maybeAction.update("message", message => message instanceof Message ? message.setCursor(this) : message) : maybeAction;
-    }
-
-    // _debug.currentTrace => _unit.debug.currentTrace
-    get currentTrace(): ?Trace {
-        return this.traces.first();
+        return maybeAction instanceof PendingAction ? maybeAction.setCursor(this) : maybeAction;
     }
 
     // _debug.traces => _unit.debug.traces
     get traces(): List<Trace> {
-        return this._unit.traces;
+        return this._unit.debug.traces;
     }
 
     // _action.shouldTrigger => _unit.action.shouldTrigger
     get shouldTrigger(): boolean {
-        return this.action instanceof PendingAction && !this.action.hasRecentlyErrored ? this.action.willTrigger : false;
-    }
-
-    // _state.errors => _unit.action.state.errors
-    get errors(): List<Error> {
-        return this._unit.errors;
-    }
-
-    // _unit.children
-    get children(): List<Runtime> {
-        return this._unit.children;
-    }
-
-    // _debug.isTracing -> besserer name => _unit.debug.isTracing
-    get isTracing(): boolean {
-        return this._unit && this._unit.isTracing();
+        return this.action instanceof PendingAction ? this.action.shouldTrigger : false;
     }
 
     patch(...results: Array<Cursor>): Cursor {
@@ -205,7 +185,7 @@ class Cursor {
         }), { diffs: Set(), traces: List(), errors: Set() });
 
         const patched = patch(this.__data.x, patchSet.diffs.toList());
-        const updated = this._unit.traces
+        const updated = this._unit.debug.traces
             .concat(patchSet.traces.filter(x => !x.locked))
             .groupBy(x => x.name)
             .map(x => x.first())
@@ -213,14 +193,11 @@ class Cursor {
 
         const action = !(this.action instanceof PendingAction) ? this.action : this.action
             .update("state", state => state.set("errors", state.errors.concat(patchSet.errors)));
-            // .update("state", state => state.set("errors", state.errors.concat(patchSet.errors)));
 
-        // das hier is eigtl die richtige variante, aber rejected dann irgend ne promise???
-        // .update("state", state => state.set("errors", state.errors.concat(patchSet.errors)));
-
-        const next = patched
+        const debug = this._unit.debug.set("traces", updated);
+        const next  = patched
             .update("_unit", internals => internals.set("action", action))
-            .update("_unit", internals => internals.set("traces", updated));
+            .update("_unit", internals => internals.set("debug", debug));
 
         return new this.constructor(next);
     }
@@ -240,12 +217,12 @@ class Cursor {
         return this;
     }
 
-    // _state.messageReceived
+    // _unit.messageReceived
     messageReceived(message: Message): Cursor {
         return this.update("_unit", internals => internals.messageReceived(message.setCursor(this)));
     }
 
-    // _state.messageProcessed
+    // _unit.messageProcessed
     messageProcessed(): Cursor {
         return this.update("_unit", internals => internals.messageProcessed());
     }
@@ -278,6 +255,7 @@ class Cursor {
         return this
             .update("_unit", internals => internals.set("action", internals.action.addError(e)));
     }
+    // error un addError zusammenbekommen (trace.error mit error maybe, dann den letzten error verwenden
 
     defer(op: Function, delay?: number): Promise<*> {
         return schedule(op, delay);
@@ -287,6 +265,7 @@ class Cursor {
         return `${this.constructor.name}<${this.__data.x instanceof Collection ? this.__data.x.filter((_, key) => key !== "_unit").toString() : JSON.stringify(this.__data)}>`;
     }
 
+    // >>>> in action rein mit setcursor
     done(): Cursor {
         return this
             .update("_unit", internals => internals.actionDone());
@@ -306,6 +285,7 @@ class Cursor {
         return (error ? this.trace.error(error) : this.trace.end())
             .update("_unit", internals => internals.actionFinished());
     }
+    // >>>>>
 }
 
 // das bei cursor.for machen je nach props

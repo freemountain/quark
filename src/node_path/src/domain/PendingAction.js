@@ -1,27 +1,31 @@
 // @flow
-import { Record } from "immutable";
+import { Record, List } from "immutable";
 import Message from "../Message";
 import Action from "./Action";
 import Trigger from "./Trigger";
 import State from "./State";
+import Cursor from "./Cursor";
+import InvalidCursorError from "./error/InvalidCursorError";
 
 type PendingActionData = {
-    message:      Message, // eslint-disable-line
-    state?:       State,   // eslint-disable-line
-    willTrigger?: boolean,
-    description?: ?Action, // eslint-disable-line
+    message:      Message,        // eslint-disable-line
+    state?:       State,          // eslint-disable-line
+    _triggers?:   boolean,        // eslint-disable-line
+    description?: ?Action,
     previous?:    ?PendingAction, // eslint-disable-line
-    error?:       ?Error   // eslint-disable-line
+    error?:       ?Error,         // eslint-disable-line
+    _cursor?:      Cursor         // eslint-disable-line
 };
 
 export default class PendingAction extends Record({
     message:     null,
     state:       null,
-    willTrigger: false,
     description: null,
     trigger:     null,
     previous:    null,
-    error:       null
+    error:       null,
+    _cursor:     null,
+    _triggers:   false
 }) {
     constructor(data: PendingActionData) {
         super(Object.assign({}, data, {
@@ -48,6 +52,7 @@ export default class PendingAction extends Record({
             .set("trigger", trigger)
             .set("description", action)
             .set("previous", this)
+            .set("_triggers", false)
             .changeState("before");
     }
 
@@ -60,9 +65,6 @@ export default class PendingAction extends Record({
         return this.update("state", state => state.addError(e));
     }
 
-    // hier den error rein un das errohandling hierhin bauen
-    // das hier kann auch die traces halten, dann kann man hier die ganzen
-    // trace handler reinballern
     error(): PendingAction {
         return this
             .set("error", this.state.errors.last())
@@ -77,12 +79,20 @@ export default class PendingAction extends Record({
         return this.update("state", state => state.change(type));
     }
 
-    shouldTrigger(...args: Array<*>): boolean {
+    guards(): Cursor {
+        if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
+
         try {
-            return this.trigger.shouldTrigger(...args);
+            return this.trigger.shouldTrigger(this._cursor, this.message ? this.message.payload : List());
         } catch(e) {
-            return false;
+            return this._cursor;
         }
+    }
+
+    setCursor(cursor: Cursor): PendingAction {
+        return this
+            .set("_cursor", cursor)
+            .update("message", message => message instanceof Message ? message.setCursor(cursor) : message);
     }
 
     get name(): string {
@@ -108,4 +118,23 @@ export default class PendingAction extends Record({
         );
     }
 
+    get shouldTrigger(): boolean {
+        return !this.hasRecentlyErrored && this._triggers;
+    }
+
+    willTrigger(): Cursor {
+        if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
+
+        return this._cursor
+            .update("_unit", internals => internals.set("action", this.set("_triggers", true)));
+    }
+
+    wontTrigger(): Cursor {
+        if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
+
+        return this._cursor
+            .update("_unit", internals => internals.set("action", this.set("_triggers", false)));
+    }
+
+    _triggers: boolean
 }

@@ -5,6 +5,8 @@ import Cursor from "./Cursor";
 import GuardError from "./error/GuardError";
 import DeclaredTrigger from "./DeclaredTrigger";
 import MergeError from "./error/MergeError";
+import NoActionError from "./error/NoActionError";
+import PendingAction from "./PendingAction";
 
 export default class Trigger {
     emits:  string;    // eslint-disable-line
@@ -44,6 +46,7 @@ export default class Trigger {
         let result  = true;   // eslint-disable-line
         let tracing = cursor; // eslint-disable-line
 
+        if(!(tracing.action instanceof PendingAction)) throw new NoActionError(tracing.action);
         // for loop to be able to return instantly
         // if some guard does not trigger or errors
         for(let i = 0; i < this.guards.size; i++) { // eslint-disable-line
@@ -57,15 +60,13 @@ export default class Trigger {
                 result  = guard(...(params.toJS()), tracing);
                 tracing = tracing.trace.end();
 
-                if(!result) return tracing
-                    .update("_unit", internals => internals.actionWontTrigger());
+                if(!result) return tracing;
             } catch(e) {
                 return tracing
-                    .update("_unit", internals => internals.actionWontTrigger())
                     .error(new GuardError(tracing._unit.name, this.emits, i + 1, e));
             }
         }
 
-        return tracing.update("_unit", internals => internals.actionWillTrigger()); // eslint-disable-line
+        return tracing.action.willTrigger();
     }
 }

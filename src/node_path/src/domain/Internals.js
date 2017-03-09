@@ -11,6 +11,7 @@ import Action from "./Action";
 import type Runtime from "../Runtime";
 import Trigger from "./Trigger";
 import DeclaredTrigger from "./DeclaredTrigger";
+import Debug from "./Debug";
 
 type InternalsData = {
     description?: Map<string, Action>,
@@ -18,9 +19,9 @@ type InternalsData = {
     children?:    Map<string, Runtime>, // eslint-disable-line
     revision?:    number,               // eslint-disable-line
     history?:     List<*>,              // eslint-disable-line
-    traces?:      List<Trace>,          // eslint-disable-line
     action?:      ?PendingAction,       // eslint-disable-line
     previous?:    ?PendingAction,       // eslint-disable-line
+    debug?:       Debug,                // eslint-disable-line
     name:         string                // eslint-disable-line
 }
 
@@ -30,8 +31,8 @@ export default class Internals extends Record({
     history:     List(),
     children:    Map(),
     revision:    0,
-    traces:      List(),
     action:      null,
+    debug:       new Debug(),
     name:        "Default"
 }) {
     constructor(data: InternalsData) {
@@ -42,44 +43,16 @@ export default class Internals extends Record({
         }));
     }
 
-    // .debug.trace
-    currentTrace(): ?Trace {
-        return this.traces.findLast(x => x.end === null && !x.locked);
-    }
-
-    isTracing(): boolean {
-        return (
-            this.action !== null &&
-            this.currentTrace() instanceof Trace
-        );
-    }
-
     updateCurrentTrace(op: Trace => Trace): Internals {
         if(this.action === null) throw new NoMessageError();
 
-        const current = this.currentTrace();
-
-        if(!current) return this;
-
-        return this.update("traces", traces => traces.set(this.traces.findLastKey(x => x.end === null && !x.locked), op(current)));
+        return this.update("debug", debug => debug.updateCurrentTrace(op));
     }
 
-    trace(name: string, params: List<*>, trigger: ?string, guards: ?number = 0) {
-        const current = this.currentTrace();
-        const parent  = current ? current.id : current;
-        const id      = null;
-        const start   = null;
-
-        return this.update("traces", traces => traces.push(new Trace({
-            name,
-            params,
-            guards,
-            trigger,
-            parent,
-            id,
-            start
-        }, this.name)));
+    trace(name: string, params: List<*>, trigger: ?string, guards: ?number = 0) { // eslint-disable-line
+        return this.update("debug", debug => debug.startTrace(this.name, name, params, trigger, guards));
     }
+
     // .debug.trace
 
 
@@ -94,13 +67,8 @@ export default class Internals extends Record({
     messageProcessed(): Internals {
         if(this.action === null) throw new NotStartedError();
 
-        const filtered = this.traces.filter(x => !x.locked);
-        const trace    = filtered
-            .shift()
-            .reduce((dest, x) => dest.addSubtrace(x), filtered.first().ended());
-
         return this
-            .update("traces", traces => traces.filter(x => x.locked).push(trace.lock()))
+            .update("debug", debug => debug.compactTraces())
             .set("action", null);
     }
 
@@ -134,14 +102,5 @@ export default class Internals extends Record({
         return this
             .update("action", action => action instanceof PendingAction ? action.triggers() : action);
     }
-
-    actionWillTrigger(): Internals {
-        return this
-            .update("action", action => action.set("willTrigger", true));
-    }
-
-    actionWontTrigger(): Internals {
-        return this
-            .update("action", action => action.set("willTrigger", false));
-    }
 }
+

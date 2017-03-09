@@ -355,10 +355,7 @@ export default class Runtime extends Duplex {
         const hasRecentlyErrored = this.action.hasRecentlyErrored;
         const error              = hasRecentlyErrored ? this.action.state.error : null;
 
-        return (hasRecentlyErrored ? this.send.done() : this.send.error())
-            // die zeile hier sollte eigtl weg könne, aber dann klappt da was nich
-            // cursor checken!
-            .then(cursor => error instanceof Error ? cursor.errored() : cursor.done())
+        return (hasRecentlyErrored ? this.send.error() : this.send.done())
             .then(cursor => cursor.send.triggers())
             .then(cursor => cursor.finish(error));
     }
@@ -367,9 +364,9 @@ export default class Runtime extends Duplex {
         if(!(this instanceof Cursor))               return Promise.reject(new Error("fucking cursor"));
         if(!(this.action instanceof PendingAction)) return Promise.resolve(this.error(new Error("no action")));
 
-        const x = this.action.shouldTrigger(this, this.message ? this.message.payload : List());
+        const cursor = this.action.guards();
 
-        return Promise.resolve(x.shouldTrigger ? x.trace.triggered() : x.trace.end());
+        return Promise.resolve(cursor.shouldTrigger ? cursor.trace.triggered() : cursor.trace.end());
     }
 
     done() {

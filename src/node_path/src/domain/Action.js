@@ -23,7 +23,7 @@ type ActionInput = {
     done:     List<Trigger>, // eslint-disable-line
     error:    List<Trigger>, // eslint-disable-line
     triggers: List<Trigger>,
-    func:     Handler,       // eslint-disable-line
+    func:     Handler        // eslint-disable-line
 };
 
 class Action {
@@ -84,7 +84,7 @@ class Action {
                 //
                 return this.send.before(description, message)
                     .then(x => x.send.guards())
-                    .then(x => !x.shouldTrigger ? x : x.send.triggers()
+                    .then(x => !x.action.shouldTrigger ? x : x.send.triggers()
                             .then(cursor => cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle())
                             .then(cursor => cursor.send.after())
                             .catch(e => x.error(e)))

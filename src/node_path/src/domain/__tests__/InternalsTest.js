@@ -32,7 +32,6 @@ describe("InternalsTest", function() {
         });
 
         expect(internals.toJS()).to.eql({
-            traces:      [],
             name:        "Blub",
             history:     [],
             children:    {},
@@ -56,6 +55,9 @@ describe("InternalsTest", function() {
                         params: []
                     }]
                 }
+            },
+            debug: {
+                traces: []
             }
         });
 
@@ -99,8 +101,8 @@ describe("InternalsTest", function() {
             id:   "id"
         });
 
-        expect(internals.isTracing()).to.equal(false);
-        expect(internals.trace("func", List.of(1)).traces.toJS()).to.eql([new Trace({
+        expect(internals.debug.isTracing).to.equal(false);
+        expect(internals.trace("func", List.of(1)).debug.traces.toJS()).to.eql([new Trace({
             name:   "func",
             params: List.of(1)
         }, "blub").set("id", 1).set("start", 1).toJS()]);
@@ -112,9 +114,10 @@ describe("InternalsTest", function() {
             .trace("lulu", List(), "lala.done", 1)
             .updateCurrentTrace(x => x.triggered());
 
-        expect(internals2.isTracing()).to.equal(true);
+        expect(internals2.debug.isTracing).to.equal(true);
         expect(internals2.toJS()).to.eql({
             action: {
+                _cursor: null,
                 message: {
                     headers:  {},
                     payload:  [],
@@ -136,11 +139,11 @@ describe("InternalsTest", function() {
                         params: []
                     }]
                 },
-                trigger:     null,
-                previous:    null,
-                error:       null,
-                willTrigger: false,
-                state:       {
+                trigger:   null,
+                previous:  null,
+                error:     null,
+                _triggers: false,
+                state:     {
                     type:   "before",
                     errors: []
                 }
@@ -168,46 +171,49 @@ describe("InternalsTest", function() {
                     }]
                 }
             },
-            traces: [{
-                id:       3,
-                parent:   null,
-                end:      null,
-                error:    null,
-                guards:   0,
-                name:     "blub::Message</blub>",
-                params:   [],
-                start:    3,
-                traces:   [],
-                triggers: true,
-                locked:   false,
-                trigger:  null
-            }, {
-                id:       4,
-                parent:   3,
-                end:      null,
-                error:    null,
-                guards:   1,
-                name:     "blub::lulu",
-                params:   [],
-                start:    4,
-                traces:   [],
-                triggers: true,
-                locked:   false,
-                trigger:  "done"
-            }]
+            debug: {
+                traces: [{
+                    id:       3,
+                    parent:   null,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "blub::Message</blub>",
+                    params:   [],
+                    start:    3,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false,
+                    trigger:  null
+                }, {
+                    id:       4,
+                    parent:   3,
+                    end:      null,
+                    error:    null,
+                    guards:   1,
+                    name:     "blub::lulu",
+                    params:   [],
+                    start:    4,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false,
+                    trigger:  "done"
+                }]
+            }
         });
 
         const internals3 = internals2.updateCurrentTrace(x => x.errored(new Error("blub")));
 
         expect(internals3.toJS()).to.eql({
             action: {
+                _cursor: null,
                 message: {
                     headers:  {},
                     payload:  [],
                     resource: "/blub"
                 },
-                willTrigger: false,
-                state:       {
+                _triggers: false,
+                state:     {
                     type:   "before",
                     errors: []
                 },
@@ -254,37 +260,39 @@ describe("InternalsTest", function() {
                     }]
                 }
             },
-            traces: [{
-                id:       3,
-                parent:   null,
-                end:      null,
-                error:    null,
-                guards:   0,
-                name:     "blub::Message</blub>",
-                params:   [],
-                start:    3,
-                traces:   [],
-                triggers: true,
-                locked:   false,
-                trigger:  null
-            }, {
-                id:       4,
-                parent:   3,
-                end:      5,
-                error:    new Error("blub"),
-                guards:   1,
-                name:     "blub::lulu",
-                params:   [],
-                start:    4,
-                traces:   [],
-                triggers: true,
-                locked:   false,
-                trigger:  "done"
-            }]
+            debug: {
+                traces: [{
+                    id:       3,
+                    parent:   null,
+                    end:      null,
+                    error:    null,
+                    guards:   0,
+                    name:     "blub::Message</blub>",
+                    params:   [],
+                    start:    3,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false,
+                    trigger:  null
+                }, {
+                    id:       4,
+                    parent:   3,
+                    end:      5,
+                    error:    new Error("blub"),
+                    guards:   1,
+                    name:     "blub::lulu",
+                    params:   [],
+                    start:    4,
+                    traces:   [],
+                    triggers: true,
+                    locked:   false,
+                    trigger:  "done"
+                }]
+            }
         });
 
-        expect(internals3.isTracing()).to.equal(true);
-        expect(internals3.messageProcessed().isTracing()).to.equal(false);
+        expect(internals3.debug.isTracing).to.equal(true);
+        expect(internals3.messageProcessed().debug.isTracing).to.equal(false);
         expect(() => internals3.trace("g", List()).messageProcessed().toJS()).to.throw("NotConsistentError: You can only lock consistent traces. Some end calls are probably missing @blub::Message</blub>.");
     });
 

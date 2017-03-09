@@ -1,12 +1,13 @@
 // @flow
 
 import WrongContextError from "./WrongContextError";
-import type Action from "../Action";
+import Action from "../Action";
 
 export default class InvalidCursorError extends WrongContextError {
-    constructor(cursor: any, description: Action) {
-        const name = cursor instanceof Object ? cursor.constructor.name : cursor;
+    constructor(cursor: any, description?: Action) {
+        const kind   = cursor instanceof Object ? cursor.constructor.name : cursor;
+        const action = description instanceof Action ? `${description.unit}[${description.name}]` : "unknown Action";
 
-        super(`Invalid cursor of ${name} for '${description.unit}[${description.name}]'.`);
+        super(`Invalid cursor of ${kind} for '${action}'.`);
     }
 }
