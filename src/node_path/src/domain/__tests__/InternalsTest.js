@@ -58,7 +58,8 @@ describe("InternalsTest", function() {
                 }
             },
             debug: {
-                traces: []
+                traces:  [],
+                _cursor: null
             }
         });
 
@@ -103,17 +104,17 @@ describe("InternalsTest", function() {
         });
 
         expect(internals.debug.isTracing).to.equal(false);
-        expect(internals.trace("func", List.of(1)).debug.traces.toJS()).to.eql([new Trace({
+        expect(internals.debug.trace(internals.name, "func", List.of(1)).traces.toJS()).to.eql([new Trace({
             name:   "func",
             params: List.of(1)
         }, "blub").set("id", 1).set("start", 1).toJS()]);
 
-        expect(() => internals.updateCurrentTrace(x => x)).to.throw("NoMessageError: Can\'t update a trace before receiving a message.");
-        expect(internals.set("action", message).updateCurrentTrace(x => x).toJS()).to.eql(internals.set("action", message).toJS());
+        expect(internals.set("action", message).update("debug", debug => debug.updateCurrentTrace(x => x)).toJS()).to.eql(internals.set("action", message).toJS());
         const internals2 = internals
             .messageReceived(message)
-            .trace("lulu", List(), "lala.done", 1)
-            .updateCurrentTrace(x => x.triggered());
+            .update("debug", debug => debug
+                .trace(internals.name, "lulu", List(), "lala.done", 1)
+                .updateCurrentTrace(x => x.triggered()));
 
         expect(internals2.debug.isTracing).to.equal(true);
         expect(internals2.toJS()).to.eql({
@@ -200,11 +201,13 @@ describe("InternalsTest", function() {
                     triggers: true,
                     locked:   false,
                     trigger:  "done"
-                }]
+                }],
+                _cursor: null
             }
         });
 
-        const internals3 = internals2.updateCurrentTrace(x => x.errored(new Error("blub")));
+        const internals3 = internals2
+            .update("debug", debug => debug.updateCurrentTrace(x => x.errored(new Error("blub"))));
 
         expect(internals3.toJS()).to.eql({
             _cursor: null,
@@ -290,13 +293,14 @@ describe("InternalsTest", function() {
                     triggers: true,
                     locked:   false,
                     trigger:  "done"
-                }]
+                }],
+                _cursor: null
             }
         });
 
         expect(internals3.debug.isTracing).to.equal(true);
         expect(internals3.messageProcessed().debug.isTracing).to.equal(false);
-        expect(() => internals3.trace("g", List()).messageProcessed().toJS()).to.throw("NotConsistentError: You can only lock consistent traces. Some end calls are probably missing @blub::Message</blub>.");
+        expect(() => internals3.update("debug", debug => debug.trace(internals3.name, "g", List())).messageProcessed().toJS()).to.throw("NotConsistentError: You can only lock consistent traces. Some end calls are probably missing @blub::Message</blub>.");
     });
 
 // to state shit

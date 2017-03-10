@@ -140,6 +140,12 @@ export default class PendingAction extends Record({
         return !this.hasRecentlyErrored && this._triggers;
     }
 
+    get guard(): { count: number } {
+        return {
+            count: this.trigger !== null ? this.trigger.guards.size : 0
+        };
+    }
+
     willTrigger(): Cursor {
         if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
 

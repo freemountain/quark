@@ -1,9 +1,7 @@
-// @flow
-
 import { Record, List, Map } from "immutable";
-import Trace from "../telemetry/Trace";
+// import Trace from "../telemetry/Trace";
 import Message from "../Message";
-import NoMessageError from "./error/NoMessageError";
+// import NoMessageError from "./error/NoMessageError";
 import AlreadyReceivedError from "./error/AlreadyReceivedError";
 import NotStartedError from "./error/NotStartedError";
 import PendingAction from "./PendingAction";
@@ -46,30 +44,19 @@ export default class Internals extends Record({
         }));
     }
 
-    // >>> in debug
-    updateCurrentTrace(op: Trace => Trace): Internals {
-        if(this.action === null) throw new NoMessageError();
-
-        return this.update("debug", debug => debug.updateCurrentTrace(op));
-    }
-
-    trace(name: string, params: List<*>, trigger: ?string, guards: ?number = 0) { // eslint-disable-line
-        return this.update("debug", debug => debug.startTrace(this.name, name, params, trigger, guards));
-    }
-    // >>> das in debug mit dem anderen tracewichs
-
     messageReceived(message: Message): Internals {
         if(this.action !== null) throw new AlreadyReceivedError();
 
         const updated = this
             .setCursor(null)
-            .before(message)
-            .updateCurrentTrace(trace => trace.triggered());
+            .before(message, this.description.get("message"))
+            .beforeTrace(`Message<${message.resource}>`)
+            .update("debug", debug => debug.updateCurrentTrace(trace => trace.triggered()));
 
         return !(this._cursor instanceof Cursor) ? updated : this._cursor.set("_unit", updated);
     }
 
-    messageProcessed(): Internals {
+    messageProcessed(): Internals | Cursor {
         if(this.action === null) throw new NotStartedError();
 
         const updated = this
@@ -80,23 +67,45 @@ export default class Internals extends Record({
         return !(this._cursor instanceof Cursor) ? updated : this._cursor.set("_unit", updated);
     }
 
-    // das sollte auch noch auf action kommen
-    before(y: Message, descr?: ?Action): Internals { // eslint-disable-line
-        const message     = this._cursor instanceof Cursor ? y.setCursor(this._cursor) : y;
-        const description = descr instanceof Action ? descr : this.description.get("message");
-        const updated     = this.update("action", action => action instanceof PendingAction ? action.before(description, message) : new PendingAction({ message: message, description }));
-        const name        = !(descr instanceof Action) ? `Message<${y.resource}>` : description.name;
-        const trigger     = !(this.action instanceof PendingAction) || description.name === "message" ? undefined : this.action.state.type; // eslint-disable-line
-        const guards      = updated.action.trigger !== null ? updated.action.trigger.guards.size : 0;
-        const internals   = updated.trace(name, updated.action.message.payload, trigger, guards);
+        // das sollte auch noch auf action kommen + die beiden fälle:
+    // unit -> message
+    // und alles andere müssen entkoppelt werden
+    // eigtl kann die ganze logik hier raus und in die jeweilige funktion
+    // (Runtime.before, Internals.messageReceived
+    before(y: Message, description: Action): Internals { // eslint-disable-line
+        const message = y.setCursor(this._cursor);
+        const updated = this.update("action", action => action instanceof PendingAction ? action.before(description, message) : new PendingAction({ message: message, description }));
 
-        return !(this._cursor instanceof Cursor) ? internals : this._cursor.set("_unit", internals);
+        return updated;
+    }
+
+    beforeTrace(maybeName?: string): Internals { // eslint-disable-line
+       // hier das dabei dann in die before methode ansich und in
+        // trigger (das sind ja atm 2 fälle, die hier abgehandelt werden)
+        const trigger     = !(this.action instanceof PendingAction) || this.action.description.name === "message" ? undefined : this.action.previous.state.type; // eslint-disable-line
+        const unit        = this.name;
+        const name        = maybeName ? maybeName : this.action.description.name;
+        const payload     = this.action.message.payload;
+        const guards      = this.action.guard.count;
+
+        const internals   = this.update("debug", debug => debug
+            .setCursor(null)
+            .trace(unit, name, payload, trigger, guards));
+
+        /*  const debug = updated.debug
+         .trace(name, updated.action.message.payload, trigger, guards);*/
+
+        return !(this._cursor instanceof Cursor) ? internals : this._cursor.set("_unit", internals.setCursor(null));
+        // return !(this.debug._cursor instanceof Cursor) ? this.set("debug", debug) : debug;
     }
 
     setCursor(cursor: Cursor | null): Internals {
         return this
             .set("_cursor", cursor)
-            .update("action", action => action instanceof PendingAction ? action.setCursor(cursor) : action);
+            .update("action", action => action instanceof PendingAction ? action.setCursor(cursor) : action)
+            .update("debug", debug => debug.setCursor(cursor));
     }
+
+    // _cursor: Cursor
 }
 

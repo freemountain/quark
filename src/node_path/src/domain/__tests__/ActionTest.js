@@ -246,7 +246,7 @@ describe("ActionTest", function() {
         const cursor = (new unit.__Cursor(data))._unit
             .messageReceived(message)
             .trace("message", message.get("payload"))
-            .trace.triggered()
+            .debug.trace.triggered()
             .update("_unit", internals => internals.set("action", new PendingAction({
                 message:     message,
                 state:       "triggers",
@@ -258,11 +258,11 @@ describe("ActionTest", function() {
             .then(() => unit.handle.call(cursor, message.setCursor(cursor)))
             .then(x => { // eslint-disable-line
                 const result  = x
-                    .trace.end()
+                    .debug.trace.ended()
                     ._unit.messageProcessed();
 
                 const cursor2 = cursor
-                        .trace.end()
+                        .debug.trace.ended()
                         ._unit.messageProcessed()
                         .set("name", "test")
                         .filter((_, key) => key !== "_unit"); // eslint-disable-line
@@ -316,7 +316,7 @@ describe("ActionTest", function() {
         const cursor   = (new unit.__Cursor(data))._unit
             .messageReceived(message)
             .trace("message", message.get("payload"))
-            .trace.triggered()
+            .debug.trace.triggered()
             .update("_unit", internals => internals.update("action", action => action.set("message", null)));
 
         const descr = new Action("Test", "test", unit.__triggers, function(name) {
@@ -327,11 +327,11 @@ describe("ActionTest", function() {
             .then(() => descr.func.call(cursor, "huhu"))
             .then(x => { // eslint-disable-line
                 const result = x
-                    .trace.end()
+                    .debug.trace.ended()
                     ._unit.messageProcessed();
 
                 const cursor2 = cursor
-                        .trace.end()
+                        .debug.trace.ended()
                         ._unit.messageProcessed()
                         .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
@@ -403,8 +403,8 @@ describe("ActionTest", function() {
                 const result  = x._unit.messageProcessed();
                 const cursor2 = cursor
                     .trace("message", message.get("payload"))
-                    .trace.triggered()
-                    .trace.end()
+                    .debug.trace.triggered()
+                    .debug.trace.ended()
                     ._unit.messageProcessed()
                     .set("name", "test")
                     .set("value", 5)
@@ -1008,17 +1008,17 @@ describe("ActionTest", function() {
             .then(() => {
                 const cursor2 = cursor.update("_unit", internals => internals.messageReceived(message))
                     .trace("message", message.get("payload"))
-                    .trace.triggered();
+                    .debug.trace.triggered();
 
                 return unit.triggers.call(cursor2)
                     .then(x => {
                         const result = x
-                            .trace.end()
+                            .debug.trace.ended()
                             ._unit.messageProcessed();
 
                         const cursor3 = cursor2
-                            .trace.triggered()
-                            .trace.end()
+                            .debug.trace.triggered()
+                            .debug.trace.ended()
                             ._unit.messageProcessed()
                             .filter((_, key) => key !== "_unit") // eslint-disable-line
                             .set("test1", "test1")
@@ -1175,8 +1175,8 @@ describe("ActionTest", function() {
                         const result  = y._unit.messageProcessed();
                         const cursor3 = cursor2
                             .trace("message", message.get("payload"))
-                            .trace.triggered()
-                            .trace.end()
+                            .debug.trace.triggered()
+                            .debug.trace.ended()
                             ._unit.messageProcessed()
                             .filter((_, key) => key !== "_unit") // eslint-disable-line
                             .set("name", "test")
@@ -1361,8 +1361,8 @@ describe("ActionTest", function() {
                         const result  = y._unit.messageProcessed();
                         const cursor3 = cursor2
                             .trace("message", message.get("payload"))
-                            .trace.triggered()
-                            .trace.end()
+                            .debug.trace.triggered()
+                            .debug.trace.ended()
                             ._unit.messageProcessed()
                             .set("test", new Error("an error"))
                             .set("test2", new Error("an error2"))

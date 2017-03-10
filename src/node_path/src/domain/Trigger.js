@@ -52,13 +52,13 @@ export default class Trigger {
         for(let i = 0; i < this.guards.size; i++) { // eslint-disable-line
             tracing = tracing
                 .trace(`${this.emits}<Guard${i + 1}>`, params, "guard")
-                .trace.triggered();
+                .debug.trace.triggered();
 
             try {
                 const guard = this.guards.get(i);
 
                 result  = guard(...(params.toJS()), tracing);
-                tracing = tracing.trace.end();
+                tracing = tracing.debug.trace.ended();
 
                 if(!result) return tracing;
             } catch(e) {

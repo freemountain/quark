@@ -32,47 +32,6 @@ class Cursor {
     __actions:     Object;                                // eslint-disable-line
     __actionProto: Object;
 
-    static assertTraceStarted(cursor: Cursor, caller: string): void {
-        if(!cursor.debug.isTracing) throw new TraceNotStartedError(`You have to start a trace with 'Cursor::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
-    }
-
-    // >>>>> in debug
-    static trace(cursor: Cursor, ...args: *): Cursor {
-        if(!cursor.debug.isTracing) throw new TraceNotStartedError("You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
-
-        const data = cursor.__data.x.update("_unit", internals => internals.trace(...args));
-
-        return new cursor.constructor(data);
-    }
-
-    static triggered(cursor: Cursor): Cursor {
-        Cursor.assertTraceStarted(cursor, "triggered");
-
-        const data = cursor.__data.x
-            .update("_unit", internals => internals.updateCurrentTrace(trace => trace.triggered()));
-
-        return new cursor.constructor(data);
-    }
-
-    static error(cursor: Cursor, e: Error): Cursor {
-        Cursor.assertTraceStarted(cursor, "errored");
-
-        const data = cursor.__data.x
-            .update("_unit", internals => internals.updateCurrentTrace(trace => trace.errored(e)));
-
-        return new cursor.constructor(data);
-    }
-
-    static end(cursor: Cursor): Cursor {
-        Cursor.assertTraceStarted(cursor, "ended");
-
-        const data = cursor.__data.x
-            .update("_unit", internals => internals.updateCurrentTrace(trace => trace.ended()));
-
-        return new cursor.constructor(data);
-    }
-    // >>> in debug
-
     static for(instance: Object, description: Map<*, *>) {
         const inherited = function(...args) {
             return Cursor.call(this, ...args);
@@ -125,18 +84,19 @@ class Cursor {
         this.__previous = previous;
         this.__next     = next;
 
-        // needs to be copied, since we are mutating
-        // the Function object otherwise
-        this.trace           = Cursor.trace.bind(null, this);
-        this.trace.triggered = Cursor.triggered.bind(null, this);
-        this.trace.error     = Cursor.error.bind(null, this);
-        this.trace.end       = Cursor.end.bind(null, this);
-
         Object.freeze(this);
-        Object.freeze(this.trace);
 
         return this;
     }
+
+    // >>> hier das noch raus
+    trace(...args: *): Cursor {
+        if(!this.debug.isTracing) throw new TraceNotStartedError("You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
+
+        return this.debug.trace(this._unit.name, ...args);
+    }
+    // >>>
+
 
     generic(mapper: (cursor: Cursor) => Cursor): Cursor {
         return mapper(this);
@@ -185,8 +145,11 @@ class Cursor {
         const action = !(this.action instanceof PendingAction) ? this.action : this.action
             .update("state", state => state.set("errors", state.errors.concat(patchSet.errors)));
 
-        const debug = this.debug.set("traces", updated);
-        const next  = patched
+        const debug = this.debug
+            .set("traces", updated)
+            .setCursor(null);
+
+        const next = patched
             .update("_unit", internals => internals.set("action", action))
             .update("_unit", internals => internals.set("debug", debug));
 
@@ -212,10 +175,12 @@ class Cursor {
     error(e: Error): Cursor {
         return this
             .addError(e)
-            .trace.error(e);
+            .debug.trace.errored(e);
     }
 
     // das hier noch rausbekommen, durch trace.error conditional argument error
+    // und dann an den entsprechenden stellen von error noch trace callen und das
+    // trace.error aus cursor.error raus
     addError(e: Error): Cursor {
         return this
             .update("_unit", internals => internals.set("action", internals.action.addError(e)));

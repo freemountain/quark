@@ -140,9 +140,9 @@ describe("CursorTest", function() { // eslint-disable-line
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
         const cursor     = new UnitCursor(data);
 
-        expect(() => cursor.trace.end()).to.throw("TraceNotStartedError: You have to start a trace with \'Cursor::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'ended\'.");
-        expect(() => cursor.trace.triggered()).to.throw("TraceNotStartedError: You have to start a trace with \'Cursor::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'triggered\'.");
-        expect(() => cursor.trace.error()).to.throw("TraceNotStartedError: You have to start a trace with \'Cursor::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'errored\'.");
+        expect(() => cursor.debug.trace.ended()).to.throw("TraceNotStartedError: You have to start a trace with \'Debug::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'ended\'.");
+        expect(() => cursor.debug.trace.triggered()).to.throw("TraceNotStartedError: You have to start a trace with \'Debug::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'triggered\'.");
+        expect(() => cursor.debug.trace.errored()).to.throw("TraceNotStartedError: You have to start a trace with \'Debug::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'errored\'.");
 
         expect(() => cursor.trace("/test", List.of(false))).to.throw("TraceNotStartedError: You can only call \'Cursor::trace\' in the context of an arriving message. Please make sure to use this class in conjunction with \'Runtime\' or to provide an \'Internals\' instance to the constructor of this class, which did receive a message.");
 
@@ -231,12 +231,13 @@ describe("CursorTest", function() { // eslint-disable-line
                         triggers: false,
                         locked:   false,
                         trigger:  null
-                    }]
+                    }],
+                    _cursor: null
                 }
             }
         });
 
-        const cursor3 = cursor2.trace.triggered();
+        const cursor3 = cursor2.debug.trace.triggered();
 
         expect(cursor3.toJS()).to.eql({
             _unit: {
@@ -319,7 +320,8 @@ describe("CursorTest", function() { // eslint-disable-line
                         triggers: true,
                         locked:   false,
                         trigger:  null
-                    }]
+                    }],
+                    _cursor: null
                 }
             }
         });
@@ -420,12 +422,13 @@ describe("CursorTest", function() { // eslint-disable-line
                         triggers: false,
                         locked:   false,
                         trigger:  null
-                    }]
+                    }],
+                    _cursor: null
                 }
             }
         });
 
-        const cursor5 = cursor4.trace.triggered().trace("test3", List.of(2));
+        const cursor5 = cursor4.debug.trace.triggered().trace("test3", List.of(2));
 
         expect(cursor5.toJS()).to.eql({
             _unit: {
@@ -534,16 +537,17 @@ describe("CursorTest", function() { // eslint-disable-line
                         triggers: false,
                         locked:   false,
                         trigger:  null
-                    }]
+                    }],
+                    _cursor: null
                 }
             }
         });
 
-        const cursor6 = cursor5.trace
+        const cursor6 = cursor5.debug.trace
             .triggered()
             .trace("test4", List.of(3))
-            .trace.triggered()
-            .trace.error(new Error("hi"));
+            .debug.trace.triggered()
+            .debug.trace.errored(new Error("hi"));
 
         expect(cursor6.toJS()).to.eql({
             _unit: {
@@ -665,15 +669,16 @@ describe("CursorTest", function() { // eslint-disable-line
                         triggers: true,
                         locked:   false,
                         trigger:  null
-                    }]
+                    }],
+                    _cursor: null
                 }
             }
         });
 
         const cursor7 = cursor6
             .trace("test5", List.of(4))
-            .trace.triggered()
-            .trace.end();
+            .debug.trace.triggered()
+            .debug.trace.ended();
 
         expect(cursor7.toJS()).to.eql({
             _unit: {
@@ -808,12 +813,13 @@ describe("CursorTest", function() { // eslint-disable-line
                         triggers: true,
                         locked:   false,
                         trigger:  null
-                    }]
+                    }],
+                    _cursor: null
                 }
             }
         });
 
-        const cursor8 = cursor7.trace.end();
+        const cursor8 = cursor7.debug.trace.ended();
 
         expect(cursor8.toJS()).to.eql({
             _unit: {
@@ -948,12 +954,13 @@ describe("CursorTest", function() { // eslint-disable-line
                         triggers: true,
                         locked:   false,
                         trigger:  null
-                    }]
+                    }],
+                    _cursor: null
                 }
             }
         });
 
-        const cursor9 = cursor8.trace.error(new Error("lulu"));
+        const cursor9 = cursor8.debug.trace.errored(new Error("lulu"));
 
         expect(cursor9.toJS()).to.eql({
             _unit: {
@@ -1088,13 +1095,14 @@ describe("CursorTest", function() { // eslint-disable-line
                         triggers: true,
                         locked:   false,
                         trigger:  null
-                    }]
+                    }],
+                    _cursor: null
                 }
             }
         });
 
         const cursor10 = cursor9
-            .trace.end()
+            .debug.trace.ended()
             ._unit.messageProcessed();
 
         expect(cursor10.toJS()).to.eql({
@@ -1203,7 +1211,8 @@ describe("CursorTest", function() { // eslint-disable-line
                                 }]
                             }]
                         }]
-                    }]
+                    }],
+                    _cursor: null
                 }
             }
         });

@@ -323,7 +323,7 @@ export default class Runtime extends Duplex {
         const action  = data.payload.first();
         const message = data.payload.get(1);
 
-        return Promise.resolve(this._unit.before(message, action));
+        return Promise.resolve(this._unit.before(message, action).beforeTrace());
     }
 
     message(): Promise<Cursor> {
@@ -357,7 +357,7 @@ export default class Runtime extends Duplex {
 
         return (hasRecentlyErrored ? this.send.error() : this.send.done())
             .then(cursor => cursor.send.triggers())
-            .then(cursor => error ? cursor.trace.error(error) : cursor.trace.end())
+            .then(cursor => error ? cursor.debug.trace.errored(error) : cursor.debug.trace.ended())
             .then(cursor => cursor.action.finished());
     }
 
@@ -367,7 +367,7 @@ export default class Runtime extends Duplex {
 
         const cursor = this.action.guards();
 
-        return Promise.resolve(cursor.action.triggers ? cursor.trace.triggered() : cursor.trace.end());
+        return Promise.resolve(cursor.action.triggers ? cursor.debug.trace.triggered() : cursor.debug.trace.ended());
     }
 
     done() {
