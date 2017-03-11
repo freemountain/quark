@@ -33,10 +33,12 @@ class Debug extends Record({
             .update("_unit", internals => internals.set("debug", debug));
     }
 
-    static errored(e: Error): Cursor {
+    static errored(e?: Error): Cursor {
         this.assertTraceStarted("errored");
 
-        const debug = this.updateCurrentTrace(trace => trace.errored(e));
+        if(!(this._cursor instanceof Cursor) && !(e instanceof Error)) throw new Error("falsch");
+
+        const debug = this.updateCurrentTrace(trace => trace.errored(!(e instanceof Error) ? this._cursor.action.state.error : e));
 
         return !(this._cursor instanceof Cursor) ? debug : this._cursor
             .update("_unit", internals => internals.set("debug", debug));

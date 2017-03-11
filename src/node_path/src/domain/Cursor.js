@@ -163,16 +163,10 @@ class Cursor {
         return this.__next ? this.__next : this;
     }
 
-    error(e: Error): Cursor {
-        return this
-            .addError(e)
-            .debug.trace.errored(e);
-    }
-
     // das hier noch rausbekommen, durch trace.error conditional argument error
     // und dann an den entsprechenden stellen von error noch trace callen und das
     // trace.error aus cursor.error raus
-    addError(e: Error): Cursor {
+    error(e: Error): Cursor {
         return this
             .update("_unit", internals => internals.set("action", internals.action.addError(e)));
     }

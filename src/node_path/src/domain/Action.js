@@ -57,7 +57,8 @@ class Action {
 
             if(!Message.is(message))            return Promise.resolve(this
                 .debug.trace(description.name, List(), this.action.state.type)
-                .error(new UnknownMessageError(description.unit, description.name, message)));
+                .error(new UnknownMessageError(description.unit, description.name, message))
+                .debug.trace.errored());
 
             // hier das ganze in der message funktion mqchen
             try {
@@ -87,14 +88,18 @@ class Action {
                     .then(x => !x.action.triggers ? x : x.send.triggers()
                         .then(cursor => cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle())
                         .then(cursor => cursor.send.after())
-                        .catch(e => x.error(e)))
+                        .catch(e => x
+                            .error(e)
+                            .debug.trace.errored()))
                     .catch(e => this
                         .debug.trace(description.name, List(), this.action.state.type)
-                        .error(e));
+                        .error(e)
+                        .debug.trace.errored());
             } catch(e) {
                 return Promise.resolve(this
                     .debug.trace(description.name, List(), this.action.state.type)
-                    .error(e));
+                    .error(e)
+                    .debug.trace.errored());
             }
         };
     }

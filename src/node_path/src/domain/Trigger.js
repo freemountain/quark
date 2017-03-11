@@ -63,7 +63,8 @@ export default class Trigger {
                 if(!result) return tracing;
             } catch(e) {
                 return tracing
-                    .error(new GuardError(tracing._unit.name, this.emits, i + 1, e));
+                    .error(new GuardError(tracing._unit.name, this.emits, i + 1, e))
+                    .debug.trace.errored();
             }
         }
 
