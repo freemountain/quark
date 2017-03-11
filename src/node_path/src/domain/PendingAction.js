@@ -54,7 +54,7 @@ export default class PendingAction extends Record({
 
     errored(): PendingAction {
         return this
-            .set("error", this.state.errors.last())
+            .set("error", this.state.currentError)
             .changeState("error");
     }
 
@@ -112,6 +112,7 @@ export default class PendingAction extends Record({
     setCursor(cursor: Cursor): PendingAction {
         return this
             .set("_cursor", cursor)
+            .update("state", state => state.setCursor(cursor))
             .update("message", message => message instanceof Message ? message.setCursor(cursor) : message);
     }
 
@@ -134,7 +135,7 @@ export default class PendingAction extends Record({
         return (
             this.previous instanceof PendingAction &&
             this.previous.description.name !== this.description.name &&
-            this.state.error !== this.previous.state.error
+            this.state.currentError !== this.previous.state.currentError
         );
     }
 

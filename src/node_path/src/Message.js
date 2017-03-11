@@ -15,8 +15,6 @@ export default class Message extends Record({
     _cursor:  null,
     _initial: List()
 }) {
-    _initial: List<*>;
-
     static is(x) {
         return x instanceof Message;
     }
@@ -64,7 +62,7 @@ export default class Message extends Record({
 
         if(!(cursor instanceof Cursor)) throw new NoCursorError("Message::preparePayload");
 
-        const payload = trigger.action.indexOf(".error") !== -1 ? this.payload.unshift(cursor.action.state.error) : this.payload;
+        const payload = trigger.action.indexOf(".error") !== -1 ? this.payload.unshift(cursor.action.state.currentError) : this.payload;
 
         return this
             .set("_initial", payload)
@@ -103,4 +101,6 @@ export default class Message extends Record({
             resource: this.resource
         };
     }
+
+    _initial: List<*>;
 }

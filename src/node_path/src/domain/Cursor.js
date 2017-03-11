@@ -163,14 +163,6 @@ class Cursor {
         return this.__next ? this.__next : this;
     }
 
-    // das hier noch rausbekommen, durch trace.error conditional argument error
-    // und dann an den entsprechenden stellen von error noch trace callen und das
-    // trace.error aus cursor.error raus
-    error(e: Error): Cursor {
-        return this
-            .update("_unit", internals => internals.set("action", internals.action.addError(e)));
-    }
-
     defer(op: Function, delay?: number): Promise<*> {
         return schedule(op, delay);
     }

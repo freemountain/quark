@@ -156,8 +156,9 @@ describe("InternalsTest", function() {
                 error:     null,
                 _triggers: false,
                 state:     {
-                    type:   "before",
-                    errors: []
+                    type:    "before",
+                    errors:  [],
+                    _cursor: null
                 }
             },
             children:    {},
@@ -230,8 +231,9 @@ describe("InternalsTest", function() {
                 },
                 _triggers: false,
                 state:     {
-                    type:   "before",
-                    errors: []
+                    type:    "before",
+                    errors:  [],
+                    _cursor: null
                 },
                 description: {
                     name:     "message",

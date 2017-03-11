@@ -111,7 +111,7 @@ export default class Runtime extends Duplex {
     }
 
     static onResult(cursor: Cursor, result: (Promise<Cursor> | Error | Cursor | void)): Promise<Cursor> { // eslint-disable-line
-        if(result instanceof Error)   return cursor.error(result);
+        if(result instanceof Error)   return cursor.action.state.error(result);
         if(result instanceof Promise) return result
             .then(Runtime.onResult.bind(null, cursor))
             .catch(Runtime.onResult.bind(null, cursor));
@@ -275,7 +275,7 @@ export default class Runtime extends Duplex {
             // adde das diffen kann in ne action, wenn der cursor die history
             // kennt (property __start adden bei messagereceived)
             .then(x => {
-                if(!x.action.state.isRecoverable) return this.emit("error", x.action.state.error);
+                if(!x.action.state.isRecoverable) return this.emit("error", x.action.state.currentError);
 
                 return x;
             })
@@ -315,7 +315,7 @@ export default class Runtime extends Duplex {
 
             return Runtime.onResult(cursor, result);
         } catch(e) {
-            return Promise.resolve(this.error(e));
+            return Promise.resolve(this.action.state.error(e));
         }
     }
 
@@ -359,7 +359,7 @@ export default class Runtime extends Duplex {
 
     after(): Promise<Cursor> {
         const hasRecentlyErrored = this.action.hasRecentlyErrored;
-        const error              = hasRecentlyErrored ? this.action.state.error : null;
+        const error              = hasRecentlyErrored ? this.action.state.currentError : null;
 
         return (hasRecentlyErrored ? this.send.error() : this.send.done())
             .then(cursor => cursor.send.triggers())
