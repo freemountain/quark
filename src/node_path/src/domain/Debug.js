@@ -27,29 +27,33 @@ class Debug extends Record({
     static triggered(): Cursor {
         this.assertTraceStarted("triggered");
 
+        if(!(this._cursor instanceof Cursor)) throw new Error("lulu");
+
         const debug = this.updateCurrentTrace(trace => trace.triggered());
 
-        return !(this._cursor instanceof Cursor) ? debug : this._cursor
-            .update("_unit", internals => internals.set("debug", debug));
+        return this._cursor.update("_unit", internals => internals.set("debug", debug));
     }
 
     static errored(e?: Error): Cursor {
         this.assertTraceStarted("errored");
 
+        if(!(this._cursor instanceof Cursor)) throw new Error("lulu");
         if(!(this._cursor instanceof Cursor) && !(e instanceof Error)) throw new Error("falsch");
 
         const debug = this.updateCurrentTrace(trace => trace.errored(!(e instanceof Error) ? this._cursor.action.state.currentError : e));
 
-        return !(this._cursor instanceof Cursor) ? debug : this._cursor
+        return this._cursor
             .update("_unit", internals => internals.set("debug", debug));
     }
 
     static ended(): Cursor {
         this.assertTraceStarted("ended");
 
+        if(!(this._cursor instanceof Cursor)) throw new Error("lulu");
+
         const debug = this.updateCurrentTrace(trace => trace.ended());
 
-        return !(this._cursor instanceof Cursor) ? debug : this._cursor
+        return this._cursor
             .update("_unit", internals => internals.set("debug", debug));
     }
 
@@ -84,7 +88,7 @@ class Debug extends Record({
         return updated;
     }
 
-    startTracing(name: string, params: List<*>, trigger: ?string, guards: ?number = 0) {
+    startTracing(name: string, params?: List<*> = List(), guards?: number = 0, trigger: ?string) {
         if(!(this._cursor instanceof Cursor)) throw new Error("lulu");
 
         const current = this.currentTrace;

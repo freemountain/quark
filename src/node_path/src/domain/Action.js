@@ -56,7 +56,7 @@ class Action {
             const message = data instanceof Message ? data : this.message;
 
             if(!Message.is(message))            return Promise.resolve(this
-                .debug.trace(description.name, List(), this.action.state.type)
+                .debug.trace(description.name, List(), 0, this.action.state.type)
                 .action.state.error(new UnknownMessageError(description.unit, description.name, message))
                 .debug.trace.errored());
 
@@ -92,12 +92,12 @@ class Action {
                             .action.state.error(e)
                             .debug.trace.errored()))
                     .catch(e => this
-                        .debug.trace(description.name, List(), this.action.state.type)
+                        .debug.trace(description.name, List(), this.action.guard.count, this.action.state.type)
                         .action.state.error(e)
                         .debug.trace.errored());
             } catch(e) {
                 return Promise.resolve(this
-                    .debug.trace(description.name, List(), this.action.state.type)
+                    .debug.trace(description.name, List(), this.action.guard.count, this.action.state.type)
                     .action.state.error(e)
                     .debug.trace.errored());
             }

@@ -93,7 +93,7 @@ export default class PendingAction extends Record({
     changeState(type: string): PendingAction {
         const updated = this.update("state", state => state.change(type));
 
-        if(!(this._cursor instanceof Cursor)) return updated;
+        if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
 
         return this._cursor
             .update("_unit", internals => internals.set("action", updated));
@@ -102,11 +102,7 @@ export default class PendingAction extends Record({
     guards(): Cursor {
         if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
 
-        try {
-            return this.trigger.shouldTrigger(this._cursor, this.message ? this.message.payload : List());
-        } catch(e) {
-            return this._cursor;
-        }
+        return this.trigger.shouldTrigger(this._cursor, this.message ? this.message.payload : List());
     }
 
     setCursor(cursor: Cursor): PendingAction {

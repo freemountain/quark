@@ -317,7 +317,7 @@ export default class Runtime extends Duplex {
         const payload = updated.message.payload;
         const guards  = updated.action.guard.count;
 
-        return Promise.resolve(updated.debug.trace(name, payload, trigger, guards));
+        return Promise.resolve(updated.debug.trace(name, payload, guards, trigger));
     }
 
     message(): Promise<Cursor> {

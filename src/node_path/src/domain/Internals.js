@@ -43,37 +43,31 @@ export default class Internals extends Record({
         }));
     }
 
-    messageReceived(message: Message): Internals {
-        if(this.action !== null) throw new AlreadyReceivedError();
+    messageReceived(data: Message): Internals {
+        if(this.action !== null)              throw new AlreadyReceivedError();
+        if(!(this._cursor instanceof Cursor)) throw new Error("lulu");
 
-        const updated = this
-            .set("action", new PendingAction({
-                message:     message.setCursor(this._cursor),
-                description: this.description.get("message")
-            }));
-
-        const trigger = !(updated.action instanceof PendingAction) || updated.action.description.name === "message" ? undefined : updated.action.previous.state.type; // eslint-disable-line
-        const name    = `Message<${message.resource}>`;
-        const payload = updated.action.message.payload;
-        const guards  = updated.action.guard.count;
-
-        if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, updated.action.description);
+        const message     = data.setCursor(this._cursor);
+        const description = this.description.get("message");
+        const action      = new PendingAction({ message, description });
+        const updated     = this.set("action", action);
 
         return this._cursor
             .set("_unit", updated)
-            .debug.startTracing(name, payload, trigger, guards)
+            .debug.startTracing(`Message<${message.resource}>`, message.payload, action.guard.count)
             .debug.trace.triggered();
     }
 
     messageProcessed(): Internals | Cursor {
-        if(this.action === null) throw new NotStartedError();
+        if(this.action === null)              throw new NotStartedError();
+        if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.action.description);
 
         const updated = this
             .update("debug", debug => debug.endTracing())
             .set("action", null)
             .setCursor(null);
 
-        return !(this._cursor instanceof Cursor) ? updated : this._cursor.set("_unit", updated);
+        return this._cursor.set("_unit", updated);
     }
 
     setCursor(cursor: Cursor | null): Internals {

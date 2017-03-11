@@ -121,7 +121,7 @@ describe("InternalsTest", function() {
         const internals2 = internals
             .setCursor(cursor)
             .messageReceived(message)
-            .debug.trace("lulu", List(), "lala.done", 1)
+            .debug.trace("lulu", List(), 1, "lala.done")
             .debug.trace.triggered()
             ._unit.setCursor(null);
 
@@ -311,8 +311,8 @@ describe("InternalsTest", function() {
         });
 
         expect(internals3.debug.isTracing).to.equal(true);
-        expect(internals3.messageProcessed().debug.isTracing).to.equal(false);
-        expect(() => internals2.messageProcessed().toJS()).to.throw("NotConsistentError: You can only lock consistent traces. Some end calls are probably missing @blub::Message</blub>.");
+        expect(internals3.setCursor(cursor).messageProcessed().debug.isTracing).to.equal(false);
+        expect(() => internals2.setCursor(cursor).messageProcessed().toJS()).to.throw("NotConsistentError: You can only lock consistent traces. Some end calls are probably missing @blub::Message</blub>.");
     });
 
 // to state shit
