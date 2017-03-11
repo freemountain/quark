@@ -613,6 +613,38 @@ describe("ActionTest", function() {
                 done:     [],
                 error:    []
             },
+            diff: {
+                unit:     "Test3",
+                name:     "diff",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "diff",
+                    guards: 0,
+                    params: [],
+                    action: "diff"
+                }]
+            },
+            finish: {
+                unit:     "Test3",
+                name:     "finish",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "finish",
+                    guards: 0,
+                    params: [],
+                    action: "finish"
+                }]
+            },
             message: {
                 unit:   "Test3",
                 name:   "message",

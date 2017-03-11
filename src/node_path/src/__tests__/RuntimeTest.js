@@ -53,6 +53,7 @@ describe("RuntimeTest", function() {
 
         expect(methods.keySeq().toJS()).to.eql([
             "done",
+            "diff",
             "message",
             "error",
             "handle",
@@ -60,6 +61,7 @@ describe("RuntimeTest", function() {
             "guards",
             "init",
             "props",
+            "finish",
             "action",
             "triggers",
             "after",
@@ -194,6 +196,40 @@ describe("RuntimeTest", function() {
                     guards: 1,
                     params: [],
                     action: "message.before"
+                }]
+            },
+
+            diff: {
+                unit:     "TestUnit",
+                name:     "diff",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "diff",
+                    guards: 0,
+                    params: [],
+                    action: "diff"
+                }]
+            },
+
+            finish: {
+                unit:     "TestUnit",
+                name:     "finish",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "finish",
+                    guards: 0,
+                    params: [],
+                    action: "finish"
                 }]
             },
 

@@ -114,7 +114,9 @@ class Action {
             key !== "finish" &&
             key !== "before" &&
             key !== "guards" &&
-            key !== "triggers"
+            key !== "triggers" &&
+            key !== "diff" &&
+            key !== "finish"
         );
     }
 

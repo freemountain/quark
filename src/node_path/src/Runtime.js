@@ -1,6 +1,5 @@
 import { Duplex } from "stream";
 import assert from "assert";
-import diff from "immutablediff";
 import { Map, List, fromJS } from "immutable";
 // import Trigger from "./domain/Trigger";
 // import uuid from "uuid";
@@ -15,7 +14,6 @@ import Uuid from "./util/Uuid";
 import { schedule } from "./Runloop";
 import Internals from "./domain/Internals";
 import Message from "./Message";
-import type { Diffs } from "./domain/Cursor";
 import Trace from "./telemetry/Trace";
 import PendingAction from "./domain/PendingAction";
 
@@ -57,7 +55,6 @@ export default class Runtime extends Duplex {
             key !== "history" &&
             key !== "diffs" &&
             key !== "action" &&
-            key !== "diffs" &&
             key !== "history" &&
             key !== "traces" &&
             key !== "id" &&
@@ -83,31 +80,8 @@ export default class Runtime extends Duplex {
             x !== "trace" &&
             x !== "onError" &&
             x !== "shouldThrow" &&
-            x !== "toJS" &&
-            x !== "finish"
+            x !== "toJS"
         );
-    }
-
-    // das noch zu ner action
-    static diff(instance: Runtime, updated: Cursor): Promise<{ cursor: Cursor, diffs: Diffs}> {
-        return new Promise((resolve, reject) => {
-            try {
-                const previous = !(instance.cursor instanceof Cursor) ? updated.__data.constructor() : instance.cursor.__data;
-                const cursor   = updated.update("_unit", x => x
-                    .update("revision", y => y + 1)
-                    .update("history", y => y.push(previous))
-                );
-
-                const diffs = diff(previous, cursor.__data);
-
-                return resolve({
-                    cursor: cursor,
-                    diffs
-                });
-            } catch(e) {
-                return reject(e);
-            }
-        });
     }
 
     static onResult(cursor: Cursor, result: (Promise<Cursor> | Error | Cursor | void)): Promise<Cursor> { // eslint-disable-line
@@ -272,22 +246,19 @@ export default class Runtime extends Duplex {
 
         return this.receive.call(cursor, message.setCursor(cursor))
             .then(x => this.message.call(x, x.currentMessage))
-            // adde das diffen kann in ne action, wenn der cursor die history
-            // kennt (property __start adden bei messagereceived)
             .then(x => {
                 if(!x.action.state.isRecoverable) return this.emit("error", x.action.state.currentError);
 
                 return x;
             })
-            .then(x => Runtime.diff(this, x))
-            .then(update => this.finish.call(update.cursor))
+            .then(x => x.send.diff(cursor))
+            .then(x => x.send.finish())
             .then(x => {
                 this.cursor = x;
                 this.locked = false;
 
                 return this;
-            })
-            .then(() => this);
+            });
     }
 
     // checken, ob die überhaupt aufgerufen wird
@@ -297,6 +268,20 @@ export default class Runtime extends Duplex {
         assert(false, "Every unit needs to implement an 'init' action");
 
         return new Cursor({});
+    }
+
+    diff(message: Message) {
+        try {
+            const previous = message.payload.first();
+            const cursor   = this.update("_unit", x => x
+                .update("revision", y => y + 1)
+                .update("history", y => y.push(previous)))
+                .set("diffs", this.diff(previous));
+
+            return Promise.resolve(cursor);
+        } catch(e) {
+            return Promise.reject(e);
+        }
     }
 
     handle(): Promise<Cursor> { // eslint-disable-line
