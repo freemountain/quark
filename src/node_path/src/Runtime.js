@@ -80,7 +80,8 @@ export default class Runtime extends Duplex {
             x !== "trace" &&
             x !== "onError" &&
             x !== "shouldThrow" &&
-            x !== "toJS"
+            x !== "toJS" &&
+            x !== "emitIfNotRevoverable"
         );
     }
 
@@ -245,12 +246,8 @@ export default class Runtime extends Duplex {
         const cursor  = defaults(this.cursor).to(new this.__Cursor(message.payload.first(), this));
 
         return this.receive.call(cursor, message.setCursor(cursor))
-            .then(x => this.message.call(x, x.currentMessage))
-            .then(x => {
-                if(!x.action.state.isRecoverable) return this.emit("error", x.action.state.currentError);
-
-                return x;
-            })
+            // .then(x => this.message.call(x, x.currentMessage))
+            .then(x => this.emitIfNotRevoverable(x))
             .then(x => x.send.diff(cursor))
             .then(x => x.send.finish())
             .then(x => {
@@ -259,6 +256,12 @@ export default class Runtime extends Duplex {
 
                 return this;
             });
+    }
+
+    emitIfNotRevoverable(cursor: Cursor) {
+        if(!cursor.action.state.isRecoverable) return this.emit("error", cursor.action.state.currentError);
+
+        return cursor;
     }
 
     // checken, ob die überhaupt aufgerufen wird
