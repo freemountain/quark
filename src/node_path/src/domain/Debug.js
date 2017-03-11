@@ -18,25 +18,10 @@ class Debug extends Record({
         if(!this.isTracing) throw new TraceNotStartedError(`You have to start a trace with 'Debug::trace: (string -> { name: string }) -> Cursor', before you can change it's state to '${caller}'.`);
     }
 
-    static trace(unit: string, name: string, params: List<*>, trigger: ?string, guards: ?number = 0) {
-        if(this._cursor instanceof Cursor && !this._cursor.debug.isTracing) throw new TraceNotStartedError("You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
+    static trace(...args: Array<*>) {
+        if(!(this._cursor instanceof Cursor) || !(this._cursor.debug instanceof Debug) || !this._cursor.debug.isTracing) throw new TraceNotStartedError("You can only call 'Debug::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance, which did receive a message, to this cursor.");
 
-        const current = this.currentTrace;
-        const parent  = current ? current.id : current;
-        const id      = null;
-        const start   = null;
-        const debug   = this.update("traces", traces => traces.push(new Trace({
-            name,
-            params,
-            guards,
-            trigger,
-            parent,
-            id,
-            start
-        }, this._cursor instanceof Cursor ? this._cursor._unit.name : unit))).setCursor(null);
-
-        return !(this._cursor instanceof Cursor) ? debug : this._cursor
-            .update("_unit", internals => internals.set("debug", debug));
+        return this.startTracing(...args);
     }
 
     static triggered(): Cursor {
@@ -70,10 +55,6 @@ class Debug extends Record({
     constructor(data?: DebugInput = {}) {
         super(data);
 
-        // trace.triggered = Debug.triggered.bind(this);
-        // this.trace.error     = Cursor.error.bind(null, this);
-        // this.trace.end       = Cursor.end.bind(null, this);
-        //
         const updated = this.set("trace", function(...args) {
             return Debug.trace.apply(this, args);
         });
@@ -101,6 +82,28 @@ class Debug extends Record({
         return updated;
     }
 
+    startTracing(name: string, params: List<*>, trigger: ?string, guards: ?number = 0) {
+        if(!(this._cursor instanceof Cursor)) throw new Error("lulu");
+
+        const current = this.currentTrace;
+        const parent  = current ? current.id : current;
+        const id      = null;
+        const start   = null;
+        const unit    = this._cursor._unit.name;
+        const debug   = this.update("traces", traces => traces.push(new Trace({
+            name,
+            params,
+            guards,
+            trigger,
+            parent,
+            id,
+            start
+        }, unit)));
+
+        return this._cursor
+            .update("_unit", internals => internals.set("debug", debug.setCursor(null)));
+    }
+
     updateCurrentTrace(op: Trace => Trace): Debug {
         const current = this.currentTrace;
 
@@ -113,7 +116,7 @@ class Debug extends Record({
             .setCursor(null);
     }
 
-    compactTraces(): Debug {
+    endTracing(): Debug {
         const filtered = this.traces.filter(x => !x.locked);
         const trace    = filtered
             .shift()

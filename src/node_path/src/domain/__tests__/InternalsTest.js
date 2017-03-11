@@ -3,11 +3,14 @@
 import Internals from "../Internals";
 import { expect } from "chai";
 import Message from "../../Message";
-import { List } from "immutable";
+import { List, Map } from "immutable";
 import Trace from "../../telemetry/Trace";
 import sinon from "sinon";
 import Uuid from "../../util/Uuid";
+import Cursor from "../Cursor";
 // import CoreComponentError from "../../error/CoreComponentError";
+
+const UnitCursor = Cursor.for(new (class Unit {})(), Map());
 
 describe("InternalsTest", function() {
     beforeEach(function() {
@@ -84,16 +87,17 @@ describe("InternalsTest", function() {
     });
 
     it("checks the action functions", function() {
-        const message   = new Message("/blub", List());
-        const internals = new Internals({
+        const cursor     = new UnitCursor(Map());
+        const message    = new Message("/blub", List());
+        const internals  = new Internals({
             name: "blub",
             id:   "id"
         });
 
         expect(() => internals.messageProcessed()).to.throw("NotStartedError: Can\'t finish a message before starting.");
-        expect(internals.messageReceived(message).action.message).to.equal(message);
-        expect(() => internals.messageReceived(message).messageReceived(message)).to.throw("AlreadyReceivedError: Can\'t start a message, if another message is currently processed.");
-        expect(internals.messageReceived(message).messageProcessed().action).to.equal(null);
+        expect(internals.setCursor(cursor).messageReceived(message).action.message.setCursor(null).toJS()).to.eql(message.toJS());
+        expect(() => internals.setCursor(cursor).messageReceived(message)._unit.messageReceived(message)).to.throw("AlreadyReceivedError: Can\'t start a message, if another message is currently processed.");
+        expect(internals.setCursor(cursor).messageReceived(message)._unit.messageProcessed().action).to.equal(null);
     });
 
     it("starts and updates a trace", function() {
@@ -102,19 +106,24 @@ describe("InternalsTest", function() {
             name: "blub",
             id:   "id"
         });
+        const cursor = new UnitCursor(Map({
+            _unit: internals
+        }));
 
         expect(internals.debug.isTracing).to.equal(false);
-        expect(internals.debug.trace(internals.name, "func", List.of(1)).traces.toJS()).to.eql([new Trace({
+
+        expect(internals.debug.setCursor(cursor).startTracing("func", List.of(1)).debug.traces.toJS()).to.eql([new Trace({
             name:   "func",
             params: List.of(1)
         }, "blub").set("id", 1).set("start", 1).toJS()]);
 
         expect(internals.set("action", message).update("debug", debug => debug.updateCurrentTrace(x => x)).toJS()).to.eql(internals.set("action", message).toJS());
         const internals2 = internals
+            .setCursor(cursor)
             .messageReceived(message)
-            .update("debug", debug => debug
-                .trace(internals.name, "lulu", List(), "lala.done", 1)
-                .updateCurrentTrace(x => x.triggered()));
+            .debug.trace("lulu", List(), "lala.done", 1)
+            .debug.trace.triggered()
+            ._unit.setCursor(null);
 
         expect(internals2.debug.isTracing).to.equal(true);
         expect(internals2.toJS()).to.eql({
@@ -207,6 +216,7 @@ describe("InternalsTest", function() {
         });
 
         const internals3 = internals2
+            .setCursor(null)
             .update("debug", debug => debug.updateCurrentTrace(x => x.errored(new Error("blub"))));
 
         expect(internals3.toJS()).to.eql({
@@ -300,7 +310,7 @@ describe("InternalsTest", function() {
 
         expect(internals3.debug.isTracing).to.equal(true);
         expect(internals3.messageProcessed().debug.isTracing).to.equal(false);
-        expect(() => internals3.update("debug", debug => debug.trace(internals3.name, "g", List())).messageProcessed().toJS()).to.throw("NotConsistentError: You can only lock consistent traces. Some end calls are probably missing @blub::Message</blub>.");
+        expect(() => internals2.messageProcessed().toJS()).to.throw("NotConsistentError: You can only lock consistent traces. Some end calls are probably missing @blub::Message</blub>.");
     });
 
 // to state shit

@@ -245,7 +245,7 @@ describe("ActionTest", function() {
 
         const cursor = (new unit.__Cursor(data))._unit
             .messageReceived(message)
-            .trace("message", message.get("payload"))
+            .debug.trace("message", message.get("payload"))
             .debug.trace.triggered()
             .update("_unit", internals => internals.set("action", new PendingAction({
                 message:     message,
@@ -315,7 +315,7 @@ describe("ActionTest", function() {
         const message  = (new Message("/actions/test", List.of("test")));
         const cursor   = (new unit.__Cursor(data))._unit
             .messageReceived(message)
-            .trace("message", message.get("payload"))
+            .debug.trace("message", message.get("payload"))
             .debug.trace.triggered()
             .update("_unit", internals => internals.update("action", action => action.set("message", null)));
 
@@ -402,7 +402,7 @@ describe("ActionTest", function() {
             .then(x => {
                 const result  = x._unit.messageProcessed();
                 const cursor2 = cursor
-                    .trace("message", message.get("payload"))
+                    .debug.trace("message", message.get("payload"))
                     .debug.trace.triggered()
                     .debug.trace.ended()
                     ._unit.messageProcessed()
@@ -1006,8 +1006,9 @@ describe("ActionTest", function() {
 
         return unit.ready()
             .then(() => {
-                const cursor2 = cursor.update("_unit", internals => internals.messageReceived(message))
-                    .trace("message", message.get("payload"))
+                const cursor2 = cursor._unit
+                    .messageReceived(message)
+                    .debug.trace("message", message.get("payload"))
                     .debug.trace.triggered();
 
                 return unit.triggers.call(cursor2)
@@ -1168,13 +1169,13 @@ describe("ActionTest", function() {
 
         return unit.ready()
             .then(x => {
-                const cursor2 = cursor.update("_unit", internals => internals.messageReceived(message));
+                const cursor2 = cursor._unit.messageReceived(message);
 
                 return x.message.call(cursor2, message.setCursor(cursor))
                     .then(y => {
                         const result  = y._unit.messageProcessed();
                         const cursor3 = cursor2
-                            .trace("message", message.get("payload"))
+                            .debug.trace("message", message.get("payload"))
                             .debug.trace.triggered()
                             .debug.trace.ended()
                             ._unit.messageProcessed()
@@ -1354,13 +1355,13 @@ describe("ActionTest", function() {
 
         return unit.ready()
             .then(x => {
-                const cursor2 = cursor.update("_unit", internals => internals.messageReceived(message));
+                const cursor2 = cursor._unit.messageReceived(message);
 
                 return x.message.call(cursor2, message.setCursor(cursor))
                     .then(y => {
                         const result  = y._unit.messageProcessed();
                         const cursor3 = cursor2
-                            .trace("message", message.get("payload"))
+                            .debug.trace("message", message.get("payload"))
                             .debug.trace.triggered()
                             .debug.trace.ended()
                             ._unit.messageProcessed()

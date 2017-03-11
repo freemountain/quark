@@ -41,7 +41,7 @@ export default class Trace extends Record({
             name:    context ? `${context}::${data.name}` : data.name,
             parent:  data.parent || null,
             start:   Date.now(),
-            trigger: !data.trigger || data.trigger === null || data.trigger === data.name ? null : data.trigger.split(".").pop(),
+            trigger: !data.trigger || typeof data.trigger !== "string" || data.trigger === data.name ? null : data.trigger.split(".").pop(),
             params:  data.params instanceof List ? data.params.map(x => x instanceof Map ? x.delete("_unit") : x).toJS() : [],
             id:      !data.id ? Uuid.uuid() : data.id
         }));

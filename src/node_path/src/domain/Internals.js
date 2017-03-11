@@ -1,7 +1,6 @@
 import { Record, List, Map } from "immutable";
-// import Trace from "../telemetry/Trace";
 import Message from "../Message";
-// import NoMessageError from "./error/NoMessageError";
+import InvalidCursorError from "./error/InvalidCursorError";
 import AlreadyReceivedError from "./error/AlreadyReceivedError";
 import NotStartedError from "./error/NotStartedError";
 import PendingAction from "./PendingAction";
@@ -48,55 +47,33 @@ export default class Internals extends Record({
         if(this.action !== null) throw new AlreadyReceivedError();
 
         const updated = this
-            .setCursor(null)
-            .before(message, this.description.get("message"))
-            .beforeTrace(`Message<${message.resource}>`)
-            .update("debug", debug => debug.updateCurrentTrace(trace => trace.triggered()));
+            .set("action", new PendingAction({
+                message:     message.setCursor(this._cursor),
+                description: this.description.get("message")
+            }));
 
-        return !(this._cursor instanceof Cursor) ? updated : this._cursor.set("_unit", updated);
+        const trigger = !(updated.action instanceof PendingAction) || updated.action.description.name === "message" ? undefined : updated.action.previous.state.type; // eslint-disable-line
+        const name    = `Message<${message.resource}>`;
+        const payload = updated.action.message.payload;
+        const guards  = updated.action.guard.count;
+
+        if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, updated.action.description);
+
+        return this._cursor
+            .set("_unit", updated)
+            .debug.startTracing(name, payload, trigger, guards)
+            .debug.trace.triggered();
     }
 
     messageProcessed(): Internals | Cursor {
         if(this.action === null) throw new NotStartedError();
 
         const updated = this
-            .update("debug", debug => debug.compactTraces())
+            .update("debug", debug => debug.endTracing())
             .set("action", null)
             .setCursor(null);
 
         return !(this._cursor instanceof Cursor) ? updated : this._cursor.set("_unit", updated);
-    }
-
-        // das sollte auch noch auf action kommen + die beiden fälle:
-    // unit -> message
-    // und alles andere müssen entkoppelt werden
-    // eigtl kann die ganze logik hier raus und in die jeweilige funktion
-    // (Runtime.before, Internals.messageReceived
-    before(y: Message, description: Action): Internals { // eslint-disable-line
-        const message = y.setCursor(this._cursor);
-        const updated = this.update("action", action => action instanceof PendingAction ? action.before(description, message) : new PendingAction({ message: message, description }));
-
-        return updated;
-    }
-
-    beforeTrace(maybeName?: string): Internals { // eslint-disable-line
-       // hier das dabei dann in die before methode ansich und in
-        // trigger (das sind ja atm 2 fälle, die hier abgehandelt werden)
-        const trigger     = !(this.action instanceof PendingAction) || this.action.description.name === "message" ? undefined : this.action.previous.state.type; // eslint-disable-line
-        const unit        = this.name;
-        const name        = maybeName ? maybeName : this.action.description.name;
-        const payload     = this.action.message.payload;
-        const guards      = this.action.guard.count;
-
-        const internals   = this.update("debug", debug => debug
-            .setCursor(null)
-            .trace(unit, name, payload, trigger, guards));
-
-        /*  const debug = updated.debug
-         .trace(name, updated.action.message.payload, trigger, guards);*/
-
-        return !(this._cursor instanceof Cursor) ? internals : this._cursor.set("_unit", internals.setCursor(null));
-        // return !(this.debug._cursor instanceof Cursor) ? this.set("debug", debug) : debug;
     }
 
     setCursor(cursor: Cursor | null): Internals {
@@ -105,7 +82,5 @@ export default class Internals extends Record({
             .update("action", action => action instanceof PendingAction ? action.setCursor(cursor) : action)
             .update("debug", debug => debug.setCursor(cursor));
     }
-
-    // _cursor: Cursor
 }
 

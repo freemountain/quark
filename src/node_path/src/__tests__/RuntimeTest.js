@@ -425,7 +425,7 @@ describe("RuntimeTest", function() {
         });
 
         const message  = (new Message("/actions/init", List([data]))).setCursor(unit.cursor);
-        const cursor   = (new unit.__Cursor(data)).update("_unit", internals => internals.messageReceived(message));
+        const cursor   = (new unit.__Cursor(data))._unit.messageReceived(message);
         const payload  = List.of(cursor);
         const message2 = message.set("payload", payload);
 

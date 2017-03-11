@@ -1,6 +1,6 @@
 // @flow
 
-import TraceNotStartedError from "./error/TraceNotStartedError";
+// import TraceNotStartedError from "./error/TraceNotStartedError";
 import { fromJS, Map, List, OrderedSet, OrderedMap, Iterable, Seq, Set, Collection, Record, Stack } from "immutable";
 import ImmutableMethods from "../util/ImmutableMethods";
 import patch from "immutablepatch";
@@ -88,15 +88,6 @@ class Cursor {
 
         return this;
     }
-
-    // >>> hier das noch raus
-    trace(...args: *): Cursor {
-        if(!this.debug.isTracing) throw new TraceNotStartedError("You can only call 'Cursor::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance to the constructor of this class, which did receive a message.");
-
-        return this.debug.trace(this._unit.name, ...args);
-    }
-    // >>>
-
 
     generic(mapper: (cursor: Cursor) => Cursor): Cursor {
         return mapper(this);

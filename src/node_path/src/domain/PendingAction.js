@@ -45,7 +45,7 @@ export default class PendingAction extends Record({
             .set("description", action)
             .set("previous", this)
             .set("_triggers", false)
-            .update("state", state => state.change("before"));
+            .changeState("before");
     }
 
     triggered(): PendingAction {
@@ -91,10 +91,12 @@ export default class PendingAction extends Record({
     }
 
     changeState(type: string): PendingAction {
-        if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
+        const updated = this.update("state", state => state.change(type));
+
+        if(!(this._cursor instanceof Cursor)) return updated;
 
         return this._cursor
-            .update("_unit", internals => internals.set("action", this.update("state", state => state.change(type))));
+            .update("_unit", internals => internals.set("action", updated));
     }
 
     guards(): Cursor {

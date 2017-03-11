@@ -60,12 +60,13 @@ describe("TriggerTest", function() {
                     error:    new Action("Unit", "error", List(), Runtime.prototype.error),
                     triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers)
                 })
-            })).messageReceived(message),
+            })),
             value: 2
         });
 
         const TestCursor = Cursor.for(class Test {}, data.get("_unit").description);
-        const cursor     = new TestCursor(data);
+        const cursor     = (new TestCursor(data))
+            ._unit.messageReceived(message);
 
         return action.func
             .call(cursor, new Message("/blub", List([1, "huhu"])))

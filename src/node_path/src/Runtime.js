@@ -320,10 +320,16 @@ export default class Runtime extends Duplex {
     }
 
     before(data): Promise<Cursor> {
-        const action  = data.payload.first();
-        const message = data.payload.get(1);
+        const description = data.payload.first();
+        const message     = data.payload.get(1).setCursor(this);
+        const updated     = this.action.before(description, message);
 
-        return Promise.resolve(this._unit.before(message, action).beforeTrace());
+        const trigger = !(updated.action instanceof PendingAction) || updated.action.description.name === "message" ? undefined : updated.action.previous.state.type; // eslint-disable-line
+        const name    = updated.action.description.name;
+        const payload = updated.message.payload;
+        const guards  = updated.action.guard.count;
+
+        return Promise.resolve(updated.debug.trace(name, payload, trigger, guards));
     }
 
     message(): Promise<Cursor> {

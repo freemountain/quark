@@ -132,9 +132,8 @@ describe("CursorTest", function() { // eslint-disable-line
         const message = new Message("/test", List.of(1));
         const data    = fromJS({
             _unit: new Internals({
-                name:   "Unit",
-                action: message,
-                id:     "id"
+                name: "Unit",
+                id:   "id"
             })
         });
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
@@ -143,12 +142,12 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(() => cursor.debug.trace.ended()).to.throw("TraceNotStartedError: You have to start a trace with \'Debug::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'ended\'.");
         expect(() => cursor.debug.trace.triggered()).to.throw("TraceNotStartedError: You have to start a trace with \'Debug::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'triggered\'.");
         expect(() => cursor.debug.trace.errored()).to.throw("TraceNotStartedError: You have to start a trace with \'Debug::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'errored\'.");
-
-        expect(() => cursor.trace("/test", List.of(false))).to.throw("TraceNotStartedError: You can only call \'Cursor::trace\' in the context of an arriving message. Please make sure to use this class in conjunction with \'Runtime\' or to provide an \'Internals\' instance to the constructor of this class, which did receive a message.");
+        expect(() => cursor.debug.trace("/test", List.of(false))).to.throw("TraceNotStartedError: You can only call \'Debug::trace\' in the context of an arriving message. Please make sure to use this class in conjunction with \'Runtime\' or to provide an \'Internals\' instance, which did receive a message, to this cursor.");
 
         const cursor2 = cursor
-            .update("_unit", internals => internals.set("action", null).messageReceived(message))
-            .trace("test", List.of(false));
+            ._unit.messageReceived(message)
+            .debug.trace("test", List.of(false))
+            .update("_unit", internals => internals.setCursor(null));
 
         expect(cursor2.toJS()).to.eql({
             _unit: {
@@ -326,7 +325,7 @@ describe("CursorTest", function() { // eslint-disable-line
             }
         });
 
-        const cursor4 = cursor3.trace("test2", List.of(1));
+        const cursor4 = cursor3.debug.trace("test2", List.of(1));
 
         expect(cursor4.toJS()).to.eql({
             _unit: {
@@ -428,7 +427,9 @@ describe("CursorTest", function() { // eslint-disable-line
             }
         });
 
-        const cursor5 = cursor4.debug.trace.triggered().trace("test3", List.of(2));
+        const cursor5 = cursor4
+            .debug.trace.triggered()
+            .debug.trace("test3", List.of(2));
 
         expect(cursor5.toJS()).to.eql({
             _unit: {
@@ -545,7 +546,7 @@ describe("CursorTest", function() { // eslint-disable-line
 
         const cursor6 = cursor5.debug.trace
             .triggered()
-            .trace("test4", List.of(3))
+            .debug.trace("test4", List.of(3))
             .debug.trace.triggered()
             .debug.trace.errored(new Error("hi"));
 
@@ -676,7 +677,7 @@ describe("CursorTest", function() { // eslint-disable-line
         });
 
         const cursor7 = cursor6
-            .trace("test5", List.of(4))
+            .debug.trace("test5", List.of(4))
             .debug.trace.triggered()
             .debug.trace.ended();
 
@@ -1259,13 +1260,14 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: (new Internals({
                 name: "Unit",
                 id:   "id"
-            })).messageReceived(message),
+            })),
             test: "test"
         });
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
-        const cursor     = new UnitCursor(data);
+        const cursor     = (new UnitCursor(data))
+            ._unit.messageReceived(message);
 
-        cursor.trace("/error", List());
+        cursor.debug.trace("/error", List());
 
         const cursor2 = cursor.error(new Error("huhu"));
 
