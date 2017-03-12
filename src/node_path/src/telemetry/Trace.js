@@ -13,7 +13,7 @@ type TraceDescription = {
     id?:      ?string,  // eslint-disable-line
     parent?:  ?number,  // eslint-disable-line
     trigger?: ?string,  // eslint-disable-line
-    params?:  ?List<*>, // eslint-disable-line
+    params?:  ?(List<*> | Array<*>), // eslint-disable-line
     start?:   ?number   // eslint-disable-line
 }
 
@@ -37,12 +37,14 @@ export default class Trace extends Record({
     locked:   false
 }) {
     constructor(data: TraceDescription, context: Context) { // eslint-disable-line
+        const params = data.params instanceof List || data.params instanceof Array ? data.params.map(x => x instanceof Map ? x.delete("_unit") : x) : [];
+
         super(Object.assign({}, data, {
             name:    context ? `${context}::${data.name}` : data.name,
             parent:  data.parent || null,
             start:   Date.now(),
             trigger: !data.trigger || typeof data.trigger !== "string" || data.trigger === data.name ? null : data.trigger.split(".").pop(),
-            params:  data.params instanceof List ? data.params.map(x => x instanceof Map ? x.delete("_unit") : x).toJS() : [],
+            params:  params instanceof List ? params.toJS() : params,
             id:      !data.id ? Uuid.uuid() : data.id
         }));
     }

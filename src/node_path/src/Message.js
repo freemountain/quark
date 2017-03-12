@@ -5,6 +5,7 @@ import { Map, List, Record, fromJS } from "immutable";
 import defaults from "set-default-value";
 import Cursor from "./domain/Cursor";
 import Trigger from "./domain/Trigger";
+import Action from "./domain/Action";
 import InvalidMessageError from "./error/InvalidMessageError";
 import NoCursorError from "./error/NoCursorError";
 
@@ -31,7 +32,7 @@ export default class Message extends Record({
     }
 
     constructor(resource: (string | Message | { resource: string, payload?: ?List<*>, headers?: ?Map<string, *> }), payload?: ?List<*>, headers?: Map<string, *> = Map()) { // eslint-disable-line
-        const data = fromJS(typeof resource === "string" ? { resource, payload, headers, _initial: payload } : resource);
+        const data = fromJS(typeof resource === "string" ? { resource, headers, payload, _initial: payload } : resource);
 
         super(data);
 
@@ -79,7 +80,18 @@ export default class Message extends Record({
 
     setCursor(cursor: Cursor): Message {
         return this.set("_cursor", cursor);
-        // new Message(this.resource, this.payload, this.headers, cursor);
+    }
+
+    unboxPayload() {
+        return this.payload.map(x => (
+            x.toJS instanceof Function &&
+            !(
+                x instanceof Record ||
+                x instanceof Action ||
+                x instanceof Trigger ||
+                x instanceof Cursor
+            )
+        ) ? x.toJS() : x).toArray();
     }
 
     get path(): List<string> {

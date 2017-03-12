@@ -42,7 +42,7 @@ export default class Trigger {
         };
     }
 
-    shouldTrigger(cursor: Cursor, params: List<any>): Cursor { // eslint-disable-line
+    shouldTrigger(cursor: Cursor, params: Array<any>): Cursor { // eslint-disable-line
         let result  = true;   // eslint-disable-line
         let tracing = cursor; // eslint-disable-line
 
@@ -57,7 +57,7 @@ export default class Trigger {
             try {
                 const guard = this.guards.get(i);
 
-                result  = guard(...(params.toJS()), tracing);
+                result  = guard(...params, tracing);
                 tracing = tracing.debug.trace.ended();
 
                 if(!result) return tracing;

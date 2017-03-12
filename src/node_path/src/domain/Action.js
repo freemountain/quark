@@ -65,9 +65,9 @@ class Action {
             try {
                 if(!(description.op instanceof Function)) return Promise.resolve(this);
 
-                const result = description.op.call(this, message);
+                const result = description.op.call(this, ...message.unboxPayload());
 
-                return description.name === "receive" ? result : unboxResult(this, result);
+                return unboxResult(this, result);
             } catch(e) {
                 return Promise.reject(e);
             }
@@ -146,7 +146,7 @@ class Action {
     }
 
     static shouldWrap(key: string, op: any) {
-        return (!op || !op.__Action) && key !== "receive";
+        return (!op || !op.__Action);
     }
 
     constructor(unit: string | ActionInput, name?: string = "", declarativeTriggers?: List<Trigger> = List(), op: any = null) { // eslint-disable-line
@@ -190,12 +190,12 @@ class Action {
     willTrigger(cursor: Cursor, ...messages: Array<Message>): boolean { // eslint-disable-line
         // Test!!
         return List(messages).every(message => ( // eslint-disable-line
-            (this.triggers.has(message.resource) && this.triggers.get(message.resource).shouldTrigger(cursor, message.payload)) ||
-            (this.before.has(message.resource) && this.before.get(message.resource).shouldTrigger(cursor, message.payload)) ||
-            (this.progress.has(message.resource) && this.progress.get(message.resource).shouldTrigger(cursor, message.payload)) ||
-            (this.cancel.has(message.resource) && this.cancel.get(message.resource).shouldTrigger(cursor, message.payload)) ||
-            (this.done.has(message.resource) && this.done.get(message.resource).shouldTrigger(cursor, message.payload)) ||
-            (this.error.has(message.resource) && this.error.get(message.resource).shouldTrigger(cursor, message.payload))
+            (this.triggers.has(message.resource) && this.triggers.get(message.resource).shouldTrigger(cursor, message.unboxPayload())) ||
+            (this.before.has(message.resource) && this.before.get(message.resource).shouldTrigger(cursor, message.unboxPayload())) ||
+            (this.progress.has(message.resource) && this.progress.get(message.resource).shouldTrigger(cursor, message.unboxPayload())) ||
+            (this.cancel.has(message.resource) && this.cancel.get(message.resource).shouldTrigger(cursor, message.unboxPayload())) ||
+            (this.done.has(message.resource) && this.done.get(message.resource).shouldTrigger(cursor, message.unboxPayload())) ||
+            (this.error.has(message.resource) && this.error.get(message.resource).shouldTrigger(cursor, message.unboxPayload()))
         ));
     }
 

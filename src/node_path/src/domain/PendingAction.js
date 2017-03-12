@@ -1,5 +1,5 @@
 // @flow
-import { Record, List } from "immutable";
+import { Record } from "immutable";
 import Message from "../Message";
 import Action from "./Action";
 import Trigger from "./Trigger";
@@ -102,7 +102,7 @@ export default class PendingAction extends Record({
     guards(): Cursor {
         if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
 
-        return this.trigger.shouldTrigger(this._cursor, this.message ? this.message.payload : List());
+        return this.trigger.shouldTrigger(this._cursor, this.message ? this.message.unboxPayload() : []);
     }
 
     setCursor(cursor: Cursor): PendingAction {

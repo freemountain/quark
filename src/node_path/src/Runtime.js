@@ -84,15 +84,6 @@ export default class Runtime extends Duplex {
         );
     }
 
-    static onResult(cursor: Cursor, result: (Promise<Cursor> | Error | Cursor | void)): Promise<Cursor> { // eslint-disable-line
-        if(result instanceof Error)   return cursor.action.state.error(result);
-        if(result instanceof Promise) return result
-            .then(Runtime.onResult.bind(null, cursor))
-            .catch(Runtime.onResult.bind(null, cursor));
-
-        return Promise.resolve(result instanceof Cursor ? result : cursor);
-    }
-
     static allActions(x: Object, carry: Map<string, DeclaredAction> = Map()): Map<string, DeclaredAction> {
         const proto = Object.getPrototypeOf(x);
 
@@ -113,7 +104,11 @@ export default class Runtime extends Duplex {
         if(proto === Duplex.prototype) return carry;
 
         const triggers = Map(proto.constructor.triggers || {})
-            .map((y, key) => y.setName(key));
+            .map((y, key) => {
+                if(Action.isLifeCycleHandler(key)) throw new Error("can't use triggers with LifecycleHandlers");
+
+                return y.setName(key);
+            });
 
         return Runtime.allTriggers(proto, triggers.mergeWith((prev, next) => prev.merge(next), carry));
     }
@@ -244,8 +239,7 @@ export default class Runtime extends Duplex {
         const message = new Message(data);
         const cursor  = defaults(this.cursor).to(new this.__Cursor(message.payload.first(), this));
 
-        return this.receive.call(cursor, message.setCursor(cursor))
-            // .then(x => this.message.call(x, x.currentMessage))
+        return cursor.send.receive(message.setCursor(cursor))
             .then(x => this.emitIfNotRevoverable(x))
             .then(x => x.send.diff(cursor))
             .then(x => x.send.finish())
@@ -272,9 +266,7 @@ export default class Runtime extends Duplex {
         return new Cursor({});
     }
 
-    diff(message: Message) {
-        const previous = message.payload.first();
-
+    diff(previous: Cursor) {
         return this.update("_unit", x => x
             .update("revision", y => y + 1)
             .update("history", y => y.push(previous)))
@@ -289,11 +281,11 @@ export default class Runtime extends Duplex {
         try {
             const cursor  = this.action.triggered();
             const op      = cursor.action.op;
-            const payload = cursor.message.payload;
+            const payload = cursor.message.unboxPayload();
 
             if(!op) return Promise.resolve(cursor);
 
-            const result = op.call(cursor, ...payload.toJS());
+            const result = op.call(cursor, ...payload);
 
             return result;
         } catch(e) {
@@ -301,9 +293,8 @@ export default class Runtime extends Duplex {
         }
     }
 
-    before(data): Promise<Cursor> {
-        const description = data.payload.first();
-        const message     = data.payload.get(1).setCursor(this);
+    before(description: Action, data: Message): Promise<Cursor> {
+        const message     = data.setCursor(this);
         const updated     = this.action.before(description, message);
 
         const trigger = !(updated.action instanceof PendingAction) || updated.action.description.name === "message" ? undefined : updated.action.previous.state.type; // eslint-disable-line
@@ -336,7 +327,7 @@ export default class Runtime extends Duplex {
     receive(message: Message): Promise<Cursor> {
         if(!(this.get("_unit") instanceof Object)) return Promise.reject(new Error("unit not present"));
 
-        return Promise.resolve(this._unit.messageReceived(message));
+        return this._unit.messageReceived(message);
     }
 
     after(): Promise<Cursor> {

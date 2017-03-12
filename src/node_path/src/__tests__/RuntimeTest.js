@@ -480,7 +480,7 @@ describe("RuntimeTest", function() {
 
         const message  = (new Message("/actions/init", List([data]))).setCursor(unit.cursor);
         const cursor   = (new unit.__Cursor(data))._unit.messageReceived(message);
-        const payload  = List.of(cursor);
+        const payload  = List.of(cursor.toJS());
         const message2 = message.set("payload", payload);
 
         expect(message2.get("payload").first()).to.equal(payload.first());
