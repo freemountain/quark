@@ -53,6 +53,7 @@ describe("RuntimeTest", function() {
 
         expect(methods.keySeq().toJS()).to.eql([
             "done",
+            "receive",
             "diff",
             "message",
             "error",
@@ -196,6 +197,23 @@ describe("RuntimeTest", function() {
                     guards: 1,
                     params: [],
                     action: "message.before"
+                }]
+            },
+
+            receive: {
+                unit:     "TestUnit",
+                name:     "receive",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "receive",
+                    guards: 0,
+                    params: [],
+                    action: "receive"
                 }]
             },
 

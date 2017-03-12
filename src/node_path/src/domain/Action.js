@@ -1,5 +1,4 @@
 // @flow
-
 import { List } from "immutable";
 import Cursor from "./Cursor";
 import assert from "assert";
@@ -9,6 +8,7 @@ import Trigger from "./Trigger";
 import DeclaredTrigger from "./DeclaredTrigger";
 import InvalidCursorError from "./error/InvalidCursorError";
 import PendingAction from "./PendingAction";
+import unboxResult from "../util/unboxResult";
 
 type Kind    = "before" | "cancel" | "progress" | "done" | "error"; // eslint-disable-line
 type Handler = (y?: Message) => Promise<Cursor>;
@@ -28,7 +28,7 @@ type ActionInput = {
 
 class Action {
     name:     string;         // eslint-disable-line
-    op:       ?(* => Cursor); // eslint-disable-line
+    op:       ?(* => Cursor);             // eslint-disable-line
     before:   List<Trigger>;  // eslint-disable-line
     done:     List<Trigger>;  // eslint-disable-line
     triggers: List<Trigger>;
@@ -48,6 +48,31 @@ class Action {
         !Action.BEFORE(x) &&
         !Action.ERROR(x)
     );
+
+    static wrap(key: string, description: Action): Handler {
+        return Action.isLifeCycleHandler(key) ? Action.LifecycleHandler(description) : Action.Handler(description);
+    }
+
+    static LifecycleHandler(description: Action): Handler {
+        return function(data?: Message): Promise<Cursor> { // eslint-disable-line
+            if(!(this instanceof Cursor)) return Promise.reject(new InvalidCursorError(this, description));
+
+            const message = data instanceof Message ? data : this.message;
+
+            if(!Message.is(message)) return Promise
+                .resolve(new UnknownMessageError(description.unit, description.name, message));
+
+            try {
+                if(!(description.op instanceof Function)) return Promise.resolve(this);
+
+                const result = description.op.call(this, message);
+
+                return description.name === "receive" ? result : unboxResult(this, result);
+            } catch(e) {
+                return Promise.reject(e);
+            }
+        };
+    }
 
     static Handler(description: Action): Handler {
         return function(data?: Message): Promise<Cursor> { // eslint-disable-line
@@ -104,20 +129,24 @@ class Action {
         };
     }
 
-    static shouldWrap(key, op) { // eslint-disable-line
+    static isLifeCycleHandler(key: string): boolean { // eslint-disable-line
         return (
-            (!op || !op.__Action) &&
-            key !== "handle" &&
-            key !== "after" &&
-            key !== "error" &&
-            key !== "done" &&
-            key !== "finish" &&
-            key !== "before" &&
-            key !== "guards" &&
-            key !== "triggers" &&
-            key !== "diff" &&
-            key !== "finish"
+            key === "handle" ||
+            key === "after" ||
+            key === "error" ||
+            key === "done" ||
+            key === "finish" ||
+            key === "before" ||
+            key === "guards" ||
+            key === "triggers" ||
+            key === "diff" ||
+            key === "finish" ||
+            key === "receive"
         );
+    }
+
+    static shouldWrap(key: string, op: any) {
+        return (!op || !op.__Action) && key !== "receive";
     }
 
     constructor(unit: string | ActionInput, name?: string = "", declarativeTriggers?: List<Trigger> = List(), op: any = null) { // eslint-disable-line
@@ -132,7 +161,7 @@ class Action {
         const ownTriggers = declarativeTriggers
             .filter(trigger => trigger.emits === name);
 
-        const func = Action.shouldWrap(name, op) ? Action.Handler(this) : op;
+        const func = Action.shouldWrap(name, op) ? Action.wrap(name, this) : op;
 
         func.__Action = this;
         func.cancel   = Action.cancel.bind(this, func);

@@ -629,6 +629,22 @@ describe("ActionTest", function() {
                     action: "diff"
                 }]
             },
+            receive: {
+                unit:     "Test3",
+                name:     "receive",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "receive",
+                    guards: 0,
+                    params: [],
+                    action: "receive"
+                }]
+            },
             finish: {
                 unit:     "Test3",
                 name:     "finish",
@@ -1130,7 +1146,7 @@ describe("ActionTest", function() {
                                     id:       9,
                                     parent:   5,
                                     start:    8,
-                                    end:      15,
+                                    end:      16,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test9",
@@ -1169,7 +1185,7 @@ describe("ActionTest", function() {
                                     id:       11,
                                     parent:   5,
                                     start:    10,
-                                    end:      16,
+                                    end:      15,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test",
@@ -1290,7 +1306,7 @@ describe("ActionTest", function() {
                                     id:       9,
                                     parent:   5,
                                     start:    8,
-                                    end:      15,
+                                    end:      16,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test9",
@@ -1329,7 +1345,7 @@ describe("ActionTest", function() {
                                     id:       11,
                                     parent:   5,
                                     start:    10,
-                                    end:      16,
+                                    end:      15,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test",
