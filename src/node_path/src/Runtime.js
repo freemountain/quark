@@ -12,7 +12,7 @@ import Cursor from "./domain/Cursor";
 import defaults from "set-default-value";
 import Uuid from "./util/Uuid";
 import { schedule } from "./Runloop";
-import Internals from "./domain/Internals";
+import UnitState from "./domain/UnitState";
 import Message from "./Message";
 import Trace from "./telemetry/Trace";
 import PendingAction from "./domain/PendingAction";
@@ -186,7 +186,7 @@ export default class Runtime extends Duplex {
             .filter(Runtime.ValueFilter)
             // TODO: use deps
             .merge(deps.map(() => null))
-            .set("_unit", new Internals({
+            .set("_unit", new UnitState({
                 description: unit.__actions,
                 id:          id,
                 name:        this.constructor.name

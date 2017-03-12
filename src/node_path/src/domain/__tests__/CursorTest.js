@@ -5,7 +5,7 @@ import { expect } from "chai";
 import { fromJS, List, Map, Set } from "immutable";
 import sinon from "sinon";
 import Action from "../Action";
-import Internals from "../Internals";
+import UnitState from "../UnitState";
 import Message from "../../Message";
 import Uuid from "../../util/Uuid";
 import PendingAction from "../PendingAction";
@@ -34,7 +34,7 @@ describe("CursorTest", function() { // eslint-disable-line
         };
         const action = new Action("Test", "blub", List(), func);
         const data   = fromJS({
-            _unit: new Internals({
+            _unit: new UnitState({
                 name:        "Unit",
                 id:          "id",
                 description: Map({
@@ -62,7 +62,7 @@ describe("CursorTest", function() { // eslint-disable-line
 
         expect(cursor).to.be.an.instanceOf(Cursor);
         expect(cursor.toJS()).to.eql({
-            _unit: new Internals({
+            _unit: new UnitState({
                 name:        "Unit",
                 id:          "id",
                 description: Map({
@@ -111,7 +111,7 @@ describe("CursorTest", function() { // eslint-disable-line
         });
 
         const data    = fromJS({
-            _unit: new Internals({
+            _unit: new UnitState({
                 name:     "Unit",
                 id:       "id",
                 action:   new PendingAction({ message, state: new State({ errors: Set.of(error) }) }),
@@ -131,7 +131,7 @@ describe("CursorTest", function() { // eslint-disable-line
     it("does a trace", function() { // eslint-disable-line
         const message = new Message("/test", List.of(1));
         const data    = fromJS({
-            _unit: new Internals({
+            _unit: new UnitState({
                 name: "Unit",
                 id:   "id"
             })
@@ -142,7 +142,7 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(() => cursor.debug.trace.ended()).to.throw("TraceNotStartedError: You have to start a trace with \'Debug::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'ended\'.");
         expect(() => cursor.debug.trace.triggered()).to.throw("TraceNotStartedError: You have to start a trace with \'Debug::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'triggered\'.");
         expect(() => cursor.debug.trace.errored()).to.throw("TraceNotStartedError: You have to start a trace with \'Debug::trace: (string -> { name: string }) -> Cursor\', before you can change it\'s state to \'errored\'.");
-        expect(() => cursor.debug.trace("/test", List.of(false))).to.throw("TraceNotStartedError: You can only call \'Debug::trace\' in the context of an arriving message. Please make sure to use this class in conjunction with \'Runtime\' or to provide an \'Internals\' instance, which did receive a message, to this cursor.");
+        expect(() => cursor.debug.trace("/test", List.of(false))).to.throw("TraceNotStartedError: You can only call \'Debug::trace\' in the context of an arriving message. Please make sure to use this class in conjunction with \'Runtime\' or to provide an \'UnitState\' instance, which did receive a message, to this cursor.");
 
         const cursor2 = cursor
             ._unit.messageReceived(message)
@@ -1234,7 +1234,7 @@ describe("CursorTest", function() { // eslint-disable-line
             return this.set("four", 4);
         });
         const map = fromJS({
-            _unit: new Internals({
+            _unit: new UnitState({
                 description: Map({
                     blub: action
                 }),
@@ -1265,7 +1265,7 @@ describe("CursorTest", function() { // eslint-disable-line
     it("errors with a cursor", function() {
         const message = new Message("/test", List.of(1));
         const data    = fromJS({
-            _unit: (new Internals({
+            _unit: (new UnitState({
                 name: "Unit",
                 id:   "id"
             })),
@@ -1287,7 +1287,7 @@ describe("CursorTest", function() { // eslint-disable-line
 
     it("patches and diffs with a cursor", function() {
         const data = fromJS({
-            _unit: (new Internals({
+            _unit: (new UnitState({
                 name: "Unit",
                 id:   "id"
             })),

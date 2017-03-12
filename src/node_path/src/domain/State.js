@@ -32,7 +32,7 @@ export default class State extends Record({
         const action = this._cursor.action
             .set("state", this.update("errors", errors => errors.add(e)));
 
-        return this._cursor.update("_unit", internals => internals.set("action", action));
+        return this._cursor.update("_unit", unit => unit.set("action", action));
     }
 
     get isRecoverable(): boolean {

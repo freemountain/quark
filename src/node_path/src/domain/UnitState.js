@@ -11,7 +11,7 @@ import DeclaredTrigger from "./DeclaredTrigger";
 import Debug from "./Debug";
 import Cursor from "./Cursor";
 
-type InternalsData = {
+type UnitStateData = {
     description?: Map<string, Action>,
     id:           string,               // eslint-disable-line
     children?:    Map<string, Runtime>, // eslint-disable-line
@@ -24,7 +24,7 @@ type InternalsData = {
     _cursor?:     Cursor                // eslint-disable-line
 }
 
-export default class Internals extends Record({
+export default class UnitState extends Record({
     description: Map(),
     id:          null,
     history:     List(),
@@ -35,7 +35,7 @@ export default class Internals extends Record({
     name:        "Default",
     _cursor:     null
 }) {
-    constructor(data: InternalsData) {
+    constructor(data: UnitStateData) {
         const description = data.description instanceof Map ? data.description : Map();
 
         super(Object.assign({}, data, {
@@ -43,7 +43,7 @@ export default class Internals extends Record({
         }));
     }
 
-    messageReceived(data: Message): Internals {
+    messageReceived(data: Message): UnitState {
         if(this.action !== null)              throw new AlreadyReceivedError();
         if(!(this._cursor instanceof Cursor)) throw new Error("lulu");
 
@@ -58,7 +58,7 @@ export default class Internals extends Record({
             .debug.trace.triggered();
     }
 
-    messageProcessed(): Internals | Cursor {
+    messageProcessed(): UnitState | Cursor {
         if(this.action === null)              throw new NotStartedError();
         if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.action.description);
 
@@ -70,7 +70,7 @@ export default class Internals extends Record({
         return this._cursor.set("_unit", updated);
     }
 
-    setCursor(cursor: Cursor | null): Internals {
+    setCursor(cursor: Cursor | null): UnitState {
         return this
             .set("_cursor", cursor)
             .update("action", action => action instanceof PendingAction ? action.setCursor(cursor) : action)

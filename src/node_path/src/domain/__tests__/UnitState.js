@@ -1,6 +1,6 @@
 // @flow
 
-import Internals from "../Internals";
+import UnitState from "../UnitState";
 import { expect } from "chai";
 import Message from "../../Message";
 import { List, Map } from "immutable";
@@ -12,7 +12,7 @@ import Cursor from "../Cursor";
 
 const UnitCursor = Cursor.for(new (class Unit {})(), Map());
 
-describe("InternalsTest", function() {
+describe("UnitStateTest", function() {
     beforeEach(function() {
         let counter = 0;
         let id      = 0;
@@ -29,7 +29,7 @@ describe("InternalsTest", function() {
     });
 
     it("creates internals", function() {
-        const internals = new Internals({
+        const internals = new UnitState({
             name: "Blub",
             id:   "id"
         });
@@ -89,7 +89,7 @@ describe("InternalsTest", function() {
     it("checks the action functions", function() {
         const cursor     = new UnitCursor(Map());
         const message    = new Message("/blub", List());
-        const internals  = new Internals({
+        const internals  = new UnitState({
             name: "blub",
             id:   "id"
         });
@@ -102,7 +102,7 @@ describe("InternalsTest", function() {
 
     it("starts and updates a trace", function() {
         const message   = new Message("/blub", List());
-        const internals = new Internals({
+        const internals = new UnitState({
             name: "blub",
             id:   "id"
         });
@@ -317,7 +317,7 @@ describe("InternalsTest", function() {
 
 // to state shit
 /* it("works with the error functions", function() {
-        const internals = new Internals({
+        const internals = new UnitState({
             name: "Blub",
             id:   "id"
         });

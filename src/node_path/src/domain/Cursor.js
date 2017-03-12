@@ -141,8 +141,8 @@ class Cursor {
             .setCursor(null);
 
         const next = patched
-            .update("_unit", internals => internals.set("action", action))
-            .update("_unit", internals => internals.set("debug", debug));
+            .update("_unit", unit => unit.set("action", action))
+            .update("_unit", unit => unit.set("debug", debug));
 
         return new this.constructor(next);
     }

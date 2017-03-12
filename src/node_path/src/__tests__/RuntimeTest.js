@@ -6,7 +6,7 @@ import DeclaredTrigger from "../domain/DeclaredTrigger";
 import { List, Map } from "immutable";
 import Uuid from "../util/Uuid";
 import sinon from "sinon";
-import Internals from "../domain/Internals";
+import UnitState from "../domain/UnitState";
 import Message from "../Message";
 
 const triggered = DeclaredAction.triggered;
@@ -471,7 +471,7 @@ describe("RuntimeTest", function() {
 
         const data = Map({
             name:  "jupp",
-            _unit: new Internals({
+            _unit: new UnitState({
                 id:          "blub",
                 name:        "Inheritance",
                 description: unit.__actions

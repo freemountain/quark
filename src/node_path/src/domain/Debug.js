@@ -19,7 +19,7 @@ class Debug extends Record({
     }
 
     static trace(...args: Array<*>) {
-        if(!(this._cursor instanceof Cursor) || !(this._cursor.debug instanceof Debug) || !this._cursor.debug.isTracing) throw new TraceNotStartedError("You can only call 'Debug::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'Internals' instance, which did receive a message, to this cursor.");
+        if(!(this._cursor instanceof Cursor) || !(this._cursor.debug instanceof Debug) || !this._cursor.debug.isTracing) throw new TraceNotStartedError("You can only call 'Debug::trace' in the context of an arriving message. Please make sure to use this class in conjunction with 'Runtime' or to provide an 'UnitState' instance, which did receive a message, to this cursor.");
 
         return this.startTracing(...args);
     }
@@ -31,7 +31,7 @@ class Debug extends Record({
 
         const debug = this.updateCurrentTrace(trace => trace.triggered());
 
-        return this._cursor.update("_unit", internals => internals.set("debug", debug));
+        return this._cursor.update("_unit", unit => unit.set("debug", debug));
     }
 
     static errored(e?: Error): Cursor {
@@ -43,7 +43,7 @@ class Debug extends Record({
         const debug = this.updateCurrentTrace(trace => trace.errored(!(e instanceof Error) ? this._cursor.action.state.currentError : e));
 
         return this._cursor
-            .update("_unit", internals => internals.set("debug", debug));
+            .update("_unit", unit => unit.set("debug", debug));
     }
 
     static ended(): Cursor {
@@ -54,7 +54,7 @@ class Debug extends Record({
         const debug = this.updateCurrentTrace(trace => trace.ended());
 
         return this._cursor
-            .update("_unit", internals => internals.set("debug", debug));
+            .update("_unit", unit => unit.set("debug", debug));
     }
 
 
@@ -95,7 +95,6 @@ class Debug extends Record({
         const parent  = current ? current.id : current;
         const id      = null;
         const start   = null;
-        const unit    = this._cursor._unit.name;
         const debug   = this.update("traces", traces => traces.push(new Trace({
             name,
             params,
@@ -104,10 +103,10 @@ class Debug extends Record({
             parent,
             id,
             start
-        }, unit)));
+        }, this._cursor._unit.name)));
 
         return this._cursor
-            .update("_unit", internals => internals.set("debug", debug.setCursor(null)));
+            .update("_unit", unit => unit.set("debug", debug.setCursor(null)));
     }
 
     updateCurrentTrace(op: Trace => Trace): Debug {

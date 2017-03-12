@@ -96,7 +96,7 @@ export default class PendingAction extends Record({
         if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
 
         return this._cursor
-            .update("_unit", internals => internals.set("action", updated));
+            .update("_unit", unit => unit.set("action", updated));
     }
 
     guards(): Cursor {
@@ -149,14 +149,14 @@ export default class PendingAction extends Record({
         if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
 
         return this._cursor
-            .update("_unit", internals => internals.set("action", this.set("_triggers", true)));
+            .update("_unit", unit => unit.set("action", this.set("_triggers", true)));
     }
 
     wontTrigger(): Cursor {
         if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
 
         return this._cursor
-            .update("_unit", internals => internals.set("action", this.set("_triggers", false)));
+            .update("_unit", unit => unit.set("action", this.set("_triggers", false)));
     }
 
     _triggers: boolean

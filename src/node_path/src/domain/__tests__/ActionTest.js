@@ -8,7 +8,7 @@ import Trigger from "../Trigger";
 import DeclaredAction from "../DeclaredAction";
 import Runtime from "../../Runtime";
 import Message from "../../Message";
-import Internals from "../Internals";
+import UnitState from "../UnitState";
 import Uuid from "../../util/Uuid";
 import sinon from "sinon";
 import { schedule } from "../../Runloop";
@@ -236,7 +236,7 @@ describe("ActionTest", function() {
 
         const data = Map({
             name:  "jupp",
-            _unit: new Internals({
+            _unit: new UnitState({
                 id:          "blub",
                 name:        "Test",
                 description: unit.__actions
@@ -305,7 +305,7 @@ describe("ActionTest", function() {
         const unit = new Test();
         const data = Map({
             name:  "jupp",
-            _unit: new Internals({
+            _unit: new UnitState({
                 id:          "blub",
                 name:        "Test",
                 description: unit.__actions
@@ -387,7 +387,7 @@ describe("ActionTest", function() {
         const unit = new Test2();
         const data = Map({
             name:  "jupp",
-            _unit: new Internals({
+            _unit: new UnitState({
                 id:          "blub",
                 name:        "Test",
                 description: unit.__actions
@@ -501,7 +501,7 @@ describe("ActionTest", function() {
         const unit = new Test3();
         const data = Map({
             name:  "jupp",
-            _unit: new Internals({
+            _unit: new UnitState({
                 id:          "blub",
                 name:        "Test",
                 description: unit.__actions
@@ -1205,7 +1205,7 @@ describe("ActionTest", function() {
         const unit = new Test3();
         const data = Map({
             name:  "jupp",
-            _unit: new Internals({
+            _unit: new UnitState({
                 id:          "blub",
                 name:        "Test",
                 description: unit.__actions
@@ -1391,7 +1391,7 @@ describe("ActionTest", function() {
         const unit = new Test4();
         const data = Map({
             test:  "jupp",
-            _unit: new Internals({
+            _unit: new UnitState({
                 id:          "blub",
                 name:        "Test",
                 description: unit.__actions

@@ -7,7 +7,7 @@ import DeclaredTrigger from "../DeclaredTrigger";
 import { List, Map, fromJS } from "immutable";
 import sinon from "sinon";
 import Cursor from "../Cursor";
-import Internals from "../Internals";
+import UnitState from "../UnitState";
 import Message from "../../Message";
 import Uuid from "../../util/Uuid";
 import Runtime from "../../Runtime";
@@ -46,7 +46,7 @@ describe("TriggerTest", function() {
         });
 
         const data = fromJS({
-            _unit: (new Internals({
+            _unit: (new UnitState({
                 id:          "id",
                 name:        "Test",
                 actions:     fromJS([[]]),
