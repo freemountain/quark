@@ -52,22 +52,72 @@ class Test2 extends Runtime {
 
 class Test3 extends Runtime {
     static triggers = {
-        test:  triggered.by("message.before"),
-        test2: triggered.by("message.before"),
-        test3: triggered.by("message"),
-        test4: triggered.by("message"),
-        test5: triggered.by("message.error"),
-        test6: triggered.by("message.error"),
-        test7: triggered.by("message.before"),
-        test8: triggered.by("message.before"),
-        test9: triggered.by("message.before")
+        message3: triggered.by("message2"),
+        test:     triggered.by("message3.before"),
+        test2:    triggered.by("message3.before"),
+        test3:    triggered.by("message3"),
+        test4:    triggered.by("message3"),
+        test5:    triggered.by("message3.error"),
+        test6:    triggered.by("message3.error"),
+        test7:    triggered.by("message3.before"),
+        test8:    triggered.by("message3.before"),
+        test9:    triggered.by("message3.before")
     };
 
     static props = {
         name: "jupp"
     };
 
-    message(name) {
+    message3(name) {
+        return this.set("name", name);
+    }
+
+    test() {
+        return this.set("test1", "test1");
+    }
+
+    test2() {
+        return this
+            .set("test2", "test2")
+            .set("test21", "test21");
+    }
+
+    test3() {
+        return this
+            .set("test3", "test3")
+            .set("test21", "test3");
+    }
+
+    test4() {}
+
+    test7() {
+        return schedule(() => this.set("test7", "test7"), 20);
+    }
+
+    test8() {
+        return schedule(() => undefined, 20); // eslint-disable-line
+    }
+}
+
+class Test31 extends Runtime {
+    static triggers = {
+        message3: triggered.by("message"),
+        test:     triggered.by("message3.before"),
+        test2:    triggered.by("message3.before"),
+        test3:    triggered.by("message3"),
+        test4:    triggered.by("message3"),
+        test5:    triggered.by("message3.error"),
+        test6:    triggered.by("message3.error"),
+        test7:    triggered.by("message3.before"),
+        test8:    triggered.by("message3.before"),
+        test9:    triggered.by("message3.before")
+    };
+
+    static props = {
+        name: "jupp"
+    };
+
+    message3(name) {
         return this.set("name", name);
     }
 
@@ -482,57 +532,56 @@ describe("ActionTest", function() {
             })
         });
 
-        const message  = (new Message("/actions/message", List.of("test")));
+        const message  = (new Message("/actions/message3", List.of("test")));
         const cursor   = new unit.__Cursor(data);
-
-        const descr = new Action("Test", "message", unit.__triggers, Test.prototype.message);
+        const descr    = new Action("Test", "message3", unit.__triggers, Test.prototype.message3);
 
         expect(descr.toJS()).to.eql({
             unit:   "Test",
-            name:   "message",
+            name:   "message3",
             before: [{
                 emits:  "test2",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message.before"
+                action: "message3.before"
             }, {
                 emits:  "test7",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message.before"
+                action: "message3.before"
             }, {
                 emits:  "test8",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message.before"
+                action: "message3.before"
             }, {
                 emits:  "test9",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message.before"
-            }, {
-                emits:  "init",
-                delay:  0,
-                guards: 1,
-                params: [],
-                action: "message.before"
+                action: "message3.before"
             }, {
                 emits:  "test",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message.before"
+                action: "message3.before"
             }],
             triggers: [{
-                emits:  "message",
+                emits:  "message3",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message"
+                action: "message3"
+            }, {
+                emits:  "message3",
+                delay:  0,
+                guards: 0,
+                params: [],
+                action: "message2"
             }],
             cancel:   [],
             progress: [],
@@ -541,26 +590,26 @@ describe("ActionTest", function() {
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message"
+                action: "message3"
             }, {
                 emits:  "test4",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message"
+                action: "message3"
             }],
             error: [{
                 emits:  "test5",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message.error"
+                action: "message3.error"
             }, {
                 emits:  "test6",
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message.error"
+                action: "message3.error"
             }]
         });
 
@@ -635,6 +684,28 @@ describe("ActionTest", function() {
                     action: "finish"
                 }]
             },
+            message: {
+                unit:   "Test3",
+                name:   "message",
+                before: [{
+                    delay:  0,
+                    emits:  "init",
+                    guards: 1,
+                    params: [],
+                    action: "message.before"
+                }],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "message",
+                    guards: 0,
+                    params: [],
+                    action: "message"
+                }]
+            },
             message2: {
                 unit:     "Test3",
                 name:     "message2",
@@ -642,7 +713,13 @@ describe("ActionTest", function() {
                 cancel:   [],
                 progress: [],
                 error:    [],
-                done:     [],
+                done:     [{
+                    delay:  0,
+                    emits:  "message3",
+                    guards: 0,
+                    params: [],
+                    action: "message2"
+                }],
                 triggers: [{
                     delay:  0,
                     emits:  "message2",
@@ -651,52 +728,52 @@ describe("ActionTest", function() {
                     action: "message2"
                 }]
             },
-            message: {
+            message3: {
                 unit:   "Test3",
-                name:   "message",
+                name:   "message3",
                 before: [{
                     emits:  "test2",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.before"
+                    action: "message3.before"
                 }, {
                     emits:  "test7",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.before"
+                    action: "message3.before"
                 }, {
                     emits:  "test8",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.before"
+                    action: "message3.before"
                 }, {
                     emits:  "test9",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.before"
-                }, {
-                    emits:  "init",
-                    delay:  0,
-                    guards: 1,
-                    params: [],
-                    action: "message.before"
+                    action: "message3.before"
                 }, {
                     emits:  "test",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.before"
+                    action: "message3.before"
                 }],
                 triggers: [{
-                    emits:  "message",
+                    emits:  "message3",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message3"
+                }, {
+                    delay:  0,
+                    emits:  "message3",
+                    guards: 0,
+                    params: [],
+                    action: "message2"
                 }],
                 cancel:   [],
                 progress: [],
@@ -705,26 +782,26 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message3"
                 }, {
                     emits:  "test4",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message3"
                 }],
                 error: [{
                     emits:  "test5",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.error"
+                    action: "message3.error"
                 }, {
                     emits:  "test6",
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.error"
+                    action: "message3.error"
                 }]
             },
             test: {
@@ -742,7 +819,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.before"
+                    action: "message3.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -860,7 +937,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.before"
+                    action: "message3.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -898,7 +975,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message3"
                 }],
                 cancel:   [],
                 progress: [],
@@ -920,7 +997,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message"
+                    action: "message3"
                 }],
                 cancel:   [],
                 progress: [],
@@ -942,7 +1019,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.error"
+                    action: "message3.error"
                 }],
                 cancel:   [],
                 progress: [],
@@ -964,7 +1041,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.error"
+                    action: "message3.error"
                 }],
                 cancel:   [],
                 progress: [],
@@ -987,7 +1064,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.before"
+                    action: "message3.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -1010,7 +1087,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.before"
+                    action: "message3.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -1033,7 +1110,7 @@ describe("ActionTest", function() {
                     delay:  0,
                     guards: 0,
                     params: [],
-                    action: "message.before"
+                    action: "message3.before"
                 }],
                 cancel:   [],
                 progress: [],
@@ -1046,6 +1123,7 @@ describe("ActionTest", function() {
             .then(() => {
                 const cursor2 = cursor._unit
                     .messageReceived(message)
+                    .update("_unit", x => x.set("action", new PendingAction({ message: x.action.message, description: descr })))
                     .debug.trace("message", message.get("payload"))
                     .debug.trace.triggered();
 
@@ -1073,10 +1151,10 @@ describe("ActionTest", function() {
                             id:       4,
                             start:    3,
                             parent:   null,
-                            end:      20,
+                            end:      16,
                             guards:   0,
                             locked:   true,
-                            name:     "Test::Message</actions/message>",
+                            name:     "Test::Message</actions/message3>",
                             params:   ["test"],
                             triggers: true,
                             error:    null,
@@ -1085,7 +1163,7 @@ describe("ActionTest", function() {
                                 id:       5,
                                 parent:   4,
                                 start:    4,
-                                end:      19,
+                                end:      15,
                                 guards:   0,
                                 locked:   true,
                                 name:     "Test::message",
@@ -1097,7 +1175,7 @@ describe("ActionTest", function() {
                                     id:       6,
                                     parent:   5,
                                     start:    5,
-                                    end:      14,
+                                    end:      10,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test2",
@@ -1110,7 +1188,7 @@ describe("ActionTest", function() {
                                     id:       7,
                                     parent:   5,
                                     start:    6,
-                                    end:      17,
+                                    end:      13,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test7",
@@ -1123,7 +1201,7 @@ describe("ActionTest", function() {
                                     id:       8,
                                     parent:   5,
                                     start:    7,
-                                    end:      18,
+                                    end:      14,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test8",
@@ -1136,7 +1214,7 @@ describe("ActionTest", function() {
                                     id:       9,
                                     parent:   5,
                                     start:    8,
-                                    end:      16,
+                                    end:      12,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test9",
@@ -1149,33 +1227,7 @@ describe("ActionTest", function() {
                                     id:       10,
                                     parent:   5,
                                     start:    9,
-                                    end:      13,
-                                    guards:   1,
-                                    locked:   true,
-                                    name:     "Test::init",
-                                    params:   ["test"],
-                                    triggers: false,
-                                    error:    null,
-                                    trigger:  "before",
-                                    traces:   [{
-                                        id:       12,
-                                        parent:   10,
-                                        start:    11,
-                                        end:      12,
-                                        guards:   0,
-                                        locked:   true,
-                                        name:     "Test::init<Guard1>",
-                                        params:   ["test"],
-                                        triggers: true,
-                                        error:    null,
-                                        trigger:  "guard",
-                                        traces:   []
-                                    }]
-                                }, {
-                                    id:       11,
-                                    parent:   5,
-                                    start:    10,
-                                    end:      15,
+                                    end:      11,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test",
@@ -1192,7 +1244,7 @@ describe("ActionTest", function() {
     });
 
     it("calls a complex action", function() {
-        const unit = new Test3();
+        const unit = new Test31();
         const data = Map({
             name:  "jupp",
             _unit: new UnitState({
@@ -1202,14 +1254,20 @@ describe("ActionTest", function() {
             })
         });
 
-        const message  = (new Message("/actions/message", List.of("test")));
+        const message  = (new Message("/actions/message2", List.of("test")));
         const cursor   = new unit.__Cursor(data);
 
         return unit.ready()
             .then(x => {
-                const cursor2 = cursor._unit.messageReceived(message);
+                const description =  cursor._unit.description.get("message2");
+                const cursor2     = cursor._unit
+                    .messageReceived(message)
+                    .update("_unit", y => y.set("action", new PendingAction({
+                        message:     y.action.message,
+                        description: description
+                    })));
 
-                return x.message.call(cursor2, message.setCursor(cursor))
+                return x.message.call(cursor2, List.of(description, message.setCursor(cursor)))
                     .then(y => {
                         const result  = y._unit.messageProcessed();
                         const cursor3 = cursor2
@@ -1228,15 +1286,16 @@ describe("ActionTest", function() {
                         const filtered = result
                             .filter((_, key) => key !== "_unit"); // eslint-disable-line
 
+                        expect(y._unit.action.state.errors.toJS()).to.eql([]);
                         expect(filtered.toJS()).to.eql(cursor3.toJS());
                         expect(result.debug.traces.toJS()).to.eql([{
                             id:       4,
                             start:    3,
                             parent:   null,
-                            end:      24,
+                            end:      26,
                             guards:   0,
                             locked:   true,
-                            name:     "Test::Message</actions/message>",
+                            name:     "Test::Message</actions/message2>",
                             params:   ["test"],
                             triggers: true,
                             error:    null,
@@ -1245,7 +1304,7 @@ describe("ActionTest", function() {
                                 id:       5,
                                 parent:   4,
                                 start:    4,
-                                end:      23,
+                                end:      25,
                                 guards:   0,
                                 locked:   true,
                                 name:     "Test::message",
@@ -1257,59 +1316,7 @@ describe("ActionTest", function() {
                                     id:       6,
                                     parent:   5,
                                     start:    5,
-                                    end:      14,
-                                    guards:   0,
-                                    locked:   true,
-                                    name:     "Test::test2",
-                                    params:   ["test"],
-                                    triggers: true,
-                                    traces:   [],
-                                    trigger:  "before",
-                                    error:    null
-                                }, {
-                                    id:       7,
-                                    parent:   5,
-                                    start:    6,
-                                    end:      17,
-                                    guards:   0,
-                                    locked:   true,
-                                    name:     "Test::test7",
-                                    params:   ["test"],
-                                    triggers: true,
-                                    traces:   [],
-                                    trigger:  "before",
-                                    error:    null
-                                }, {
-                                    id:       8,
-                                    parent:   5,
-                                    start:    7,
-                                    end:      18,
-                                    guards:   0,
-                                    locked:   true,
-                                    name:     "Test::test8",
-                                    params:   ["test"],
-                                    triggers: true,
-                                    traces:   [],
-                                    trigger:  "before",
-                                    error:    null
-                                }, {
-                                    id:       9,
-                                    parent:   5,
-                                    start:    8,
-                                    end:      16,
-                                    guards:   0,
-                                    locked:   true,
-                                    name:     "Test::test9",
-                                    params:   ["test"],
-                                    triggers: true,
-                                    traces:   [],
-                                    trigger:  "before",
-                                    error:    null
-                                }, {
-                                    id:       10,
-                                    parent:   5,
-                                    start:    9,
-                                    end:      13,
+                                    end:      8,
                                     guards:   1,
                                     locked:   true,
                                     name:     "Test::init",
@@ -1318,10 +1325,10 @@ describe("ActionTest", function() {
                                     error:    null,
                                     trigger:  "before",
                                     traces:   [{
-                                        id:       12,
-                                        parent:   10,
-                                        start:    11,
-                                        end:      12,
+                                        id:       7,
+                                        parent:   6,
+                                        start:    6,
+                                        end:      7,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::init<Guard1>",
@@ -1332,44 +1339,109 @@ describe("ActionTest", function() {
                                         traces:   []
                                     }]
                                 }, {
-                                    id:       11,
+                                    id:       8,
                                     parent:   5,
-                                    start:    10,
-                                    end:      15,
+                                    start:    9,
+                                    end:      24,
                                     guards:   0,
                                     locked:   true,
-                                    name:     "Test::test",
+                                    name:     "Test::message3",
                                     params:   ["test"],
                                     triggers: true,
-                                    traces:   [],
-                                    trigger:  "before",
-                                    error:    null
-                                }, {
-                                    id:       13,
-                                    parent:   5,
-                                    start:    19,
-                                    end:      21,
-                                    guards:   0,
-                                    locked:   true,
-                                    name:     "Test::test3",
-                                    params:   ["test"],
-                                    triggers: true,
-                                    traces:   [],
+                                    error:    null,
                                     trigger:  "done",
-                                    error:    null
-                                }, {
-                                    id:       14,
-                                    parent:   5,
-                                    start:    20,
-                                    end:      22,
-                                    guards:   0,
-                                    locked:   true,
-                                    name:     "Test::test4",
-                                    params:   ["test"],
-                                    triggers: true,
-                                    traces:   [],
-                                    trigger:  "done",
-                                    error:    null
+                                    traces:   [{
+                                        id:       9,
+                                        parent:   8,
+                                        start:    10,
+                                        end:      15,
+                                        guards:   0,
+                                        locked:   true,
+                                        name:     "Test::test2",
+                                        params:   ["test"],
+                                        triggers: true,
+                                        traces:   [],
+                                        trigger:  "before",
+                                        error:    null
+                                    }, {
+                                        id:       10,
+                                        parent:   8,
+                                        start:    11,
+                                        end:      18,
+                                        guards:   0,
+                                        locked:   true,
+                                        name:     "Test::test7",
+                                        params:   ["test"],
+                                        triggers: true,
+                                        traces:   [],
+                                        trigger:  "before",
+                                        error:    null
+                                    }, {
+                                        id:       11,
+                                        parent:   8,
+                                        start:    12,
+                                        end:      19,
+                                        guards:   0,
+                                        locked:   true,
+                                        name:     "Test::test8",
+                                        params:   ["test"],
+                                        triggers: true,
+                                        traces:   [],
+                                        trigger:  "before",
+                                        error:    null
+                                    }, {
+                                        id:       12,
+                                        parent:   8,
+                                        start:    13,
+                                        end:      17,
+                                        guards:   0,
+                                        locked:   true,
+                                        name:     "Test::test9",
+                                        params:   ["test"],
+                                        triggers: true,
+                                        traces:   [],
+                                        trigger:  "before",
+                                        error:    null
+                                    }, {
+                                        id:       13,
+                                        parent:   8,
+                                        start:    14,
+                                        end:      16,
+                                        guards:   0,
+                                        locked:   true,
+                                        name:     "Test::test",
+                                        params:   ["test"],
+                                        triggers: true,
+                                        traces:   [],
+                                        trigger:  "before",
+                                        error:    null
+                                    }, {
+                                        id:       14,
+                                        parent:   8,
+                                        start:    20,
+                                        end:      22,
+                                        guards:   0,
+                                        locked:   true,
+                                        name:     "Test::test3",
+                                        params:   ["test"],
+                                        triggers: true,
+                                        traces:   [],
+                                        trigger:  "done",
+                                        error:    null
+                                    }, {
+                                        id:       15,
+                                        parent:   8,
+                                        start:    21,
+                                        end:      23,
+                                        guards:   0,
+                                        locked:   true,
+                                        name:     "Test::test4",
+                                        params:   ["test"],
+                                        triggers: true,
+                                        traces:   [],
+                                        trigger:  "done",
+                                        error:    null
+                                    }]
                                 }]
                             }]
                         }]);

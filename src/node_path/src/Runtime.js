@@ -332,16 +332,24 @@ export default class Runtime extends Duplex {
     }
 
     message2(description: Action, message: Message): Promise<Cursor> {
-        if(!(this instanceof Cursor)) throw new Error("fucking Cursor");
+        // console.log("message2", description.name, message.resource);
+        if(!(this instanceof Cursor))        throw new Error("fucking Cursor");
+        if(!(description instanceof Action)) throw new Error("fucking action");
+        if(!(message instanceof Message))    throw new Error("fucking message");
 
         return this.send.before(description, message)
             .then(x => x.send.guards())
             .then(x => !x.action.triggers ? x : x.send.triggers()
-                        .then(cursor => cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle())
-                        .then(cursor => cursor.send.after())
-                        .catch(e => x
-                            .action.state.error(e)
-                            .debug.trace.errored()));
+                .then(cursor => cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle())
+                .then(cursor => {
+                    console.log("after handle", cursor.action.description.name, cursor.action.state.currentError);
+
+                    return cursor;
+                })
+                .then(cursor => cursor.send.after())
+                .catch(e => x
+                    .action.state.error(e)
+                    .debug.trace.errored()));
     }
 
     triggers(): Promise<Cursor> {
@@ -377,16 +385,19 @@ export default class Runtime extends Duplex {
         if(!(this instanceof Cursor))               throw new Error("fucking cursor");
         if(!(this.action instanceof PendingAction)) throw new Error("fucking cursor");
 
+        console.log("guards", this.action.description.name, this.action.state.currentError);
         const cursor = this.action.guards();
 
         return cursor.action.triggers ? cursor.debug.trace.triggered() : cursor.debug.trace.ended();
     }
 
     done() {
+        console.log("done", this.action.description.name, this.action.state.currentError);
         return this.action.done();
     }
 
     error() {
+        console.log("error", this.action.description.name, this.action.state.currentError);
         return this.action.errored();
     }
 
