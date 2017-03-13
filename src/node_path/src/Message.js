@@ -1,6 +1,5 @@
 // @flow
 
-// import assert from "assert";
 import { Map, List, Record, fromJS } from "immutable";
 import defaults from "set-default-value";
 import Cursor from "./domain/Cursor";

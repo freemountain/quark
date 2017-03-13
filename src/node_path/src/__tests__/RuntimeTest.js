@@ -27,7 +27,7 @@ class Inheritance extends TestUnit {
 class Inheritance2 extends TestUnit {
     static props = {};
 
-    message(payload: { name: string }) {
+    message3(payload: { name: string }) {
         return this.set("name", payload.name);
     }
 }
@@ -58,6 +58,7 @@ describe("RuntimeTest", function() {
             "message",
             "error",
             "handle",
+            "message2",
             "diffs",
             "guards",
             "init",
@@ -214,6 +215,23 @@ describe("RuntimeTest", function() {
                     guards: 0,
                     params: [],
                     action: "receive"
+                }]
+            },
+
+            message2: {
+                unit:     "TestUnit",
+                name:     "message2",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "message2",
+                    guards: 0,
+                    params: [],
+                    action: "message2"
                 }]
             },
 
@@ -485,7 +503,8 @@ describe("RuntimeTest", function() {
 
         expect(message2.get("payload").first()).to.equal(payload.first());
 
-        return unit.message.call(cursor, message2).then(x => {
+        // hier das mit unit.send machen
+        return unit.message3.call(cursor, message2).then(x => {
             expect(x.action.state.errors.toJS()).to.eql([]);
             expect(x.filter((_, key) => key !== "_unit").toJS()).to.eql({
                 name: "jupp"

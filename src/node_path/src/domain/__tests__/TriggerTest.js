@@ -58,7 +58,8 @@ describe("TriggerTest", function() {
                     after:    new Action("Unit", "after", List(), Runtime.prototype.after),
                     done:     new Action("Unit", "done", List(), Runtime.prototype.done),
                     error:    new Action("Unit", "error", List(), Runtime.prototype.error),
-                    triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers)
+                    triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers),
+                    message2: new Action("Unit", "message2", List(), Runtime.prototype.message2)
                 })
             })),
             value: 2

@@ -49,10 +49,8 @@ class Cursor {
 
         inherited.prototype             = Object.create(Cursor.prototype);
         inherited.prototype.constructor = inherited;
-        inherited.prototype.__actions   = {};
         inherited.prototype.__inherited = true;
-
-        Object.assign(inherited.prototype.__actions, description.map((action, key) => function(...payload: Array<mixed>) {
+        inherited.prototype.__actions   = description.map((action, key) => function(...payload: Array<mixed>) {
             const message = new Message(key, List(payload), this.__headers);
             const cursor  = this.__cursor;
             const func    = action.func.bind(cursor, message);
@@ -67,7 +65,7 @@ class Cursor {
             this.__delay = delay;
 
             return Object.assign({}, this);
-        }).toJS());
+        }).toJS();
 
         return inherited;
     }
@@ -108,7 +106,7 @@ class Cursor {
     }
 
     get message(): ?Message {
-        return this.action ? this.action.message : null;
+        return this.action instanceof PendingAction ? this.action.message : null;
     }
 
     get action(): ?PendingAction {

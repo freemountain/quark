@@ -23,14 +23,14 @@ class Test extends Runtime {
         name: "jupp"
     };
 
-    message(name) {
+    message3(name) {
         return this.set("name", name);
     }
 }
 
 class Test2 extends Runtime {
     static triggers = {
-        message: triggered
+        message3: triggered
             .if(() => true)
                 .or(() => false)
             .if(name => typeof name === "string" && name.indexOf("test") !== -1)
@@ -43,7 +43,7 @@ class Test2 extends Runtime {
         value: 3
     };
 
-    message(name, value) {
+    message3(name, value) {
         return this
             .set("value", value)
             .set("name", name);
@@ -202,7 +202,7 @@ describe("ActionTest", function() {
             .map((x, key) => x.setName(key))
             .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new Trigger(key, y))), List()); // eslint-disable-line
 
-        const descr = new Action("Test", "message", triggers, function(name, value) {
+        const descr = new Action("Test", "message3", triggers, function(name, value) {
             return this
                 .set("value", value)
                 .set("name", name);
@@ -210,14 +210,14 @@ describe("ActionTest", function() {
 
         expect(descr.toJS()).to.eql({
             unit:     "Test",
-            name:     "message",
+            name:     "message3",
             before:   [],
             triggers: [{
-                emits:  "message",
+                emits:  "message3",
                 delay:  20,
                 guards: 2,
                 params: [5],
-                action: "message"
+                action: "message3"
             }],
             cancel:   [],
             progress: [],
@@ -398,7 +398,7 @@ describe("ActionTest", function() {
         const cursor   = (new unit.__Cursor(data))._unit
             .messageReceived(message);
 
-        return unit.ready().then(y => y.message.call(cursor, message))
+        return unit.ready().then(y => y.message3.call(cursor, message))
             .then(x => {
                 const result  = x._unit.messageProcessed();
                 const cursor2 = cursor
@@ -419,7 +419,7 @@ describe("ActionTest", function() {
                     id:       4,
                     parent:   null,
                     start:    2,
-                    end:      14,
+                    end:      10,
                     guards:   0,
                     locked:   true,
                     name:     "Test::Message</actions/test>",
@@ -431,14 +431,14 @@ describe("ActionTest", function() {
                         id:       5,
                         parent:   4,
                         start:    4,
-                        end:      13,
+                        end:      9,
                         guards:   2,
                         locked:   true,
-                        name:     "Test::message",
+                        name:     "Test::message3",
                         params:   ["test", 5],
                         triggers: true,
                         error:    null,
-                        trigger:  null,
+                        trigger:  "before",
                         traces:   [{
                             id:       6,
                             parent:   5,
@@ -446,7 +446,7 @@ describe("ActionTest", function() {
                             end:      6,
                             guards:   0,
                             locked:   true,
-                            name:     "Test::message<Guard1>",
+                            name:     "Test::message3<Guard1>",
                             params:   ["test", 5],
                             triggers: true,
                             error:    null,
@@ -459,38 +459,12 @@ describe("ActionTest", function() {
                             end:      8,
                             guards:   0,
                             locked:   true,
-                            name:     "Test::message<Guard2>",
+                            name:     "Test::message3<Guard2>",
                             params:   ["test", 5],
                             triggers: true,
                             error:    null,
                             trigger:  "guard",
                             traces:   []
-                        }, {
-                            id:       8,
-                            parent:   5,
-                            start:    9,
-                            end:      12,
-                            guards:   1,
-                            locked:   true,
-                            name:     "Test::init",
-                            params:   ["test"],
-                            triggers: false,
-                            error:    null,
-                            trigger:  "before",
-                            traces:   [{
-                                id:       9,
-                                parent:   8,
-                                start:    10,
-                                end:      11,
-                                guards:   0,
-                                locked:   true,
-                                name:     "Test::init<Guard1>",
-                                params:   ["test"],
-                                triggers: true,
-                                error:    null,
-                                trigger:  "guard",
-                                traces:   []
-                            }]
                         }]
                     }]
                 }]);
@@ -659,6 +633,22 @@ describe("ActionTest", function() {
                     guards: 0,
                     params: [],
                     action: "finish"
+                }]
+            },
+            message2: {
+                unit:     "Test3",
+                name:     "message2",
+                before:   [],
+                cancel:   [],
+                progress: [],
+                error:    [],
+                done:     [],
+                triggers: [{
+                    delay:  0,
+                    emits:  "message2",
+                    guards: 0,
+                    params: [],
+                    action: "message2"
                 }]
             },
             message: {

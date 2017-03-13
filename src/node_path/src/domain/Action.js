@@ -7,7 +7,6 @@ import UnknownMessageError from "./error/UnknownMessageError";
 import Trigger from "./Trigger";
 import DeclaredTrigger from "./DeclaredTrigger";
 import InvalidCursorError from "./error/InvalidCursorError";
-import PendingAction from "./PendingAction";
 import unboxResult from "../util/unboxResult";
 
 type Kind    = "before" | "cancel" | "progress" | "done" | "error"; // eslint-disable-line
@@ -85,37 +84,8 @@ class Action {
                 .action.state.error(new UnknownMessageError(description.unit, description.name, message))
                 .debug.trace.errored());
 
-            // hier das ganze in der message funktion mqchen
             try {
-                //  Cursor promise aware machen, sodass
-                //
-                //  cursor
-                //      .send.message
-                //      .set()
-                //      .send... geht
-                //
-                //  parallel:
-                //
-                //  cursor.send
-                //      .message()
-                //      .handle()
-                //
-                //  => das hängt im kern auch mit den computed props zusammen
-                //
-                // before():
-                //
-                // this
-                //  .before(description, y)
-                //  .send.guards()
-                //
-                return this.send.before(description, message)
-                    .then(x => x.send.guards())
-                    .then(x => !x.action.triggers ? x : x.send.triggers()
-                        .then(cursor => cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle())
-                        .then(cursor => cursor.send.after())
-                        .catch(e => x
-                            .action.state.error(e)
-                            .debug.trace.errored()))
+                return this.send.message2(description, message)
                     .catch(e => this
                         .debug.trace(description.name, List(), this.action.guard.count, this.action.state.type)
                         .action.state.error(e)
@@ -141,7 +111,8 @@ class Action {
             key === "triggers" ||
             key === "diff" ||
             key === "finish" ||
-            key === "receive"
+            key === "receive" ||
+            key === "message2"
         );
     }
 
@@ -209,7 +180,7 @@ class Action {
         const trimmed = name.replace(".done", "");
         const trigger = this.triggers.find(x => x.action === trimmed);
 
-        return trigger || new Trigger(this.name, new DeclaredTrigger(this.name));
+        return trigger || this.triggers.find(x => x.action === this.name);
     }
 
     static cancel() {

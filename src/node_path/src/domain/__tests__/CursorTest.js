@@ -45,7 +45,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     after:    new Action("Unit", "after", List(), Runtime.prototype.after),
                     done:     new Action("Unit", "done", List(), Runtime.prototype.done),
                     error:    new Action("Unit", "error", List(), Runtime.prototype.error),
-                    triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers)
+                    triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers),
+                    message2: new Action("Unit", "message2", List(), Runtime.prototype.message2)
                 }),
                 children: Map({
                     test: Map()
@@ -73,7 +74,8 @@ describe("CursorTest", function() { // eslint-disable-line
                     after:    new Action("Unit", "after", List(), Runtime.prototype.after),
                     done:     new Action("Unit", "done", List(), Runtime.prototype.done),
                     error:    new Action("Unit", "error", List(), Runtime.prototype.error),
-                    triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers)
+                    triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers),
+                    message2: new Action("Unit", "message2", List(), Runtime.prototype.message2)
                 }),
                 children: Map({
                     test: Map()
@@ -126,6 +128,7 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor.action.state.errors.toJS()).to.eql([error]);
         expect(cursor.action.state.currentError).to.equal(error);
         expect(cursor._unit.children).to.equal(children);
+        expect(cursor.update("_unit", unit => unit.set("action", null)).message).to.equal(null);
     });
 
     it("does a trace", function() { // eslint-disable-line

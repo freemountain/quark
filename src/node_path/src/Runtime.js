@@ -1,8 +1,6 @@
 import { Duplex } from "stream";
 import assert from "assert";
 import { Map, List, fromJS } from "immutable";
-// import Trigger from "./domain/Trigger";
-// import uuid from "uuid";
 import curry from "lodash.curry";
 import Trigger from "./domain/Trigger";
 import Action from "./domain/Action";
@@ -140,11 +138,27 @@ export default class Runtime extends Duplex {
                 .filter(x => !actions0.find(y => y.name === x.emits))
                 .reduce((dest, x) => dest.set(x.emits, new Action(name, x.emits, triggers)), Map()));
 
-        proto.__triggers = triggers;
-        proto.__actions  = actions;
-        proto.__Cursor   = Cursor.for(instance, actions);
+        proto.__triggers        = triggers;
+        proto.__actions         = actions;
+        proto.__Cursor          = Cursor.for(instance, actions);
+        proto.__sendableActions = actions.map((action, key) => function(...payload: Array<mixed>) {
+            return this.__unit.trigger({
+                resource: key,
+                payload:  payload,
+                headers:  this.__headers
+            });
+        }).set("headers", function(headers: Object): { headers: Function, after: Function } {
+            this.__headers = Map(headers);
+
+            return Object.assign({}, this);
+        }).set("delay", function(delay: number): { headers: Function, after: Function } {
+            this.__delay = delay;
+
+            return Object.assign({}, this);
+        }).toJS();
 
         Object.assign(proto, actions.map(action => action.func).toJS());
+
 
         Object.defineProperty(proto, "__Unit", {
             writeable:    false,
@@ -229,6 +243,12 @@ export default class Runtime extends Duplex {
     traces(): List<Trace> {
         return !(this.cursor instanceof Cursor) ? List() : this.cursor.debug.traces;
     }
+
+    get send(): Object {
+        return Object.assign({}, this.__sendableActions, {
+            __unit: this
+        });
+    }
     //
 
     trigger(data: Object): Promise<Runtime> {
@@ -309,6 +329,19 @@ export default class Runtime extends Duplex {
         if(!(this instanceof Cursor)) throw new Error("fucking Cursor");
 
         return this;
+    }
+
+    message2(description: Action, message: Message): Promise<Cursor> {
+        if(!(this instanceof Cursor)) throw new Error("fucking Cursor");
+
+        return this.send.before(description, message)
+            .then(x => x.send.guards())
+            .then(x => !x.action.triggers ? x : x.send.triggers()
+                        .then(cursor => cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle())
+                        .then(cursor => cursor.send.after())
+                        .catch(e => x
+                            .action.state.error(e)
+                            .debug.trace.errored()));
     }
 
     triggers(): Promise<Cursor> {

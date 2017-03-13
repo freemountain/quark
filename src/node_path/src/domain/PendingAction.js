@@ -86,10 +86,6 @@ export default class PendingAction extends Record({
         return this;
     }
 
-    addError(e: Error): PendingAction {
-        return this.update("state", state => state.addError(e));
-    }
-
     changeState(type: string): PendingAction {
         const updated = this.update("state", state => state.change(type));
 
