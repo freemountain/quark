@@ -249,7 +249,6 @@ export default class Runtime extends Duplex {
             __unit: this
         });
     }
-    //
 
     trigger(data: Object): Promise<Runtime> {
         if(this.locked || (!this.isReady && data.resource !== "/actions/init")) return schedule(() => this.trigger(data));
@@ -278,13 +277,10 @@ export default class Runtime extends Duplex {
         return cursor;
     }
 
-    // checken, ob die überhaupt aufgerufen wird
     init(): Cursor {
-        if(this instanceof Cursor) return this;
+        if(!(this instanceof Cursor)) throw new Error("fucking cursor");
 
-        assert(false, "Every unit needs to implement an 'init' action");
-
-        return new Cursor({});
+        return this;
     }
 
     diff(previous: Cursor) {
@@ -300,30 +296,35 @@ export default class Runtime extends Duplex {
         if(!(this.action instanceof PendingAction)) throw new Error("fucking cursor");
 
         try {
+            if(this.action.name === "message") return this;
+
             const cursor  = this.action.triggered();
             const op      = cursor.action.op;
             const payload = cursor.message.unboxPayload();
 
-            if(!op) return Promise.resolve(cursor);
+            if(!op) return cursor;
 
             const result = op.call(cursor, ...payload);
 
             return result;
         } catch(e) {
-            return Promise.resolve(this.action.state.error(e));
+            return this.action.state.error(e);
         }
     }
 
     before(description: Action, data: Message): Promise<Cursor> {
-        const message     = data.setCursor(this);
-        const updated     = this.action.before(description, message);
+        const message = data.setCursor(this);
+        const updated = this.action.before(description, message);
 
         const trigger = !(updated.action instanceof PendingAction) || updated.action.description.name === "message" ? undefined : updated.action.previous.state.type; // eslint-disable-line
         const name    = updated.action.description.name;
         const payload = updated.message.payload;
         const guards  = updated.action.guard.count;
 
-        return updated.debug.trace(name, payload, guards, trigger);
+        return updated
+            .debug.trace(name, payload, guards, trigger)
+            .send.guards();
+            // .then(x => !x.action.triggers ? x : x.send.triggers());
     }
 
     message(description: Action, message: Message): Promise<Cursor> {
@@ -332,13 +333,21 @@ export default class Runtime extends Duplex {
         if(!(message instanceof Message))    throw new Error("fucking message");
 
         return this.send.before(description, message)
-            .then(x => x.send.guards())
             .then(x => !x.action.triggers ? x : x.send.triggers()
-                .then(cursor => description.name !== "message" ? cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle() : cursor)
+                .then(cursor => cursor.send.delay(x.action.delay).handle())
                 .then(cursor => cursor.send.after())
                 .catch(e => x
                     .action.state.error(e)
                     .debug.trace.errored()));
+
+            // hier kommz bei den .action.triggers je was anderes raus
+            // das muss behoben werden (muss iwas mit dem patch zu tun haben)
+            /* .then(x => !x.action.triggers ? x : x.send.triggers())
+            .then(x => !x.action.triggers ? x : x.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle()
+                .then(cursor => cursor.send.after())
+                .catch(e => x
+                    .action.state.error(e)
+                    .debug.trace.errored()));*/
     }
 
     triggers(): Promise<Cursor> {
@@ -363,10 +372,7 @@ export default class Runtime extends Duplex {
     after(): Promise<Cursor> {
         return (this.action.hasErrored ? this.send.error() : this.send.done())
             .then(cursor => cursor.send.triggers())
-            .then(cursor => {
-                // hier muss bei action der alte error behalten werden bei patch wahrscheinlich
-                return this.action.hasErrored ? cursor.debug.trace.errored(cursor.action.error) : cursor.debug.trace.ended();
-            })
+            .then(cursor => cursor.action.hasErrored ? cursor.debug.trace.errored(cursor.action.error) : cursor.debug.trace.ended())
             .then(cursor => cursor.action.finished());
     }
 

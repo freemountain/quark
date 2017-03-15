@@ -1149,7 +1149,7 @@ describe("ActionTest", function() {
                                     id:       9,
                                     parent:   5,
                                     start:    8,
-                                    end:      12,
+                                    end:      11,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test9",
@@ -1162,7 +1162,7 @@ describe("ActionTest", function() {
                                     id:       10,
                                     parent:   5,
                                     start:    9,
-                                    end:      11,
+                                    end:      12,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test",
@@ -1328,7 +1328,7 @@ describe("ActionTest", function() {
                                         id:       12,
                                         parent:   8,
                                         start:    13,
-                                        end:      17,
+                                        end:      16,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test9",
@@ -1341,7 +1341,7 @@ describe("ActionTest", function() {
                                         id:       13,
                                         parent:   8,
                                         start:    14,
-                                        end:      16,
+                                        end:      17,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test",
@@ -1461,7 +1461,7 @@ describe("ActionTest", function() {
                                     id:       6,
                                     parent:   5,
                                     start:    5,
-                                    end:      9,
+                                    end:      8,
                                     guards:   1,
                                     locked:   true,
                                     name:     "Test::init",
@@ -1470,10 +1470,10 @@ describe("ActionTest", function() {
                                     error:    null,
                                     trigger:  "before",
                                     traces:   [{
-                                        id:       8,
+                                        id:       7,
                                         parent:   6,
-                                        start:    7,
-                                        end:      8,
+                                        start:    6,
+                                        end:      7,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::init<Guard1>",
@@ -1484,9 +1484,9 @@ describe("ActionTest", function() {
                                         traces:   []
                                     }]
                                 }, {
-                                    id:       7,
+                                    id:       8,
                                     parent:   5,
-                                    start:    6,
+                                    start:    9,
                                     end:      44,
                                     guards:   1,
                                     locked:   true,
@@ -1495,7 +1495,7 @@ describe("ActionTest", function() {
                                     triggers: true,
                                     traces:   [{
                                         id:       9,
-                                        parent:   7,
+                                        parent:   8,
                                         start:    10,
                                         end:      11,
                                         guards:   0,
@@ -1508,7 +1508,7 @@ describe("ActionTest", function() {
                                         traces:   []
                                     }, {
                                         id:       10,
-                                        parent:   7,
+                                        parent:   8,
                                         start:    12,
                                         end:      23,
                                         guards:   0,
@@ -1534,7 +1534,7 @@ describe("ActionTest", function() {
                                         error:   new Error("an error2")
                                     }, {
                                         id:       11,
-                                        parent:   7,
+                                        parent:   8,
                                         start:    13,
                                         end:      21,
                                         guards:   0,
@@ -1547,7 +1547,7 @@ describe("ActionTest", function() {
                                         error:    new Error("an error3")
                                     }, {
                                         id:       12,
-                                        parent:   7,
+                                        parent:   8,
                                         start:    14,
                                         end:      19,
                                         guards:   3,
@@ -1586,7 +1586,7 @@ describe("ActionTest", function() {
                                         error:   null
                                     }, {
                                         id:       16,
-                                        parent:   7,
+                                        parent:   8,
                                         start:    24,
                                         end:      43,
                                         guards:   0,
@@ -1612,7 +1612,7 @@ describe("ActionTest", function() {
                                                 id:       20,
                                                 parent:   17,
                                                 start:    30,
-                                                end:      36,
+                                                end:      33,
                                                 guards:   1,
                                                 locked:   true,
                                                 name:     "Test::test7",
@@ -1621,10 +1621,10 @@ describe("ActionTest", function() {
                                                 error:    null,
                                                 trigger:  "error",
                                                 traces:   [{
-                                                    id:       24,
+                                                    id:       21,
                                                     parent:   20,
-                                                    start:    34,
-                                                    end:      35,
+                                                    start:    31,
+                                                    end:      32,
                                                     guards:   0,
                                                     locked:   true,
                                                     name:     "Test::test7<Guard1>",
@@ -1635,9 +1635,9 @@ describe("ActionTest", function() {
                                                     traces:   []
                                                 }]
                                             }, {
-                                                id:       21,
+                                                id:       22,
                                                 parent:   17,
-                                                start:    31,
+                                                start:    34,
                                                 end:      38,
                                                 guards:   0,
                                                 locked:   true,
@@ -1648,9 +1648,9 @@ describe("ActionTest", function() {
                                                 trigger:  "error",
                                                 traces:   []
                                             }, {
-                                                id:       22,
+                                                id:       23,
                                                 parent:   17,
-                                                start:    32,
+                                                start:    35,
                                                 end:      39,
                                                 guards:   0,
                                                 locked:   true,
@@ -1661,9 +1661,9 @@ describe("ActionTest", function() {
                                                 trigger:  "error",
                                                 traces:   []
                                             }, {
-                                                id:       23,
+                                                id:       24,
                                                 parent:   17,
-                                                start:    33,
+                                                start:    36,
                                                 end:      41,
                                                 guards:   0,
                                                 locked:   true,
@@ -1674,7 +1674,7 @@ describe("ActionTest", function() {
                                                 trigger:  "error",
                                                 traces:   [{
                                                     id:       25,
-                                                    parent:   23,
+                                                    parent:   24,
                                                     start:    37,
                                                     end:      40,
                                                     guards:   0,

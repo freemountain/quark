@@ -59,7 +59,7 @@ class Action {
             const message = data instanceof Message ? data : this.message;
 
             if(!Message.is(message)) return Promise
-                .resolve(new UnknownMessageError(description.unit, description.name, message));
+                .reject(new UnknownMessageError(description.unit, description.name, message));
 
             try {
                 if(!(description.op instanceof Function)) return Promise.resolve(this);
@@ -112,7 +112,6 @@ class Action {
             key === "diff" ||
             key === "finish" ||
             key === "receive" ||
-            key === "message2" ||
             key === "message"
         );
     }

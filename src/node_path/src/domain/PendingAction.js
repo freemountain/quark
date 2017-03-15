@@ -15,7 +15,7 @@ type PendingActionData = {
     description?: ?Action,
     previous?:    ?PendingAction, // eslint-disable-line
     error?:       ?Error,         // eslint-disable-line
-    _cursor?:      Cursor         // eslint-disable-line
+    _cursor?:     Cursor         // eslint-disable-line
 };
 
 export default class PendingAction extends Record({
@@ -124,7 +124,10 @@ export default class PendingAction extends Record({
     }
 
     get hasErrored(): boolean {
+        if(!(this.previous instanceof PendingAction)) return false;
+
         return (
+            this.state.type !== "done" &&
             this.previous instanceof PendingAction &&
             this.previous.description.name !== this.description.name &&
             this.state.currentError !== this.previous.state.currentError
@@ -132,7 +135,7 @@ export default class PendingAction extends Record({
     }
 
     get triggers(): boolean {
-        return !this.hasRecentlyErrored && this._triggers;
+        return this._triggers;
     }
 
     get guard(): { count: number } {

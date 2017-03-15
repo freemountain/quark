@@ -5,7 +5,7 @@ type StateType = "before" | "triggers" | "error" | "done" | "cancel" | "progress
 
 type StateInput = {
     type?:    StateType,    // eslint-disable-line
-    errors:   Set<Error>,   // eslint-disable-line
+    errors?:  Set<Error>,   // eslint-disable-line
     _cursor?: Cursor | null
 }
 
