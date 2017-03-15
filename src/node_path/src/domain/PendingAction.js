@@ -109,10 +109,7 @@ export default class PendingAction extends Record({
     }
 
     get name(): string {
-        if(this.trigger instanceof Trigger)    return this.trigger.emits;
-        if(this.description instanceof Action) return this.description.name;
-
-        return this.message.currentDir;
+        return this.description.name;
     }
 
     get op(): ?Function {

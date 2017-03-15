@@ -81,6 +81,8 @@ export default class Message extends Record({
         return this.set("_cursor", cursor);
     }
 
+    // hier muss unten wahrscheinlich alles von immutable
+    // rein, falls das iwie ne map oder sowas is
     unboxPayload() {
         return this.payload.map(x => (
             x instanceof Object &&

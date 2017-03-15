@@ -323,8 +323,8 @@ export default class Runtime extends Duplex {
 
         return updated
             .debug.trace(name, payload, guards, trigger)
-            .send.guards();
-            // .then(x => !x.action.triggers ? x : x.send.triggers());
+            .send.guards()
+            .then(x => !x.action.triggers ? x : x.send.triggers());
     }
 
     message(description: Action, message: Message): Promise<Cursor> {
@@ -333,21 +333,11 @@ export default class Runtime extends Duplex {
         if(!(message instanceof Message))    throw new Error("fucking message");
 
         return this.send.before(description, message)
-            .then(x => !x.action.triggers ? x : x.send.triggers()
-                .then(cursor => cursor.send.delay(x.action.delay).handle())
-                .then(cursor => cursor.send.after())
-                .catch(e => x
-                    .action.state.error(e)
-                    .debug.trace.errored()));
-
-            // hier kommz bei den .action.triggers je was anderes raus
-            // das muss behoben werden (muss iwas mit dem patch zu tun haben)
-            /* .then(x => !x.action.triggers ? x : x.send.triggers())
-            .then(x => !x.action.triggers ? x : x.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle()
-                .then(cursor => cursor.send.after())
-                .catch(e => x
-                    .action.state.error(e)
-                    .debug.trace.errored()));*/
+            .then(cursor => cursor.action.triggers ? cursor.send.delay(cursor.action.delay).handle() : cursor)
+            .then(cursor => cursor.send.after())
+            .catch(e => this
+                .action.state.error(e)
+                .debug.trace.errored());
     }
 
     triggers(): Promise<Cursor> {
