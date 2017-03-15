@@ -58,7 +58,6 @@ describe("RuntimeTest", function() {
             "message",
             "error",
             "handle",
-            "message2",
             "diffs",
             "guards",
             "init",
@@ -215,23 +214,6 @@ describe("RuntimeTest", function() {
                     guards: 0,
                     params: [],
                     action: "receive"
-                }]
-            },
-
-            message2: {
-                unit:     "TestUnit",
-                name:     "message2",
-                before:   [],
-                cancel:   [],
-                progress: [],
-                error:    [],
-                done:     [],
-                triggers: [{
-                    delay:  0,
-                    emits:  "message2",
-                    guards: 0,
-                    params: [],
-                    action: "message2"
                 }]
             },
 

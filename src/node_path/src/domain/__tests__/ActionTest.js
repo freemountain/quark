@@ -52,55 +52,6 @@ class Test2 extends Runtime {
 
 class Test3 extends Runtime {
     static triggers = {
-        message3: triggered.by("message2"),
-        test:     triggered.by("message3.before"),
-        test2:    triggered.by("message3.before"),
-        test3:    triggered.by("message3"),
-        test4:    triggered.by("message3"),
-        test5:    triggered.by("message3.error"),
-        test6:    triggered.by("message3.error"),
-        test7:    triggered.by("message3.before"),
-        test8:    triggered.by("message3.before"),
-        test9:    triggered.by("message3.before")
-    };
-
-    static props = {
-        name: "jupp"
-    };
-
-    message3(name) {
-        return this.set("name", name);
-    }
-
-    test() {
-        return this.set("test1", "test1");
-    }
-
-    test2() {
-        return this
-            .set("test2", "test2")
-            .set("test21", "test21");
-    }
-
-    test3() {
-        return this
-            .set("test3", "test3")
-            .set("test21", "test3");
-    }
-
-    test4() {}
-
-    test7() {
-        return schedule(() => this.set("test7", "test7"), 20);
-    }
-
-    test8() {
-        return schedule(() => undefined, 20); // eslint-disable-line
-    }
-}
-
-class Test31 extends Runtime {
-    static triggers = {
         message3: triggered.by("message"),
         test:     triggered.by("message3.before"),
         test2:    triggered.by("message3.before"),
@@ -581,7 +532,7 @@ describe("ActionTest", function() {
                 delay:  0,
                 guards: 0,
                 params: [],
-                action: "message2"
+                action: "message"
             }],
             cancel:   [],
             progress: [],
@@ -697,35 +648,19 @@ describe("ActionTest", function() {
                 cancel:   [],
                 progress: [],
                 error:    [],
-                done:     [],
+                done:     [{
+                    delay:  0,
+                    emits:  "message3",
+                    guards: 0,
+                    params: [],
+                    action: "message"
+                }],
                 triggers: [{
                     delay:  0,
                     emits:  "message",
                     guards: 0,
                     params: [],
                     action: "message"
-                }]
-            },
-            message2: {
-                unit:     "Test3",
-                name:     "message2",
-                before:   [],
-                cancel:   [],
-                progress: [],
-                error:    [],
-                done:     [{
-                    delay:  0,
-                    emits:  "message3",
-                    guards: 0,
-                    params: [],
-                    action: "message2"
-                }],
-                triggers: [{
-                    delay:  0,
-                    emits:  "message2",
-                    guards: 0,
-                    params: [],
-                    action: "message2"
                 }]
             },
             message3: {
@@ -773,7 +708,7 @@ describe("ActionTest", function() {
                     emits:  "message3",
                     guards: 0,
                     params: [],
-                    action: "message2"
+                    action: "message"
                 }],
                 cancel:   [],
                 progress: [],
@@ -1244,7 +1179,7 @@ describe("ActionTest", function() {
     });
 
     it("calls a complex action", function() {
-        const unit = new Test31();
+        const unit = new Test3();
         const data = Map({
             name:  "jupp",
             _unit: new UnitState({
@@ -1254,12 +1189,12 @@ describe("ActionTest", function() {
             })
         });
 
-        const message  = (new Message("/actions/message2", List.of("test")));
-        const cursor   = new unit.__Cursor(data);
+        const cursor  = new unit.__Cursor(data);
+        const message = new Message("/actions/message3", List.of("test"));
 
         return unit.ready()
             .then(x => {
-                const description =  cursor._unit.description.get("message2");
+                const description = cursor._unit.description.get("message");
                 const cursor2     = cursor._unit
                     .messageReceived(message)
                     .update("_unit", y => y.set("action", new PendingAction({
@@ -1267,7 +1202,7 @@ describe("ActionTest", function() {
                         description: description
                     })));
 
-                return x.message.call(cursor2, List.of(description, message.setCursor(cursor)))
+                return x.message.call(cursor2, new Message("/actions/message2", List.of(description, message)))
                     .then(y => {
                         const result  = y._unit.messageProcessed();
                         const cursor3 = cursor2
@@ -1295,7 +1230,7 @@ describe("ActionTest", function() {
                             end:      26,
                             guards:   0,
                             locked:   true,
-                            name:     "Test::Message</actions/message2>",
+                            name:     "Test::Message</actions/message3>",
                             params:   ["test"],
                             triggers: true,
                             error:    null,
@@ -1465,9 +1400,10 @@ describe("ActionTest", function() {
 
         return unit.ready()
             .then(x => {
-                const cursor2 = cursor._unit.messageReceived(message);
+                const description = cursor._unit.description.get("message");
+                const cursor2     = cursor._unit.messageReceived(message);
 
-                return x.message.call(cursor2, message.setCursor(cursor))
+                return x.message.call(cursor2, new Message("/actions/message2", List.of(description, message)))
                     .then(y => {
                         const result  = y._unit.messageProcessed();
                         const cursor3 = cursor2

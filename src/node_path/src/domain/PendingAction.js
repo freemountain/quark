@@ -123,7 +123,7 @@ export default class PendingAction extends Record({
         return this.trigger instanceof Trigger ? this.trigger.delay : 0;
     }
 
-    get hasRecentlyErrored(): boolean {
+    get hasErrored(): boolean {
         return (
             this.previous instanceof PendingAction &&
             this.previous.description.name !== this.description.name &&

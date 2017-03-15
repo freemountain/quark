@@ -27,7 +27,7 @@ type ActionInput = {
 
 class Action {
     name:     string;         // eslint-disable-line
-    op:       ?(* => Cursor);             // eslint-disable-line
+    op:       ?(* => Cursor); // eslint-disable-line
     before:   List<Trigger>;  // eslint-disable-line
     done:     List<Trigger>;  // eslint-disable-line
     triggers: List<Trigger>;
@@ -85,7 +85,7 @@ class Action {
                 .debug.trace.errored());
 
             try {
-                return this.send.message2(description, message)
+                return this.send.message(description, message)
                     .catch(e => this
                         .debug.trace(description.name, List(), this.action.guard.count, this.action.state.type)
                         .action.state.error(e)
@@ -112,7 +112,8 @@ class Action {
             key === "diff" ||
             key === "finish" ||
             key === "receive" ||
-            key === "message2"
+            key === "message2" ||
+            key === "message"
         );
     }
 

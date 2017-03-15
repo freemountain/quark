@@ -46,7 +46,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     done:     new Action("Unit", "done", List(), Runtime.prototype.done),
                     error:    new Action("Unit", "error", List(), Runtime.prototype.error),
                     triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers),
-                    message2: new Action("Unit", "message2", List(), Runtime.prototype.message2)
+                    message:  new Action("Unit", "message", List(), Runtime.prototype.message)
                 }),
                 children: Map({
                     test: Map()
@@ -75,7 +75,7 @@ describe("CursorTest", function() { // eslint-disable-line
                     done:     new Action("Unit", "done", List(), Runtime.prototype.done),
                     error:    new Action("Unit", "error", List(), Runtime.prototype.error),
                     triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers),
-                    message2: new Action("Unit", "message2", List(), Runtime.prototype.message2)
+                    message:  new Action("Unit", "message", List(), Runtime.prototype.message)
                 }),
                 children: Map({
                     test: Map()

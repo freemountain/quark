@@ -260,6 +260,7 @@ export default class Runtime extends Duplex {
         const cursor  = defaults(this.cursor).to(new this.__Cursor(message.payload.first(), this));
 
         return cursor.send.receive(message.setCursor(cursor))
+            // .then(x => x.send.message())
             .then(x => this.emitIfNotRevoverable(x))
             .then(x => x.send.diff(cursor))
             .then(x => x.send.finish())
@@ -325,14 +326,7 @@ export default class Runtime extends Duplex {
         return updated.debug.trace(name, payload, guards, trigger);
     }
 
-    message(): Promise<Cursor> {
-        if(!(this instanceof Cursor)) throw new Error("fucking Cursor");
-
-        return this;
-    }
-
-    message2(description: Action, message: Message): Promise<Cursor> {
-        // console.log("message2", description.name, message.resource);
+    message(description: Action, message: Message): Promise<Cursor> {
         if(!(this instanceof Cursor))        throw new Error("fucking Cursor");
         if(!(description instanceof Action)) throw new Error("fucking action");
         if(!(message instanceof Message))    throw new Error("fucking message");
@@ -340,12 +334,7 @@ export default class Runtime extends Duplex {
         return this.send.before(description, message)
             .then(x => x.send.guards())
             .then(x => !x.action.triggers ? x : x.send.triggers()
-                .then(cursor => cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle())
-                .then(cursor => {
-                    console.log("after handle", cursor.action.description.name, cursor.action.state.currentError);
-
-                    return cursor;
-                })
+                .then(cursor => description.name !== "message" ? cursor.send.delay(x.action instanceof PendingAction ? x.action.delay : 0).handle() : cursor)
                 .then(cursor => cursor.send.after())
                 .catch(e => x
                     .action.state.error(e)
@@ -372,12 +361,12 @@ export default class Runtime extends Duplex {
     }
 
     after(): Promise<Cursor> {
-        const hasRecentlyErrored = this.action.hasRecentlyErrored;
-        const error              = hasRecentlyErrored ? this.action.state.currentError : null;
-
-        return (hasRecentlyErrored ? this.send.error() : this.send.done())
+        return (this.action.hasErrored ? this.send.error() : this.send.done())
             .then(cursor => cursor.send.triggers())
-            .then(cursor => error ? cursor.debug.trace.errored(error) : cursor.debug.trace.ended())
+            .then(cursor => {
+                // hier muss bei action der alte error behalten werden bei patch wahrscheinlich
+                return this.action.hasErrored ? cursor.debug.trace.errored(cursor.action.error) : cursor.debug.trace.ended();
+            })
             .then(cursor => cursor.action.finished());
     }
 
@@ -385,19 +374,16 @@ export default class Runtime extends Duplex {
         if(!(this instanceof Cursor))               throw new Error("fucking cursor");
         if(!(this.action instanceof PendingAction)) throw new Error("fucking cursor");
 
-        console.log("guards", this.action.description.name, this.action.state.currentError);
         const cursor = this.action.guards();
 
         return cursor.action.triggers ? cursor.debug.trace.triggered() : cursor.debug.trace.ended();
     }
 
     done() {
-        console.log("done", this.action.description.name, this.action.state.currentError);
         return this.action.done();
     }
 
     error() {
-        console.log("error", this.action.description.name, this.action.state.currentError);
         return this.action.errored();
     }
 

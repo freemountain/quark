@@ -142,7 +142,7 @@ class Cursor {
             .update("_unit", unit => unit.set("action", action))
             .update("_unit", unit => unit.set("debug", debug));
 
-        return new this.constructor(next);
+        return new this.constructor(next, this);
     }
 
     diff(cursor: Cursor): Diffs {

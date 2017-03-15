@@ -83,6 +83,7 @@ export default class Message extends Record({
 
     unboxPayload() {
         return this.payload.map(x => (
+            x instanceof Object &&
             x.toJS instanceof Function &&
             !(
                 x instanceof Record ||
