@@ -1,7 +1,6 @@
 // @flow
 import { List } from "immutable";
 import Cursor from "./Cursor";
-import assert from "assert";
 import Message from "../Message";
 import UnknownMessageError from "./error/UnknownMessageError";
 import Trigger from "./Trigger";
@@ -135,7 +134,6 @@ class Action {
         const func = Action.shouldWrap(name, op) ? Action.wrap(name, this) : op;
 
         func.__Action = this;
-        func.cancel   = Action.cancel.bind(this, func);
 
         const own = ownTriggers.find(x => x.action === name && x.emits === name);
 
@@ -181,10 +179,6 @@ class Action {
         const trigger = this.triggers.find(x => x.action === trimmed);
 
         return trigger || this.triggers.find(x => x.action === this.name);
-    }
-
-    static cancel() {
-        assert(false, "Action.cancel: implement!");
     }
 
     toJS(): Object {

@@ -7,6 +7,8 @@ import diff from "immutablediff";
 import Message from "../Message";
 import CursorAbstractError from "./error/CursorAbstractError";
 import UnknownMethodError from "./error/UnknownMethodError";
+import InvalidUnitError from "./error/InvalidUnitError";
+import DeferredMethodError from "./error/DeferredMethodError";
 import PendingAction from "./PendingAction";
 import { schedule } from "../Runloop";
 import type Debug from "./Debug";
@@ -33,12 +35,12 @@ class Cursor {
     then:          ?any => Cursor;                        // eslint-disable-line
     __promise:     ?Promise<*>;                           // eslint-disable-line
 
-    static box(cursor: Cursor, op: Function, args?: Array<*> = []): Cursor | Promise<*> {
-        if(!(cursor.__promise instanceof Promise)) return op.call(cursor, ...args);
-        // if(op instanceof Cursor)                   return op;
-        // if(op instanceof Promise)                  return Cursor.wrap(cursor, op);
+    static box(cursor: Cursor, op: Function, args?: Array<*> = []): Cursor {
+        const promise = cursor.__promise;
 
-        return cursor.__promise.then(x => op.call(x, ...args));
+        if(!(promise instanceof Promise)) return op.call(cursor, ...args);
+
+        return Cursor.wrap(cursor, promise.then(x => x instanceof Cursor ? op.call(x, ...args) : op.call(cursor, x, ...args)));
     }
 
     static wrap(cursor, promise) {
@@ -86,7 +88,8 @@ class Cursor {
             return Object.assign({}, this);
         }).toJS();
 
-        inherited.prototype = Object.keys(inherited.prototype)
+        // hier das muss im zuge von anderem stuff sein
+        /* inherited.prototype = getAllProperties(inherited.prototype)
             .reduce((dest, key) => {
                 const op = dest[key];
 
@@ -97,7 +100,7 @@ class Cursor {
                 } : op;
 
                 return dest;
-            }, inherited.prototype);
+            }, inherited.prototype);*/
 
         return inherited;
     }
@@ -108,7 +111,7 @@ class Cursor {
 
         const x = fromJS(data);
 
-        if(!(x instanceof Map)) throw new Error(`Your data has to contain a UnitState, got ${x}`);
+        if(!(x instanceof Map)) throw new InvalidUnitError(x);
 
         this.__data = {
             x: x
@@ -234,11 +237,11 @@ ImmutableMethods
         enumerable:   false,
         configurable: false,
         value:        function(...args) { // eslint-disable-line
+            const op = this.__data.x instanceof Object ? this.__data.x[method] : null;
+
+            if(!(op instanceof Function)) throw new UnknownMethodError(this.__data.x, method);
+
             try {
-                const op = this.__data.x instanceof Object ? this.__data.x[method] : null;
-
-                if(!(op instanceof Function)) throw new UnknownMethodError(this.__data.x, method);
-
                 const result = op.call(this.__data.x, ...args);
 
                 // TODO: hier muss nach den props gecheckt werden
@@ -250,9 +253,9 @@ ImmutableMethods
                     result instanceof OrderedMap ||
                     result instanceof Stack ||
                     result instanceof Seq
-                ) ? new this.constructor(result, this, null, result instanceof Promise ? this.__promise.then(() => result) : this.__promise) : result;
+                ) ? new this.constructor(result, this, null, this.__promise) : result;
             } catch(e) {
-                throw new Error("WrongMethodCall");
+                throw new DeferredMethodError(this, method, e);
             }
         }
     }));

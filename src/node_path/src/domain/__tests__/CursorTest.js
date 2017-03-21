@@ -28,7 +28,80 @@ describe("CursorTest", function() { // eslint-disable-line
         this.uuid.restore();
     });
 
-    it("creates a cursor for a unit", function() {
+    it("boxes something", function() {
+        const data = fromJS({
+            _unit: new UnitState({
+                name: "Unit",
+                id:   "id"
+            }),
+            test: "blub"
+        });
+        const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
+        const cursor     = new UnitCursor(data);
+
+        expect(Cursor.box(cursor, function(key) {
+            return this.get(key);
+        }, ["test"])).to.equal("blub");
+
+        const maybePromise = Cursor.box(new UnitCursor(cursor.__data.x, cursor, cursor.__next, Promise.resolve("te")), function(key, key2) {
+            return this.get(key.concat(key2));
+        }, ["st"]).__promise;
+
+        const maybePromise2 = Cursor.box(new UnitCursor(cursor.__data.x, cursor, cursor.__next, Promise.resolve(cursor)), function() {
+            return this.get("test");
+        }).__promise;
+
+        if(!(maybePromise instanceof Promise) || !(maybePromise2 instanceof Promise)) return;
+
+        return Promise.all([ // eslint-disable-line
+            maybePromise.then(x => expect(x).to.equal("blub")),
+            maybePromise2.then(x => expect(x).to.equal("blub"))
+        ]);
+    });
+
+    it("uses static then", function() {
+        const data = fromJS({
+            _unit: new UnitState({
+                name: "Unit",
+                id:   "id"
+            }),
+            test: "blub"
+        });
+        const UnitCursor   = Cursor.for(new (class Unit {})(), data.get("_unit").description);
+        const cursor       = new UnitCursor(data);
+        const maybePromise = Cursor.then(cursor, x => x.get("test"))
+            .then(x => expect(x).to.equal("blub"))
+            .__promise;
+
+        if(!(maybePromise instanceof Promise)) return;
+
+        return maybePromise; // eslint-disable-line
+    });
+
+    it("uses catch", function() {
+        const data = fromJS({
+            _unit: new UnitState({
+                name: "Unit",
+                id:   "id"
+            }),
+            test: "blub"
+        });
+        const UnitCursor    = Cursor.for(new (class Unit {})(), data.get("_unit").description);
+        const cursor        = new UnitCursor(data);
+        const maybePromise  = cursor.catch(() => {}).__promise;
+        const maybePromise2 = (new UnitCursor(cursor.__data.x, cursor, cursor.__next, Promise.reject(new Error("lulu"))))
+            .catch(e => expect(e.message).to.equal("lulu")).__promise;
+
+        if(!(maybePromise instanceof Promise) || !(maybePromise2 instanceof Promise)) return;
+
+        return Promise.all([ // eslint-disable-line
+            maybePromise,
+            maybePromise2
+        ]);
+    });
+
+
+    it("creates a cursor for a unit", function() { // eslint-disable-line
         const func = function(a) {
             return this.update("test", x => x.length + 2 + a);
         };
@@ -59,8 +132,13 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(UnitCursor.name).to.equal("UnitCursor");
         expect(UnitCursor).to.be.a("function");
 
-        const cursor = new UnitCursor(data);
+        const cursor      = new UnitCursor(data);
+        const wrongCursor = new UnitCursor({});
 
+        wrongCursor.__data.x = 5;
+
+        expect(wrongCursor.toString()).to.equal("UnitCursor<{\"x\":5}>");
+        expect(() => new UnitCursor()).to.throw("InvalidUnitError: Your data has to contain a UnitState, got undefined");
         expect(cursor).to.be.an.instanceOf(Cursor);
         expect(cursor.toJS()).to.eql({
             _unit: new UnitState({
@@ -1407,5 +1485,23 @@ describe("CursorTest", function() { // eslint-disable-line
             //      .test2()
             .then(x => x.get("name"))
             .then(name => expect(name).to.equal("lala"));
+    });
+
+    it("checks some edge cases for immutable methods", function() {
+        const data = fromJS({
+            _unit: (new UnitState({
+                name: "Unit",
+                id:   "id"
+            })),
+            test: "test"
+        });
+        const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
+        const cursor     = new UnitCursor(data);
+
+        expect(() => cursor.map()).to.throw("DeferredMethodError: DeferredMethod \'UnitCursor::map\' threw an error:\n\tCannot read property \'call\' of undefined");
+
+        cursor.__data.x = "some wrong data";
+
+        expect(() => cursor.map()).to.throw("UnknownMethodError: Trying to call unknown method \'String::map\'.");
     });
 });
