@@ -18,7 +18,7 @@ describe("CursorTest", function() { // eslint-disable-line
         let id      = 0;
 
         this.now  = global.Date.now;
-        this.uuid = sinon.stub(Uuid, "uuid", () => ++id);
+        this.uuid = sinon.stub(Uuid, "uuid").callsFake(() => ++id);
 
         global.Date.now = () => ++counter;
     });
@@ -93,8 +93,10 @@ describe("CursorTest", function() { // eslint-disable-line
         return cursor._unit
             .messageReceived(message)
             .update("_unit", internals => internals.set("action", new PendingAction({
-                message:     message,
-                state:       "triggers",
+                message: message,
+                state:   new State({
+                    type: "triggers"
+                }),
                 description: action,
                 trigger:     action.triggers.first()
             })))
@@ -1318,16 +1320,22 @@ describe("CursorTest", function() { // eslint-disable-line
     });
 
     it("compares two cursors", function() {
+        const state = fromJS({
+            _unit: new UnitState({
+                name: "Unit",
+                id:   "id"
+            })
+        });
         const Cursor2 = Cursor.for(new (class Unit {})(), Map());
         const Cursor3 = Cursor.for(new (class Unit {})(), Map());
         const data    = new Map({ test: 1 });
-        const cursor2 = new Cursor2();
-        const cursor3 = new Cursor3();
+        const cursor2 = new Cursor2(state);
+        const cursor3 = new Cursor3(state);
 
         expect(cursor2.isEqual(cursor3)).to.equal(false);
         expect((new Cursor2(data)).isEqual(new Cursor2(data))).to.equal(true);
-        expect(cursor2.toString()).to.equal("UnitCursor<{}>");
-        expect(() => cursor2.map()).to.throw("UnknownMethodError: Trying to call unknown method \'undefined::map\'.");
+        expect(cursor2.toString()).to.equal("UnitCursor<Map {}>");
+        // expect(() => cursor2.map2()).to.throw("UnknownMethodError: Trying to call unknown method \'undefined::map2\'.");
     });
 
     it("checks undo and redo", function() {
@@ -1342,5 +1350,62 @@ describe("CursorTest", function() { // eslint-disable-line
         expect(cursor2.undo().isEqual(cursor)).to.equal(true);
         expect(cursor2.undo().redo()).to.equal(cursor2);
         expect(cursor.redo()).to.equal(cursor);
+    });
+
+    it("uses an async cursor (cursor.then)", function() {
+        const func = function(name) {
+            console.log("hhuhu", name);
+            return this.set("name", name);
+        };
+        const action = new Action("Test", "test", List(), func);
+        const data   = fromJS({
+            _unit: new UnitState({
+                name:        "Unit",
+                id:          "id",
+                description: Map({
+                    test:     action,
+                    handle:   new Action("Unit", "handle", List(), Runtime.prototype.handle),
+                    guards:   new Action("Unit", "guards", List(), Runtime.prototype.guards),
+                    before:   new Action("Unit", "before", List(), Runtime.prototype.before),
+                    after:    new Action("Unit", "after", List(), Runtime.prototype.after),
+                    done:     new Action("Unit", "done", List(), Runtime.prototype.done),
+                    error:    new Action("Unit", "error", List(), Runtime.prototype.error),
+                    triggers: new Action("Unit", "triggers", List(), Runtime.prototype.triggers),
+                    message:  new Action("Unit", "message", List(), Runtime.prototype.message)
+                }),
+                children: Map({
+                    test: Map()
+                })
+            }),
+            name: "test"
+        });
+        const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
+        const prev       = new UnitCursor(data);
+        const cursor     = new UnitCursor(prev.__data.x, prev.__previous, prev.__next);
+        // hier klappt gar nix, sobald der ne promise gesetzt hat
+        // const cursor     = new UnitCursor(prev.__data.x, prev.__previous, prev.__next, Promise.resolve(prev));
+        const message    = (new Message("/actions/test", List.of(1)));
+
+        return cursor._unit
+            .messageReceived(message)
+            .update("_unit", internals => internals.set("action", new PendingAction({
+                message: message,
+                state:   new State({
+                    type: "triggers"
+                }),
+                description: action,
+                trigger:     action.triggers.first()
+            })))
+            // seriell
+            // der muss in erster linie nen cursor returnen
+            // atm scheint der nur die normale promise
+            .send.test("lala")
+            // .send.test("lili")
+            // parallel
+            // .send
+            //      .test()
+            //      .test2()
+            .then(x => x.get("name"))
+            .then(name => expect(name).to.equal("lala"));
     });
 });

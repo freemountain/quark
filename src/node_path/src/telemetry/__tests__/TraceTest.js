@@ -12,7 +12,7 @@ describe("TraceTest", function() {
         let id      = 0;
 
         this.now  = global.Date.now;
-        this.uuid = sinon.stub(Uuid, "uuid", () => ++id);
+        this.uuid = sinon.stub(Uuid, "uuid").callsFake(() => ++id);
 
         global.Date.now = () => ++counter;
     });

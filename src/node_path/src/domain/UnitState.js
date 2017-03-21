@@ -1,3 +1,5 @@
+// @flow
+
 import { Record, List, Map } from "immutable";
 import Message from "../Message";
 import InvalidCursorError from "./error/InvalidCursorError";
@@ -44,30 +46,36 @@ export default class UnitState extends Record({
     }
 
     messageReceived(data: Message): UnitState {
-        if(this.action !== null)              throw new AlreadyReceivedError();
-        if(!(this._cursor instanceof Cursor)) throw new Error("lulu");
+        const cursor = this._cursor;
 
-        const message     = data.setCursor(this._cursor);
+        if(this.action !== null) throw new AlreadyReceivedError();
+
         const description = this.description.get("message");
+
+        if(!(cursor instanceof Cursor)) throw new InvalidCursorError(cursor, description);
+
+        const message     = data.setCursor(cursor);
         const action      = new PendingAction({ message, description });
         const updated     = this.set("action", action);
 
-        return this._cursor
+        return cursor
             .set("_unit", updated)
             .debug.startTracing(`Message<${message.resource}>`, message.payload, action.guard.count)
             .debug.trace.triggered();
     }
 
     messageProcessed(): UnitState | Cursor {
-        if(this.action === null)              throw new NotStartedError();
-        if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.action.description);
+        const cursor = this._cursor;
+
+        if(this.action === null)        throw new NotStartedError();
+        if(!(cursor instanceof Cursor)) throw new InvalidCursorError(cursor, this.action.description);
 
         const updated = this
             .update("debug", debug => debug.endTracing())
             .set("action", null)
             .setCursor(null);
 
-        return this._cursor.set("_unit", updated);
+        return cursor.set("_unit", updated);
     }
 
     setCursor(cursor: Cursor | null): UnitState {
@@ -76,5 +84,7 @@ export default class UnitState extends Record({
             .update("action", action => action instanceof PendingAction ? action.setCursor(cursor) : action)
             .update("debug", debug => debug.setCursor(cursor));
     }
+
+    _cursor: ?Cursor
 }
 

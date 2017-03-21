@@ -1,5 +1,10 @@
+// @flow
+
 import { Record, Set } from "immutable";
 import Cursor from "./Cursor";
+import PendingAction from "./PendingAction";
+import InvalidCursorError from "./error/InvalidCursorError";
+import NoActionError from "./error/NoActionError";
 
 type StateType = "before" | "triggers" | "error" | "done" | "cancel" | "progress" | "finished" | "waiting";
 
@@ -14,7 +19,7 @@ export default class State extends Record({
     errors:  Set(),
     _cursor: null
 }) {
-    constructor(data: StateInput) {
+    constructor(data?: StateInput) {
         super(data);
     }
 
@@ -26,17 +31,20 @@ export default class State extends Record({
         return this.update("errors", errors => errors.add(e));
     }
 
-    error(e) {
-        if(!(this._cursor instanceof Cursor)) throw new Error("lulu");
+    error(e: Error) {
+        const cursor = this._cursor;
 
-        const action = this._cursor.action
+        if(!(cursor instanceof Cursor))               throw new InvalidCursorError(cursor);
+        if(!(cursor.action instanceof PendingAction)) throw new NoActionError(cursor.action);
+
+        const action = cursor.action
             .set("state", this.update("errors", errors => errors.add(e)));
 
-        return this._cursor.update("_unit", unit => unit.set("action", action));
+        return cursor.update("_unit", unit => unit.set("action", action));
     }
 
     get isRecoverable(): boolean {
-        return this.errors.every(x => x.isRecoverable && x.isRecoverable());
+        return this.errors.every(x => x.isRecoverable instanceof Function && x.isRecoverable());
     }
 
     get currentError(): ?Error {
@@ -50,4 +58,6 @@ export default class State extends Record({
     setCursor(cursor: Cursor | null): State {
         return this.set("_cursor", cursor);
     }
+
+    _cursor: ?Cursor;
 }

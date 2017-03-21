@@ -1,6 +1,5 @@
 // @flow
 
-// import TraceNotStartedError from "./error/TraceNotStartedError";
 import { fromJS, Map, List, OrderedSet, OrderedMap, Iterable, Seq, Set, Collection, Record, Stack } from "immutable";
 import ImmutableMethods from "../util/ImmutableMethods";
 import patch from "immutablepatch";
@@ -31,6 +30,26 @@ class Cursor {
     set:           (string, any) => Cursor;               // eslint-disable-line
     __actions:     Object;                                // eslint-disable-line
     __actionProto: Object;
+    then:          ?any => Cursor;                        // eslint-disable-line
+    __promise:     ?Promise<*>;                           // eslint-disable-line
+
+    static box(cursor: Cursor, op: Function, args?: Array<*> = []): Cursor | Promise<*> {
+        if(!(cursor.__promise instanceof Promise)) return op.call(cursor, ...args);
+        // if(op instanceof Cursor)                   return op;
+        // if(op instanceof Promise)                  return Cursor.wrap(cursor, op);
+
+        return cursor.__promise.then(x => op.call(x, ...args));
+    }
+
+    static wrap(cursor, promise) {
+        return new cursor.constructor(cursor.__data.x, cursor.__previous, cursor.__next, promise);
+    }
+
+    static then(cursor: Cursor, ...args: Array<*>): Cursor {
+        const promise = cursor.__promise instanceof Promise ? cursor.__promise : Promise.resolve(cursor);
+
+        return Cursor.wrap(cursor, promise.then(...args));
+    }
 
     static for(instance: Object, description: Map<*, *>) {
         const inherited = function(...args) {
@@ -67,20 +86,38 @@ class Cursor {
             return Object.assign({}, this);
         }).toJS();
 
+        inherited.prototype = Object.keys(inherited.prototype)
+            .reduce((dest, key) => {
+                const op = dest[key];
+
+                if(key === "constructor") return dest;
+
+                dest[key] = op instanceof Function ? function(...args) {
+                    return Cursor.box(this, op, args);
+                } : op;
+
+                return dest;
+            }, inherited.prototype);
+
         return inherited;
     }
 
-    constructor(data: any, previous?: Cursor, next?: Cursor) {
+    constructor(data: any, previous?: Cursor, next?: Cursor, promise?: Promise<*>) { // eslint-disable-line
         if(data instanceof Cursor) return data;
         if(!this.__inherited)      throw new CursorAbstractError();
 
         const x = fromJS(data);
+
+        if(!(x instanceof Map)) throw new Error(`Your data has to contain a UnitState, got ${x}`);
 
         this.__data = {
             x: x
         };
         this.__previous = previous;
         this.__next     = next;
+        this.__promise  = promise;
+
+        if(this.__promise instanceof Promise) this.then = Cursor.then.bind(null, this);
 
         Object.freeze(this);
 
@@ -145,28 +182,34 @@ class Cursor {
         return new this.constructor(next, this);
     }
 
-    diff(cursor: Cursor): Diffs {
+    diff(cursor: Cursor): Diffs | Promise<Diffs> {
         return diff(this.__data.x, cursor.__data.x);
     }
 
-    isEqual(cursor: Cursor): boolean {
+    isEqual(cursor: Cursor): boolean | Promise<boolean> {
         return cursor instanceof this.constructor && this.__data.x === cursor.__data.x;
     }
 
     undo(): Cursor {
-        return this.__previous ? new this.constructor(this.__previous.__data.x, this.__previous.__previous, this) : this;
+        return this.__previous instanceof Cursor ? new this.constructor(this.__previous.__data.x, this.__previous.__previous, this, this.__promise) : this;
     }
 
     redo(): Cursor {
-        return this.__next ? this.__next : this;
+        return this.__next instanceof Cursor ? this.__next : this;
     }
 
-    defer(op: Function, delay?: number): Promise<*> {
-        return schedule(op, delay);
+    defer(op: Function, delay?: number): Cursor {
+        return Cursor.wrap(this, schedule(op, delay));
     }
 
-    toString(): string {
+    toString(): string | Promise<string> {
         return `${this.constructor.name}<${this.__data.x instanceof Collection ? this.__data.x.filter((_, key) => key !== "_unit").toString() : JSON.stringify(this.__data)}>`;
+    }
+
+    catch(...args: Array<*>): Cursor {
+        const promise = this.__promise instanceof Promise ? this.__promise : Promise.resolve(this);
+
+        return Cursor.wrap(this, promise.catch(...args));
     }
 }
 
@@ -191,22 +234,26 @@ ImmutableMethods
         enumerable:   false,
         configurable: false,
         value:        function(...args) { // eslint-disable-line
-            const op = this.__data.x instanceof Object ? this.__data.x[method] : null;
+            try {
+                const op = this.__data.x instanceof Object ? this.__data.x[method] : null;
 
-            if(!(op instanceof Function)) throw new UnknownMethodError(this.__data.x, method);
+                if(!(op instanceof Function)) throw new UnknownMethodError(this.__data.x, method);
 
-            const result = op.call(this.__data.x, ...args);
+                const result = op.call(this.__data.x, ...args);
 
-            // TODO: hier muss nach den props gecheckt werden
-            return (
-                result instanceof Map ||
-                result instanceof List ||
-                result instanceof Set ||
-                result instanceof OrderedSet ||
-                result instanceof OrderedMap ||
-                result instanceof Stack ||
-                result instanceof Seq
-            ) ? new this.constructor(result, this) : result;
+                // TODO: hier muss nach den props gecheckt werden
+                return (
+                    result instanceof Map ||
+                    result instanceof List ||
+                    result instanceof Set ||
+                    result instanceof OrderedSet ||
+                    result instanceof OrderedMap ||
+                    result instanceof Stack ||
+                    result instanceof Seq
+                ) ? new this.constructor(result, this, null, result instanceof Promise ? this.__promise.then(() => result) : this.__promise) : result;
+            } catch(e) {
+                throw new Error("WrongMethodCall");
+            }
         }
     }));
 

@@ -9,7 +9,7 @@ const unboxResult = function(cursor: Cursor, result: (Promise<Cursor> | Error | 
 
         return cursor.action.state.error(result);
     }
-    if(result instanceof Promise)                 return result
+    if(result instanceof Promise) return result
         .then(unboxResult.bind(null, cursor))
         .catch(unboxResult.bind(null, cursor));
 

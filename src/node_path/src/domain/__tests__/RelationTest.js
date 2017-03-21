@@ -28,5 +28,12 @@ describe("RelationTest", function() {
             tag:      Relation.SELF,
             key:      null
         });
+
+        expect(relation.setCascades(["ALL"]).setCascades(["PUT", "POST"]).setPrefix("lala")).to.eql({
+            name:     "lala.test",
+            cascades: ["PUT", "POST"],
+            tag:      Relation.SELF,
+            key:      null
+        });
     });
 });

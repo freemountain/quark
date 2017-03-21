@@ -312,7 +312,7 @@ export default class Runtime extends Duplex {
         }
     }
 
-    before(description: Action, data: Message): Promise<Cursor> {
+    before(description: Action, data: Message): Promise<Cursor> { // eslint-disable-line
         const message = data.setCursor(this);
         const updated = this.action.before(description, message);
 
@@ -334,6 +334,7 @@ export default class Runtime extends Duplex {
 
         return this.send.before(description, message)
             .then(cursor => cursor.action.triggers ? cursor.send.delay(cursor.action.delay).handle() : cursor)
+            // .send.after()
             .then(cursor => cursor.send.after())
             .catch(e => this
                 .action.state.error(e)

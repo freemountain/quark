@@ -15,6 +15,7 @@ import { schedule } from "../../Runloop";
 import GuardError from "../error/GuardError";
 import UnknownMessageError from "../error/UnknownMessageError";
 import PendingAction from "../PendingAction";
+import State from "../State";
 
 const triggered = DeclaredAction.triggered;
 
@@ -188,7 +189,7 @@ describe("ActionTest", function() {
         let counter = 0;
 
         this.now  = global.Date.now;
-        this.uuid = sinon.stub(Uuid, "uuid", () => ++id);
+        this.uuid = sinon.stub(Uuid, "uuid").callsFake(() => ++id);
 
         global.Date.now = () => ++counter;
     });
@@ -249,8 +250,10 @@ describe("ActionTest", function() {
             .debug.trace("message", message.get("payload"))
             .debug.trace.triggered()
             .update("_unit", internals => internals.set("action", new PendingAction({
-                message:     message,
-                state:       "triggers",
+                message: message,
+                state:   new State({
+                    type: "triggers"
+                }),
                 description: descr,
                 trigger:     descr.triggers.first()
             })));

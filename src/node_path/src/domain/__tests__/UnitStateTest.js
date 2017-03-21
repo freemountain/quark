@@ -18,7 +18,7 @@ describe("UnitStateTest", function() {
         let id      = 0;
 
         this.now  = global.Date.now;
-        this.uuid = sinon.stub(Uuid, "uuid", () => ++id);
+        this.uuid = sinon.stub(Uuid, "uuid").callsFake(() => ++id);
 
         global.Date.now = () => ++counter;
     });
@@ -95,8 +95,10 @@ describe("UnitStateTest", function() {
         });
 
         expect(() => internals.messageProcessed()).to.throw("NotStartedError: Can\'t finish a message before starting.");
+        expect(() => internals.messageReceived(message)).to.throw("InvalidCursorError: Invalid cursor of null for \'blub[message]\'.");
         expect(internals.setCursor(cursor).messageReceived(message).action.message.setCursor(null).toJS()).to.eql(message.toJS());
         expect(() => internals.setCursor(cursor).messageReceived(message)._unit.messageReceived(message)).to.throw("AlreadyReceivedError: Can\'t start a message, if another message is currently processed.");
+        expect(() => internals.setCursor(cursor).messageReceived(message)._unit.setCursor(null).messageProcessed()).to.throw("InvalidCursorError: Invalid cursor of null for \'blub[message]\'.");
         expect(internals.setCursor(cursor).messageReceived(message)._unit.messageProcessed().action).to.equal(null);
     });
 
@@ -314,31 +316,4 @@ describe("UnitStateTest", function() {
         expect(internals3.setCursor(cursor).messageProcessed().debug.isTracing).to.equal(false);
         expect(() => internals2.setCursor(cursor).messageProcessed().toJS()).to.throw("NotConsistentError: You can only lock consistent traces. Some end calls are probably missing @blub::Message</blub>.");
     });
-
-// to state shit
-/* it("works with the error functions", function() {
-        const internals = new UnitState({
-            name: "Blub",
-            id:   "id"
-        });
-
-        expect(internals.hasErrored()).to.equal(false);
-        expect(internals.isRecoverable()).to.equal(true);
-
-        expect(internals.error(new Error("huhu")).errors.toJS()).to.eql([new Error("huhu")]);
-        expect(internals.error(new Error("huhu")).hasErrored()).to.equal(true);
-        expect(internals.error(new Error("huhu")).isRecoverable()).to.equal(false);
-
-        const e = new (class Rec extends CoreComponentError {
-            constructor() {
-                super("Rec");
-            }
-
-            isRecoverable() {
-                return true;
-            }
-        })();
-
-        expect(internals.error(e).isRecoverable()).to.equal(true);
-    });*/
 });

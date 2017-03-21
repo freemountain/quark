@@ -17,7 +17,7 @@ describe("TriggerTest", function() {
         let id      = 0;
 
         this.now  = global.Date.now;
-        this.uuid = sinon.stub(Uuid, "uuid", () => ++id);
+        this.uuid = sinon.stub(Uuid, "uuid").callsFake(() => ++id);
 
         global.Date.now = () => 0;
     });
@@ -68,6 +68,8 @@ describe("TriggerTest", function() {
         const TestCursor = Cursor.for(class Test {}, data.get("_unit").description);
         const cursor     = (new TestCursor(data))
             ._unit.messageReceived(message);
+
+        expect(() => description.shouldTrigger(new TestCursor(data), [])).to.throw("NoActionError: There is no valid ongoing action, got null instead.");
 
         return action.func
             .call(cursor, new Message("/blub", List([1, "huhu"])))
