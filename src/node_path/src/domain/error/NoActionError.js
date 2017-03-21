@@ -1,3 +1,5 @@
+// @flow
+
 import ActionError from "./ActionError";
 
 export default class NoActionError extends ActionError {

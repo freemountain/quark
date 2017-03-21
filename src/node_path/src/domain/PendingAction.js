@@ -6,7 +6,6 @@ import Trigger from "./Trigger";
 import State from "./State";
 import Cursor from "./Cursor";
 import InvalidCursorError from "./error/InvalidCursorError";
-import assert from "assert";
 
 type PendingActionData = {
     message:      Message,        // eslint-disable-line
@@ -36,7 +35,7 @@ export default class PendingAction extends Record({
 
     before(action: Action, message: Message): PendingAction {
         const prev0   = this.description ? `${this.name}.${this.state.type}` : action.name;
-        const prev    = this.description.name === action.name ? prev0.replace(".before", "") : prev0;
+        const prev    = this.description instanceof Action && this.description.name === action.name ? prev0.replace(".before", "") : prev0;
         const trigger = action.triggerFor(prev);
 
         return this
@@ -72,19 +71,18 @@ export default class PendingAction extends Record({
             .changeState("finished");
     }
 
-    progress(): Cursor {
+    /* progress(): Cursor {
         assert(false, "PendingAction.progress: implement!");
 
         // hier soll der progress wert hochgesetzt werden um den gegebenen param
         return this;
     }
-
     cancel(): Cursor {
         assert(false, "PendingAction.cancel: implement (use Action.cancel)!");
 
         // hiermit soll die aktuelle action gecanceled, werden + state revert
         return this;
-    }
+    }*/
 
     changeState(type: string): PendingAction {
         const updated = this.update("state", state => state.change(type));
@@ -98,18 +96,19 @@ export default class PendingAction extends Record({
     guards(): Cursor {
         if(!(this._cursor instanceof Cursor)) throw new InvalidCursorError(this._cursor, this.description);
 
-        return this.trigger.shouldTrigger(this._cursor, this.message ? this.message.unboxPayload() : []);
+        return this.trigger.shouldTrigger(this._cursor, this.message instanceof Message ? this.message.unboxPayload() : []);
     }
 
     setCursor(cursor: Cursor): PendingAction {
         return this
             .set("_cursor", cursor)
             .update("state", state => state.setCursor(cursor))
-            .update("message", message => message instanceof Message ? message.setCursor(cursor) : message);
+            .update("message", message => message instanceof Message ? message.setCursor(cursor) : message)
+            .update("previous", previous => previous instanceof PendingAction ? previous.setCursor(cursor) : previous);
     }
 
     get name(): string {
-        return this.description.name;
+        return this.description instanceof Action ? this.description.name : "unknown";
     }
 
     get op(): ?Function {
