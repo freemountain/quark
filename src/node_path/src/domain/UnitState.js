@@ -23,6 +23,7 @@ type UnitStateData = {
     previous?:    ?PendingAction,       // eslint-disable-line
     debug?:       Debug,                // eslint-disable-line
     name:         string,               // eslint-disable-line
+    diffs?:       List<Object>,         // eslint-disable-line
     _cursor?:     Cursor                // eslint-disable-line
 }
 
@@ -33,8 +34,10 @@ export default class UnitState extends Record({
     children:    Map(),
     revision:    0,
     action:      null,
+    previous:    null,
     debug:       new Debug(),
     name:        "Default",
+    diffs:       List(),
     _cursor:     null
 }) {
     constructor(data: UnitStateData) {
@@ -72,6 +75,7 @@ export default class UnitState extends Record({
 
         const updated = this
             .update("debug", debug => debug.endTracing())
+            .set("previous", this.action.setCursor(null))
             .set("action", null)
             .setCursor(null);
 

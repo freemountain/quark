@@ -9,15 +9,23 @@ export default class TestUnit extends Runtime {
     static triggers = {
         action: triggered
             .by("message.before")
-            .if((_, unit) => unit.message.isAction()),
+            .if((...args) => {
+                const unit = args.pop();
+
+                return unit.message.isAction();
+            }),
 
         children: triggered
             .by("message.before")
-            .if(() => true),
+            .if(() => false),
 
         diffs: triggered
             .by("message.before")
-            .if((_, unit) => unit.message.isDiff()),
+            .if((...args) => {
+                const unit = args.pop();
+
+                return unit.message.isDiff();
+            }),
 
         props: triggered.by("message")
     };

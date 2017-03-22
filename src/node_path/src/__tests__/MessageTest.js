@@ -59,11 +59,21 @@ describe("MessageTest", function() {
         expect(message).to.equal(first);
     });
 
+    it("creates a message (5)", function() {
+        const message = new Message("/test");
+
+        expect(message).to.be.an.instanceof(Message);
+        expect(message.toJS()).to.eql({
+            headers:  {},
+            resource: "/test",
+            payload:  []
+        });
+    });
+
     it("creates an invalid message", function() {
         // $FlowFixMe
         expect(() => (new Message("/blub", "huhu")).toJS()).to.throw("InvalidMessageError: Your inputdata is not a valid message, got {\"headers\":{},\"payload\":\"huhu\",\"resource\":\"/blub\",\"_cursor\":null,\"_initial\":\"huhu\"}.");
         expect(() => (new Message("/blub", null)).toJS()).to.throw("InvalidMessageError: Your inputdata is not a valid message, got {\"headers\":{},\"payload\":null,\"resource\":\"/blub\",\"_cursor\":null,\"_initial\":null}.");
-        expect(() => (new Message("/blub", undefined)).toJS()).to.throw("InvalidMessageError: Your inputdata is not a valid message, got {\"headers\":{},\"resource\":\"/blub\",\"_cursor\":null}."); // eslint-disable-line
     });
 
     it("checks the methods", function() {

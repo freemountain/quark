@@ -52,7 +52,7 @@ describe("PendingActionTest", function() {
             message: message
         }).setCursor(cursor));
 
-        expect(() => action.setCursor(null).before(description, message.setCursor(cursor))).to.throw("InvalidCursorError: Invalid cursor of null for \'Test[action]\'.");
+        expect(() => action.setCursor(null).before(description, message.setCursor(cursor))).to.throw("InvalidCursorError: Invalid cursor of null for \'Test::action\'.");
         expect(action.before(description, message.setCursor(cursor)).action.setCursor(null).toJS()).to.eql({
             _cursor:     null,
             _triggers:   false,
@@ -100,7 +100,7 @@ describe("PendingActionTest", function() {
             .before(description, message.setCursor(cursor))
             .action;
 
-        expect(() => action.setCursor(null).guards()).to.throw("InvalidCursorError: Invalid cursor of null for \'Test[action]\'.");
+        expect(() => action.setCursor(null).guards()).to.throw("InvalidCursorError: Invalid cursor of null for \'Test::action\'.");
         expect(action.guards().action.triggers).to.equal(true);
         expect(action.set("message", null).guards().action.triggers).to.equal(true);
     });

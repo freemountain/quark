@@ -69,7 +69,7 @@ describe("TriggerTest", function() {
         const cursor     = (new TestCursor(data))
             ._unit.messageReceived(message);
 
-        expect(() => description.shouldTrigger(new TestCursor(data), [])).to.throw("NoActionError: There is no valid ongoing action, got null instead.");
+        expect(() => description.shouldTrigger(new TestCursor(data), [])).to.throw("NoActionError: There is no valid ongoing action, got 'null' instead.");
 
         return action.func
             .call(cursor, new Message("/blub", List([1, "huhu"])))

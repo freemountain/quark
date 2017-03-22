@@ -219,8 +219,8 @@ describe("ActionTest", function() {
 
         return Promise.all([
             descr.func()
-                .catch(e => expect(e.message).to.equal("Invalid cursor of Action for \'Test[handle]\'.")),
-            descr.func.call(cursor).catch(e => expect(e.message).to.equal("Test::handle could not be processed, because your message is invalid. You gave me null.")),
+                .catch(e => expect(e.message).to.equal("Invalid cursor of Action for \'Test::handle\'.")),
+            descr.func.call(cursor).catch(e => expect(e.message).to.equal("Test::handle could not be processed, because your message is invalid. You gave me 'null'.")),
             descr.func.call(cursor, message).then(x => expect(x.get("test")).to.equal("test")),
             descr2.func.call(cursor, message).catch(e => expect(e).to.equal(error))
         ]);
@@ -253,7 +253,7 @@ describe("ActionTest", function() {
 
         return Promise.all([
             descr.func()
-                .catch(e => expect(e.message).to.equal("Invalid cursor of Action for \'Test[lulu]\'.")),
+                .catch(e => expect(e.message).to.equal("Invalid cursor of Action for \'Test::lulu\'.")),
             descr.func.call(cursor, message).then(x => {
                 expect(x.get("test")).to.equal("test");
                 expect(x.action.state.hasErrored).to.equal(true);
@@ -378,7 +378,7 @@ describe("ActionTest", function() {
                 trigger:     descr.triggers.first()
             })));
 
-        return unit.ready()
+        return unit.ready
             .then(() => unit.handle.call(cursor, message.setCursor(cursor)))
             .then(x => { // eslint-disable-line
                 const result  = x
@@ -399,7 +399,7 @@ describe("ActionTest", function() {
                     id:       4,
                     parent:   null,
                     start:    2,
-                    end:      6,
+                    end:      12,
                     guards:   0,
                     locked:   true,
                     name:     "Test::Message</actions/test>",
@@ -411,7 +411,7 @@ describe("ActionTest", function() {
                         id:       5,
                         parent:   4,
                         start:    3,
-                        end:      5,
+                        end:      11,
                         guards:   0,
                         locked:   true,
                         name:     "Test::message",
@@ -447,7 +447,7 @@ describe("ActionTest", function() {
             return this.set("name", name);
         });
 
-        return unit.ready()
+        return unit.ready
             .then(() => descr.func.call(cursor, "huhu"))
             .then(x => { // eslint-disable-line
                 const result = x
@@ -465,10 +465,10 @@ describe("ActionTest", function() {
                 expect(filtered.toJS()).to.eql(cursor2.toJS());
                 expect(x.action.state.errors.toJS()).to.eql([new UnknownMessageError("Test", "test", "huhu")]);
                 expect(result.debug.traces.toJS()).to.eql([{
-                    id:       4,
+                    id:       3,
                     parent:   null,
                     start:    2,
-                    end:      8,
+                    end:      14,
                     guards:   0,
                     locked:   true,
                     name:     "Test::Message</actions/test>",
@@ -477,10 +477,10 @@ describe("ActionTest", function() {
                     error:    null,
                     trigger:  null,
                     traces:   [{
-                        id:       5,
-                        parent:   4,
+                        id:       4,
+                        parent:   3,
                         start:    3,
-                        end:      7,
+                        end:      13,
                         guards:   0,
                         locked:   true,
                         name:     "Test::message",
@@ -488,10 +488,10 @@ describe("ActionTest", function() {
                         triggers: true,
                         error:    null,
                         traces:   [{
-                            id:       6,
-                            parent:   5,
-                            start:    5,
-                            end:      6,
+                            id:       8,
+                            parent:   4,
+                            start:    11,
+                            end:      12,
                             guards:   0,
                             locked:   true,
                             name:     "Test::test",
@@ -522,7 +522,7 @@ describe("ActionTest", function() {
         const cursor   = (new unit.__Cursor(data))._unit
             .messageReceived(message);
 
-        return unit.ready().then(y => y.message3.call(cursor, message))
+        return unit.ready.then(y => y.message3.call(cursor, message))
             .then(x => {
                 const result  = x._unit.messageProcessed();
                 const cursor2 = cursor
@@ -543,7 +543,7 @@ describe("ActionTest", function() {
                     id:       4,
                     parent:   null,
                     start:    2,
-                    end:      10,
+                    end:      16,
                     guards:   0,
                     locked:   true,
                     name:     "Test::Message</actions/test>",
@@ -552,10 +552,10 @@ describe("ActionTest", function() {
                     error:    null,
                     trigger:  null,
                     traces:   [{
-                        id:       5,
+                        id:       8,
                         parent:   4,
-                        start:    4,
-                        end:      9,
+                        start:    10,
+                        end:      15,
                         guards:   2,
                         locked:   true,
                         name:     "Test::message3",
@@ -564,10 +564,10 @@ describe("ActionTest", function() {
                         error:    null,
                         trigger:  "before",
                         traces:   [{
-                            id:       6,
-                            parent:   5,
-                            start:    5,
-                            end:      6,
+                            id:       9,
+                            parent:   8,
+                            start:    11,
+                            end:      12,
                             guards:   0,
                             locked:   true,
                             name:     "Test::message3<Guard1>",
@@ -577,10 +577,10 @@ describe("ActionTest", function() {
                             trigger:  "guard",
                             traces:   []
                         }, {
-                            id:       7,
-                            parent:   5,
-                            start:    7,
-                            end:      8,
+                            id:       10,
+                            parent:   8,
+                            start:    13,
+                            end:      14,
                             guards:   0,
                             locked:   true,
                             name:     "Test::message3<Guard2>",
@@ -687,7 +687,7 @@ describe("ActionTest", function() {
             }]
         });
 
-        expect(unit.actions()).to.eql({
+        expect(unit.actions).to.eql({
             init: {
                 unit:     "Test3",
                 name:     "init",
@@ -1177,7 +1177,7 @@ describe("ActionTest", function() {
             }
         });
 
-        return unit.ready()
+        return unit.ready
             .then(() => {
                 const cursor2 = cursor._unit
                     .messageReceived(message)
@@ -1206,10 +1206,10 @@ describe("ActionTest", function() {
 
                         expect(filtered.toJS()).to.eql(cursor3.toJS());
                         expect(result.debug.traces.toJS()).to.eql([{
-                            id:       4,
-                            start:    3,
+                            id:       15,
+                            start:    25,
                             parent:   null,
-                            end:      16,
+                            end:      38,
                             guards:   0,
                             locked:   true,
                             name:     "Test::Message</actions/message3>",
@@ -1218,10 +1218,10 @@ describe("ActionTest", function() {
                             error:    null,
                             trigger:  null,
                             traces:   [{
-                                id:       5,
-                                parent:   4,
-                                start:    4,
-                                end:      15,
+                                id:       16,
+                                parent:   15,
+                                start:    26,
+                                end:      37,
                                 guards:   0,
                                 locked:   true,
                                 name:     "Test::message",
@@ -1230,10 +1230,10 @@ describe("ActionTest", function() {
                                 error:    null,
                                 trigger:  null,
                                 traces:   [{
-                                    id:       6,
-                                    parent:   5,
-                                    start:    5,
-                                    end:      10,
+                                    id:       17,
+                                    parent:   16,
+                                    start:    27,
+                                    end:      32,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test2",
@@ -1243,10 +1243,10 @@ describe("ActionTest", function() {
                                     trigger:  "before",
                                     error:    null
                                 }, {
-                                    id:       7,
-                                    parent:   5,
-                                    start:    6,
-                                    end:      13,
+                                    id:       18,
+                                    parent:   16,
+                                    start:    28,
+                                    end:      35,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test7",
@@ -1256,10 +1256,10 @@ describe("ActionTest", function() {
                                     trigger:  "before",
                                     error:    null
                                 }, {
-                                    id:       8,
-                                    parent:   5,
-                                    start:    7,
-                                    end:      14,
+                                    id:       19,
+                                    parent:   16,
+                                    start:    29,
+                                    end:      36,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test8",
@@ -1269,10 +1269,10 @@ describe("ActionTest", function() {
                                     trigger:  "before",
                                     error:    null
                                 }, {
-                                    id:       9,
-                                    parent:   5,
-                                    start:    8,
-                                    end:      11,
+                                    id:       20,
+                                    parent:   16,
+                                    start:    30,
+                                    end:      33,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test9",
@@ -1282,10 +1282,10 @@ describe("ActionTest", function() {
                                     trigger:  "before",
                                     error:    null
                                 }, {
-                                    id:       10,
-                                    parent:   5,
-                                    start:    9,
-                                    end:      12,
+                                    id:       21,
+                                    parent:   16,
+                                    start:    31,
+                                    end:      34,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::test",
@@ -1315,7 +1315,7 @@ describe("ActionTest", function() {
         const cursor  = new unit.__Cursor(data);
         const message = new Message("/actions/message3", List.of("test"));
 
-        return unit.ready()
+        return unit.ready
             .then(x => {
                 const description = cursor._unit.description.get("message");
                 const cursor2     = cursor._unit
@@ -1347,10 +1347,10 @@ describe("ActionTest", function() {
                         expect(y._unit.action.state.errors.toJS()).to.eql([]);
                         expect(filtered.toJS()).to.eql(cursor3.toJS());
                         expect(result.debug.traces.toJS()).to.eql([{
-                            id:       4,
-                            start:    3,
+                            id:       14,
+                            start:    25,
                             parent:   null,
-                            end:      27,
+                            end:      48,
                             guards:   0,
                             locked:   true,
                             name:     "Test::Message</actions/message3>",
@@ -1359,10 +1359,10 @@ describe("ActionTest", function() {
                             error:    null,
                             trigger:  null,
                             traces:   [{
-                                id:       5,
-                                parent:   4,
-                                start:    4,
-                                end:      26,
+                                id:       15,
+                                parent:   14,
+                                start:    26,
+                                end:      47,
                                 guards:   0,
                                 locked:   true,
                                 name:     "Test::message",
@@ -1371,22 +1371,22 @@ describe("ActionTest", function() {
                                 error:    null,
                                 trigger:  null,
                                 traces:   [{
-                                    id:       6,
-                                    parent:   5,
-                                    start:    5,
-                                    end:      8,
+                                    id:       16,
+                                    parent:   15,
+                                    start:    27,
+                                    end:      30,
                                     guards:   1,
                                     locked:   true,
                                     name:     "Test::init",
                                     params:   ["test"],
-                                    triggers: false,
+                                    triggers: true,
                                     error:    null,
                                     trigger:  "before",
                                     traces:   [{
-                                        id:       7,
-                                        parent:   6,
-                                        start:    6,
-                                        end:      7,
+                                        id:       17,
+                                        parent:   16,
+                                        start:    28,
+                                        end:      29,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::init<Guard1>",
@@ -1397,10 +1397,10 @@ describe("ActionTest", function() {
                                         traces:   []
                                     }]
                                 }, {
-                                    id:       8,
-                                    parent:   5,
-                                    start:    10,
-                                    end:      25,
+                                    id:       18,
+                                    parent:   15,
+                                    start:    31,
+                                    end:      46,
                                     guards:   0,
                                     locked:   true,
                                     name:     "Test::message3",
@@ -1409,10 +1409,10 @@ describe("ActionTest", function() {
                                     error:    null,
                                     trigger:  "done",
                                     traces:   [{
-                                        id:       9,
-                                        parent:   8,
-                                        start:    11,
-                                        end:      16,
+                                        id:       19,
+                                        parent:   18,
+                                        start:    32,
+                                        end:      37,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test2",
@@ -1422,10 +1422,10 @@ describe("ActionTest", function() {
                                         trigger:  "before",
                                         error:    null
                                     }, {
-                                        id:       10,
-                                        parent:   8,
-                                        start:    12,
-                                        end:      19,
+                                        id:       20,
+                                        parent:   18,
+                                        start:    33,
+                                        end:      40,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test7",
@@ -1435,10 +1435,10 @@ describe("ActionTest", function() {
                                         trigger:  "before",
                                         error:    null
                                     }, {
-                                        id:       11,
-                                        parent:   8,
-                                        start:    13,
-                                        end:      20,
+                                        id:       21,
+                                        parent:   18,
+                                        start:    34,
+                                        end:      41,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test8",
@@ -1448,10 +1448,10 @@ describe("ActionTest", function() {
                                         trigger:  "before",
                                         error:    null
                                     }, {
-                                        id:       12,
-                                        parent:   8,
-                                        start:    14,
-                                        end:      17,
+                                        id:       22,
+                                        parent:   18,
+                                        start:    35,
+                                        end:      38,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test9",
@@ -1461,10 +1461,10 @@ describe("ActionTest", function() {
                                         trigger:  "before",
                                         error:    null
                                     }, {
-                                        id:       13,
-                                        parent:   8,
-                                        start:    15,
-                                        end:      18,
+                                        id:       23,
+                                        parent:   18,
+                                        start:    36,
+                                        end:      39,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test",
@@ -1474,10 +1474,10 @@ describe("ActionTest", function() {
                                         trigger:  "before",
                                         error:    null
                                     }, {
-                                        id:       14,
-                                        parent:   8,
-                                        start:    21,
-                                        end:      23,
+                                        id:       24,
+                                        parent:   18,
+                                        start:    42,
+                                        end:      44,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test3",
@@ -1487,10 +1487,10 @@ describe("ActionTest", function() {
                                         trigger:  "done",
                                         error:    null
                                     }, {
-                                        id:       15,
-                                        parent:   8,
-                                        start:    22,
-                                        end:      24,
+                                        id:       25,
+                                        parent:   18,
+                                        start:    43,
+                                        end:      45,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test4",
@@ -1521,7 +1521,7 @@ describe("ActionTest", function() {
         const message  = (new Message("/actions/message", List.of("test")));
         const cursor   = new unit.__Cursor(data);
 
-        return unit.ready()
+        return unit.ready
             .then(x => {
                 const description = cursor._unit.description.get("message");
                 const cursor2     = cursor._unit.messageReceived(message);
@@ -1557,10 +1557,10 @@ describe("ActionTest", function() {
                         ]);
 
                         expect(result.debug.traces.toJS()).to.eql([{
-                            id:       4,
-                            start:    3,
+                            id:       9,
+                            start:    14,
                             parent:   null,
-                            end:      50,
+                            end:      60,
                             guards:   0,
                             locked:   true,
                             name:     "Test::Message</actions/message>",
@@ -1569,10 +1569,10 @@ describe("ActionTest", function() {
                             error:    null,
                             trigger:  null,
                             traces:   [{
-                                id:       5,
-                                parent:   4,
-                                start:    4,
-                                end:      49,
+                                id:       10,
+                                parent:   9,
+                                start:    15,
+                                end:      59,
                                 guards:   0,
                                 locked:   true,
                                 name:     "Test::message",
@@ -1581,22 +1581,22 @@ describe("ActionTest", function() {
                                 error:    null,
                                 trigger:  null,
                                 traces:   [{
-                                    id:       6,
-                                    parent:   5,
-                                    start:    5,
-                                    end:      8,
+                                    id:       11,
+                                    parent:   10,
+                                    start:    16,
+                                    end:      32,
                                     guards:   1,
                                     locked:   true,
                                     name:     "Test::init",
                                     params:   ["test"],
-                                    triggers: false,
+                                    triggers: true,
                                     error:    null,
                                     trigger:  "before",
                                     traces:   [{
-                                        id:       7,
-                                        parent:   6,
-                                        start:    6,
-                                        end:      7,
+                                        id:       12,
+                                        parent:   11,
+                                        start:    17,
+                                        end:      18,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::init<Guard1>",
@@ -1607,20 +1607,20 @@ describe("ActionTest", function() {
                                         traces:   []
                                     }]
                                 }, {
-                                    id:       8,
-                                    parent:   5,
-                                    start:    9,
-                                    end:      48,
+                                    id:       13,
+                                    parent:   10,
+                                    start:    19,
+                                    end:      58,
                                     guards:   1,
                                     locked:   true,
                                     name:     "Test::test",
                                     params:   ["test"],
                                     triggers: true,
                                     traces:   [{
-                                        id:       9,
-                                        parent:   8,
-                                        start:    10,
-                                        end:      11,
+                                        id:       14,
+                                        parent:   13,
+                                        start:    20,
+                                        end:      21,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test<Guard1>",
@@ -1630,20 +1630,20 @@ describe("ActionTest", function() {
                                         trigger:  "guard",
                                         traces:   []
                                     }, {
-                                        id:       10,
-                                        parent:   8,
-                                        start:    12,
-                                        end:      25,
+                                        id:       15,
+                                        parent:   13,
+                                        start:    22,
+                                        end:      35,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test2",
                                         params:   ["test"],
                                         triggers: true,
                                         traces:   [{
-                                            id:       15,
-                                            parent:   10,
-                                            start:    21,
-                                            end:      24,
+                                            id:       20,
+                                            parent:   15,
+                                            start:    30,
+                                            end:      34,
                                             guards:   0,
                                             locked:   true,
                                             name:     "Test::test2Error",
@@ -1656,10 +1656,10 @@ describe("ActionTest", function() {
                                         trigger: "before",
                                         error:   new Error("an error2")
                                     }, {
-                                        id:       11,
-                                        parent:   8,
-                                        start:    13,
-                                        end:      23,
+                                        id:       16,
+                                        parent:   13,
+                                        start:    23,
+                                        end:      33,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::test3",
@@ -1669,20 +1669,20 @@ describe("ActionTest", function() {
                                         trigger:  "before",
                                         error:    new Error("an error3")
                                     }, {
-                                        id:       12,
-                                        parent:   8,
-                                        start:    14,
-                                        end:      19,
+                                        id:       17,
+                                        parent:   13,
+                                        start:    24,
+                                        end:      29,
                                         guards:   3,
                                         locked:   true,
                                         name:     "Test::test5",
                                         params:   ["test"],
                                         triggers: false,
                                         traces:   [{
-                                            id:       13,
-                                            parent:   12,
-                                            start:    15,
-                                            end:      16,
+                                            id:       18,
+                                            parent:   17,
+                                            start:    25,
+                                            end:      26,
                                             guards:   0,
                                             locked:   true,
                                             name:     "Test::test5<Guard1>",
@@ -1692,10 +1692,10 @@ describe("ActionTest", function() {
                                             trigger:  "guard",
                                             traces:   []
                                         }, {
-                                            id:       14,
-                                            parent:   12,
-                                            start:    17,
-                                            end:      18,
+                                            id:       19,
+                                            parent:   17,
+                                            start:    27,
+                                            end:      28,
                                             guards:   0,
                                             locked:   true,
                                             name:     "Test::test5<Guard2>",
@@ -1708,10 +1708,10 @@ describe("ActionTest", function() {
                                         trigger: "before",
                                         error:   null
                                     }, {
-                                        id:       16,
-                                        parent:   8,
-                                        start:    26,
-                                        end:      47,
+                                        id:       21,
+                                        parent:   13,
+                                        start:    36,
+                                        end:      57,
                                         guards:   0,
                                         locked:   true,
                                         name:     "Test::testError",
@@ -1720,10 +1720,10 @@ describe("ActionTest", function() {
                                         error:    null,
                                         trigger:  "error",
                                         traces:   [{
-                                            id:       17,
-                                            parent:   16,
-                                            start:    27,
-                                            end:      46,
+                                            id:       22,
+                                            parent:   21,
+                                            start:    37,
+                                            end:      56,
                                             guards:   0,
                                             locked:   true,
                                             name:     "Test::test4",
@@ -1732,10 +1732,10 @@ describe("ActionTest", function() {
                                             error:    new Error("an error4"),
                                             trigger:  "done",
                                             traces:   [{
-                                                id:       20,
-                                                parent:   17,
-                                                start:    33,
-                                                end:      36,
+                                                id:       25,
+                                                parent:   22,
+                                                start:    43,
+                                                end:      46,
                                                 guards:   1,
                                                 locked:   true,
                                                 name:     "Test::test7",
@@ -1744,10 +1744,10 @@ describe("ActionTest", function() {
                                                 error:    null,
                                                 trigger:  "error",
                                                 traces:   [{
-                                                    id:       21,
-                                                    parent:   20,
-                                                    start:    34,
-                                                    end:      35,
+                                                    id:       26,
+                                                    parent:   25,
+                                                    start:    44,
+                                                    end:      45,
                                                     guards:   0,
                                                     locked:   true,
                                                     name:     "Test::test7<Guard1>",
@@ -1758,10 +1758,10 @@ describe("ActionTest", function() {
                                                     traces:   []
                                                 }]
                                             }, {
-                                                id:       22,
-                                                parent:   17,
-                                                start:    37,
-                                                end:      42,
+                                                id:       27,
+                                                parent:   22,
+                                                start:    47,
+                                                end:      52,
                                                 guards:   0,
                                                 locked:   true,
                                                 name:     "Test::test4Error",
@@ -1771,10 +1771,10 @@ describe("ActionTest", function() {
                                                 trigger:  "error",
                                                 traces:   []
                                             }, {
-                                                id:       23,
-                                                parent:   17,
-                                                start:    38,
-                                                end:      43,
+                                                id:       28,
+                                                parent:   22,
+                                                start:    48,
+                                                end:      53,
                                                 guards:   0,
                                                 locked:   true,
                                                 name:     "Test::test4Error2",
@@ -1784,10 +1784,10 @@ describe("ActionTest", function() {
                                                 trigger:  "error",
                                                 traces:   []
                                             }, {
-                                                id:       24,
-                                                parent:   17,
-                                                start:    39,
-                                                end:      45,
+                                                id:       29,
+                                                parent:   22,
+                                                start:    49,
+                                                end:      55,
                                                 guards:   0,
                                                 locked:   true,
                                                 name:     "Test::test4Error3",
@@ -1796,10 +1796,10 @@ describe("ActionTest", function() {
                                                 error:    new Error("an error5"),
                                                 trigger:  "error",
                                                 traces:   [{
-                                                    id:       25,
-                                                    parent:   24,
-                                                    start:    40,
-                                                    end:      44,
+                                                    id:       30,
+                                                    parent:   29,
+                                                    start:    50,
+                                                    end:      54,
                                                     guards:   0,
                                                     locked:   true,
                                                     name:     "Test::test4Error3Error",
@@ -1811,10 +1811,10 @@ describe("ActionTest", function() {
                                                 }]
                                             }]
                                         }, {
-                                            id:       18,
-                                            parent:   16,
-                                            start:    28,
-                                            end:      31,
+                                            id:       23,
+                                            parent:   21,
+                                            start:    38,
+                                            end:      41,
                                             guards:   1,
                                             locked:   true,
                                             name:     "Test::test6",
@@ -1823,10 +1823,10 @@ describe("ActionTest", function() {
                                             error:    null,
                                             trigger:  "done",
                                             traces:   [{
-                                                id:       19,
-                                                parent:   18,
-                                                start:    29,
-                                                end:      30,
+                                                id:       24,
+                                                parent:   23,
+                                                start:    39,
+                                                end:      40,
                                                 guards:   0,
                                                 locked:   true,
                                                 name:     "Test::test6<Guard1>",

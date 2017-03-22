@@ -64,7 +64,7 @@ describe("StateTest", function() {
         const message    = new Message("/actions/test", List());
 
         expect(() => state.error(e)).to.throw("InvalidCursorError: Invalid cursor of null for unknown action.");
-        expect(() => state.setCursor(cursor).error(e)).to.throw("NoActionError: There is no valid ongoing action, got null instead.");
+        expect(() => state.setCursor(cursor).error(e)).to.throw("NoActionError: There is no valid ongoing action, got 'null' instead.");
 
         const updated = cursor.update("_unit", unit => unit.set("action", new PendingAction({
             message: message

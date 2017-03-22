@@ -17,6 +17,6 @@ describe("UnboxResultTest", function() {
         const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
         const cursor     = new UnitCursor(data);
 
-        expect(() => unboxResult(cursor, new Error("huhu"))).to.throw("NoActionError: There is no valid ongoing action, got null instead.");
+        expect(() => unboxResult(cursor, new Error("huhu"))).to.throw("NoActionError: There is no valid ongoing action, got 'null' instead.");
     });
 });

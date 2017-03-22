@@ -72,7 +72,7 @@ class Cursor {
         inherited.prototype.constructor = inherited;
         inherited.prototype.__inherited = true;
         inherited.prototype.__actions   = description.map((action, key) => function(...payload: Array<mixed>) {
-            const message = new Message(key, List(payload), this.__headers);
+            const message = new Message(`/actions/${key}`, List(payload), this.__headers);
             const cursor  = this.__cursor;
             const func    = action.func.bind(cursor, message);
 

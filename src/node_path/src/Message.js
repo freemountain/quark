@@ -30,7 +30,7 @@ export default class Message extends Record({
         return data;
     }
 
-    constructor(resource: (string | Message | { resource: string, payload?: ?List<*>, headers?: ?Map<string, *> }), payload?: ?List<*>, headers?: Map<string, *> = Map()) { // eslint-disable-line
+    constructor(resource: (string | Message | { resource: string, payload?: ?List<*>, headers?: ?Map<string, *> }), payload?: ?List<*> = List(), headers?: Map<string, *> = Map()) { // eslint-disable-line
         const data = fromJS(typeof resource === "string" ? { resource, headers, payload, _initial: payload } : resource);
 
         super(data);

@@ -3,11 +3,13 @@ import { expect } from "chai";
 import TestUnit from "./mocks/TestUnit";
 import DeclaredAction from "../domain/DeclaredAction";
 import DeclaredTrigger from "../domain/DeclaredTrigger";
-import { List, Map } from "immutable";
+import { List, Map, fromJS } from "immutable";
 import Uuid from "../util/Uuid";
 import sinon from "sinon";
 import UnitState from "../domain/UnitState";
 import Message from "../Message";
+import GuardError from "../domain/error/GuardError";
+import Action from "../domain/Action";
 
 const triggered = DeclaredAction.triggered;
 
@@ -24,11 +26,63 @@ class Inheritance extends TestUnit {
     };
 }
 
-class Inheritance2 extends TestUnit {
+class Inheritance3 extends TestUnit {}
+
+class Inheritance2 extends Inheritance3 {
     static props = {};
 
     message3(payload: { name: string }) {
         return this.set("name", payload.name);
+    }
+}
+
+class Inheritance4 extends Inheritance3 {
+    static triggers = {
+        handle: triggered.by("lulu")
+    }
+}
+
+class Inheritance5 extends Inheritance {
+    static triggers = {
+        blub: triggered.by("bla")
+    }
+}
+
+class Inheritance6 extends Inheritance5 {
+    static triggers = {
+        blub: triggered.by("bla")
+    }
+}
+
+class Inheritance7 extends Inheritance2 {
+    static props = {
+        blub: "haha"
+    }
+}
+
+class Inheritance8 extends Inheritance7 {
+    static props = {
+        blub: "huhu"
+    }
+}
+
+class Inheritance9 extends Inheritance8 {
+    static props = {
+        blob: "haha"
+    }
+}
+
+class WrongInheritedProps extends Inheritance9 {
+    static props = []
+}
+
+class ThrowsError extends Runtime {
+    static triggers = {
+        test: triggered
+            .by("message")
+            .if(() => {
+                throw new Error("something's wrong");
+            })
     }
 }
 
@@ -71,8 +125,137 @@ describe("RuntimeTest", function() {
         ]);
     });
 
+    it("transforms declarative triggers to imperative triggers", function() {
+        const triggers   = Runtime.allTriggers(new Inheritance6());
+        const imperative = Runtime.declToImpTriggers(triggers);
+
+        expect(fromJS(imperative.toJS()).map(x => x.set("guards", x.get("guards").size)).toJS()).to.eql([{
+            action: "init",
+            delay:  0,
+            emits:  "init",
+            guards: 0,
+            params: []
+        }, {
+            action: "message.before",
+            delay:  0,
+            emits:  "init",
+            guards: 1,
+            params: []
+        }, {
+            action: "action",
+            delay:  0,
+            emits:  "action",
+            guards: 0,
+            params: []
+        }, {
+            action: "message.before",
+            delay:  0,
+            emits:  "action",
+            guards: 1,
+            params: []
+        }, {
+            action: "children",
+            delay:  0,
+            emits:  "children",
+            guards: 0,
+            params: []
+        }, {
+            action: "message.before",
+            delay:  0,
+            emits:  "children",
+            guards: 1,
+            params: []
+        }, {
+            action: "diffs",
+            delay:  0,
+            emits:  "diffs",
+            guards: 0,
+            params: []
+        }, {
+            action: "message.before",
+            delay:  0,
+            emits:  "diffs",
+            guards: 1,
+            params: []
+        }, {
+            action: "message",
+            delay:  0,
+            emits:  "props",
+            guards: 0,
+            params: []
+        }, {
+            action: "props",
+            delay:  0,
+            emits:  "props",
+            guards: 0,
+            params: []
+        }, {
+            action: "test",
+            delay:  0,
+            emits:  "props",
+            guards: 0,
+            params: []
+        }, {
+            action: "blub",
+            delay:  0,
+            emits:  "blub",
+            guards: 0,
+            params: []
+        }, {
+            action: "bla",
+            delay:  0,
+            emits:  "blub",
+            guards: 0,
+            params: []
+        }]);
+    });
+
     it("extracts all triggers from an instance", function() {
-        const triggers = Runtime.allTriggers(new Inheritance());
+        const triggers  = Runtime.allTriggers(new Inheritance());
+        const triggers2 = Runtime.allTriggers(new Inheritance2());
+
+        expect(() => Runtime.allTriggers(new Inheritance4())).to.throw("InvalidTriggerError: You are trying to define a trigger for the LifecycleHandler \'handle\'. This is not possible.");
+        expect(triggers2.toJS()).to.eql({
+            action: {
+                name:     "action",
+                triggers: [
+                    (new DeclaredTrigger("action")).toJS(),
+                    (new DeclaredTrigger("message.before", List([() => true]))).toJS()
+                ]
+            },
+
+            children: {
+                name:     "children",
+                triggers: [
+                    (new DeclaredTrigger("children")).toJS(),
+                    (new DeclaredTrigger("message.before", List([() => true]))).toJS()
+                ]
+            },
+
+            diffs: {
+                name:     "diffs",
+                triggers: [
+                    (new DeclaredTrigger("diffs")).toJS(),
+                    (new DeclaredTrigger("message.before", List([() => true]))).toJS()
+                ]
+            },
+
+            init: {
+                name:     "init",
+                triggers: [
+                    (new DeclaredTrigger("init")).toJS(),
+                    (new DeclaredTrigger("message.before", List([() => true]))).toJS()
+                ]
+            },
+
+            props: {
+                name:     "props",
+                triggers: [
+                    (new DeclaredTrigger("props")).toJS(),
+                    (new DeclaredTrigger("message")).toJS()
+                ]
+            }
+        });
 
         expect(triggers.toJS()).to.eql({
             action: {
@@ -126,10 +309,24 @@ describe("RuntimeTest", function() {
         });
     });
 
+    it("merges all properties in an inheritance chain", function() {
+        const properties = Runtime.allProperties(new Inheritance9());
+
+        expect(properties.toJS()).to.eql({
+            blob: "haha",
+            blub: "huhu"
+        });
+
+        expect(() => Runtime.allProperties(new WrongInheritedProps())).to.throw("NotMergeableError: Props of type \'List\' of \'Inheritance9\' can\'t be merged with \'Map\' of \'Inheritance8\'.");
+    });
+
     it("creates an extended Runtime and checks the actions", function() {
         const unit = new TestUnit();
 
-        expect(unit.actions()).to.eql({
+        expect(new TestUnit(unit)).to.equal(unit);
+        expect(unit.traces.toJS()).to.eql([]);
+        expect(Runtime.toUnit(unit, unit.constructor.prototype)).to.equal(unit);
+        expect(unit.actions).to.eql({
             message: {
                 unit:   "TestUnit",
                 name:   "message",
@@ -467,7 +664,7 @@ describe("RuntimeTest", function() {
     it("it calls some methods", function() {
         const unit = new Inheritance2();
 
-        expect(unit.state()).to.eql(null);
+        expect(unit.state).to.eql(null);
 
         const data = Map({
             name:  "jupp",
@@ -508,26 +705,69 @@ describe("RuntimeTest", function() {
         });
     });
 
-/* it("creates an inherited runtime and checks the initial cursor", function() {
+    it("it checks for unrecoverable errors", function(cb) {
+        const unit = new ThrowsError();
+
+        unit.on("error", error => {
+            try {
+                expect(error).to.eql(new GuardError("ThrowsError", "test", 0, new Error("something's wrong")));
+                return cb();
+            } catch(e) {
+                return cb(e);
+            }
+        });
+
+        unit.trigger(new Message("/actions/test"));
+    });
+
+    it("it checks blocking", function() {
+        const unit = new Inheritance9();
+
+        return unit.trigger(new Message("/actions/test"))
+            .then(x => {
+                expect(x.cursor._unit.previous.state.errors.toJS()).to.eql([]);
+                expect(x.cursor.filter((_, key) => key !== "_unit").toJS()).to.eql({
+                    blub: "huhu",
+                    blob: "haha"
+                });
+
+                 /* expect(x.traces.toJS()).to.eql([{
+                end:      null,
+                error:    null,
+                guards:   0,
+                start:    2,
+                locked:   false,
+                triggers: true,
+                params:   [{
+                    name: "jupp"
+                }],
+                traces: [],
+                name:   "Inheritance::Message</actions/init>"
+            }]);*/
+            });
+    });
+
+    it("creates an inherited runtime and checks the initial cursor", function() {
         const unit = new Inheritance();
 
-        expect(unit.state()).to.eql(null);
+        expect(unit.state).to.eql(null);
 
-        return unit.ready()
+        return unit.ready
             .then(() => {
-                expect(unit.state()).to.eql({
+                expect(unit.state).to.eql({
                     _unit: {
                         revision: 1,
                         name:     "Inheritance",
-                        children: {},
-                        errors:   []
+                        children: {}
                     },
                     name:     "Jupp",
                     age:      40,
                     loggedIn: false
                 });
 
-                expect(unit.traces().map(x => x.toJS()).toJS()).to.eql([{
+                expect(unit.traces.size).to.eql(1);
+
+            /* expect(unit.traces().map(x => x.toJS()).toJS()).to.eql([{
                     name:     "Inheritance::Message</actions/init>",
                     id:       3,
                     end:      22,
@@ -714,7 +954,42 @@ describe("RuntimeTest", function() {
                             traces: []
                         }]
                     }]
-                }]);
+            }]);*/
             });
-    });*/
+    });
+
+    it("checks a couple of assertions in actions and lifecycle handler", function() { // eslint-disable-line
+        const unit = new TestUnit();
+        const data = Map({
+            name:  "jupp",
+            _unit: new UnitState({
+                id:   "blub",
+                name: "Inheritance"
+            })
+        });
+
+        const cursor    = new unit.__Cursor(data);
+        const noMessage = cursor
+            ._unit.messageReceived(new Message("/actions/test"))
+            .update("_unit", x => x.set("action", x.action.set("message", null)));
+
+        expect(() => Runtime.prototype.init.call()).to.throw("InvalidCursorError: Invalid cursor of undefined for \'Runtime::init\'.");
+
+        expect(() => Runtime.prototype.handle.call()).to.throw("InvalidCursorError: Invalid cursor of undefined for \'Runtime::handle\'.");
+        expect(() => Runtime.prototype.handle.call(cursor)).to.throw("NoActionError: There is no valid ongoing action, got 'null' instead.");
+        expect(() => Runtime.prototype.handle.call(noMessage)).to.throw("UnknownMessageError: Runtime::handle could not be processed, because your message is invalid. You gave me 'null'.");
+
+        expect(() => Runtime.prototype.triggers.call()).to.throw("InvalidCursorError: Invalid cursor of undefined for \'Runtime::triggers\'.");
+        expect(() => Runtime.prototype.triggers.call(cursor)).to.throw("NoActionError: There is no valid ongoing action, got 'null' instead.");
+        expect(() => Runtime.prototype.triggers.call(noMessage)).to.throw("UnknownMessageError: Runtime::triggers could not be processed, because your message is invalid. You gave me 'null'.");
+
+        expect(() => Runtime.prototype.message.call()).to.throw("InvalidCursorError: Invalid cursor of undefined for \'Runtime::message\'.");
+        expect(() => Runtime.prototype.message.call(cursor)).to.throw("NoActionError: There is no valid ongoing action, got 'undefined' instead.");
+        expect(() => Runtime.prototype.message.call(cursor, new Action("Inheritance", "test"))).to.throw("UnknownMessageError: Runtime::message could not be processed, because your message is invalid. You gave me 'undefined'.");
+
+        expect(() => Runtime.prototype.guards.call()).to.throw("InvalidCursorError: Invalid cursor of undefined for \'Runtime::guards\'.");
+        expect(() => Runtime.prototype.guards.call(cursor)).to.throw("NoActionError: There is no valid ongoing action, got 'null' instead.");
+
+        expect(() => Runtime.prototype.receive.call()).to.throw("InvalidCursorError: Invalid cursor of undefined for \'Runtime::receive\'.");
+    });
 });

@@ -42,6 +42,7 @@ describe("UnitStateTest", function() {
             id:          "id",
             revision:    0,
             action:      null,
+            previous:    null,
             description: {
                 message: {
                     name:     "message",
@@ -63,7 +64,8 @@ describe("UnitStateTest", function() {
             debug: {
                 traces:  [],
                 _cursor: null
-            }
+            },
+            diffs: []
         });
 
         expect(internals.get("description").toJS()).to.eql({
@@ -95,10 +97,10 @@ describe("UnitStateTest", function() {
         });
 
         expect(() => internals.messageProcessed()).to.throw("NotStartedError: Can\'t finish a message before starting.");
-        expect(() => internals.messageReceived(message)).to.throw("InvalidCursorError: Invalid cursor of null for \'blub[message]\'.");
+        expect(() => internals.messageReceived(message)).to.throw("InvalidCursorError: Invalid cursor of null for \'blub::message\'.");
         expect(internals.setCursor(cursor).messageReceived(message).action.message.setCursor(null).toJS()).to.eql(message.toJS());
         expect(() => internals.setCursor(cursor).messageReceived(message)._unit.messageReceived(message)).to.throw("AlreadyReceivedError: Can\'t start a message, if another message is currently processed.");
-        expect(() => internals.setCursor(cursor).messageReceived(message)._unit.setCursor(null).messageProcessed()).to.throw("InvalidCursorError: Invalid cursor of null for \'blub[message]\'.");
+        expect(() => internals.setCursor(cursor).messageReceived(message)._unit.setCursor(null).messageProcessed()).to.throw("InvalidCursorError: Invalid cursor of null for \'blub::message\'.");
         expect(internals.setCursor(cursor).messageReceived(message)._unit.messageProcessed().action).to.equal(null);
     });
 
@@ -163,6 +165,8 @@ describe("UnitStateTest", function() {
                     _cursor: null
                 }
             },
+            previous:    null,
+            diffs:       [],
             children:    {},
             history:     [],
             id:          "id",
@@ -257,11 +261,13 @@ describe("UnitStateTest", function() {
                 error:    null,
                 previous: null
             },
+            diffs:       [],
             history:     [],
             children:    {},
             id:          "id",
             name:        "blub",
             revision:    0,
+            previous:    null,
             description: {
                 message: {
                     name:     "message",

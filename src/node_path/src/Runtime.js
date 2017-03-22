@@ -1,19 +1,21 @@
 import { Duplex } from "stream";
-import assert from "assert";
 import { Map, List, fromJS } from "immutable";
-import curry from "lodash.curry";
 import Trigger from "./domain/Trigger";
 import Action from "./domain/Action";
 import DeclaredAction from "./domain/DeclaredAction";
 import DeclaredTrigger from "./domain/DeclaredTrigger";
 import Cursor from "./domain/Cursor";
-import defaults from "set-default-value";
 import Uuid from "./util/Uuid";
 import { schedule } from "./Runloop";
 import UnitState from "./domain/UnitState";
 import Message from "./Message";
 import Trace from "./telemetry/Trace";
 import PendingAction from "./domain/PendingAction";
+import InvalidTriggerError from "./error/InvalidTriggerError";
+import NotMergeableError from "./error/NotMergeableError";
+import InvalidCursorError from "./domain/error/InvalidCursorError";
+import UnknownMessageError from "./domain/error/UnknownMessageError";
+import NoActionError from "./domain/error/NoActionError";
 
 export default class Runtime extends Duplex {
     id:               string;                  // eslint-disable-line
@@ -31,9 +33,9 @@ export default class Runtime extends Duplex {
     get:              string => any            // eslint-disable-line
     handle:           any => Cursor;           // eslint-disable-line
 
-    static SetAction = curry(function(key, value) {
+    /* static SetAction = curry(function(key, value) {
         return this.set(key, value);
-    });
+    });*/
 
     static is(x: *): boolean {
         return x instanceof Runtime;
@@ -48,13 +50,15 @@ export default class Runtime extends Duplex {
 
     static StateFilter(_: *, key: string): boolean {
         return (
+            key !== "_cursor" &&
             key !== "description" &&
             key !== "id" &&
             key !== "history" &&
             key !== "diffs" &&
             key !== "action" &&
             key !== "history" &&
-            key !== "traces" &&
+            key !== "debug" &&
+            key !== "previous" &&
             key !== "id" &&
             key !== "current"
         );
@@ -89,8 +93,8 @@ export default class Runtime extends Duplex {
 
         const keys    = Object.getOwnPropertyNames(proto);
         const actions = List(keys)
-            .filter(y => proto[y] instanceof Function)
             .filter(Runtime.ActionFilter)
+            .filter(y => proto[y] instanceof Function)
             .reduce((dest, key) => dest.set(key, x[key]), Map());
 
         return Runtime.allActions(proto, actions.merge(carry));
@@ -101,9 +105,9 @@ export default class Runtime extends Duplex {
 
         if(proto === Duplex.prototype) return carry;
 
-        const triggers = Map(proto.constructor.triggers || {})
+        const triggers = Map(proto.constructor.triggers)
             .map((y, key) => {
-                if(Action.isLifeCycleHandler(key)) throw new Error("can't use triggers with LifecycleHandlers");
+                if(Action.isLifeCycleHandler(key)) throw new InvalidTriggerError(key);
 
                 return y.setName(key);
             });
@@ -111,16 +115,30 @@ export default class Runtime extends Duplex {
         return Runtime.allTriggers(proto, triggers.mergeWith((prev, next) => prev.merge(next), carry));
     }
 
+    static allProperties(x, y) { // eslint-disable-line
+        const proto = Object.getPrototypeOf(x);
+        const carry = !y ? fromJS(x.constructor.props || {}) : y;
+
+        if(proto === Duplex.prototype) return carry;
+
+        const additional = fromJS(x.constructor.props || new carry.constructor());
+
+        if(!(additional instanceof carry.constructor)) throw new NotMergeableError(x, carry, proto, additional);
+
+        return Runtime.allProperties(proto, additional.merge(carry));
+    }
+
     static declToImpTriggers(triggers: Object): List<Trigger> {
         return Map(triggers)
             .reduce((dest, x, key) => dest.concat(x.triggers.map(y => new Trigger(key, y))), List())
             .groupBy(x => `${x.action}-${x.emits}`)
-            .map(x => x.shift().reduce((dest, y) => dest.merge(y), x.first()))
+            .map(x => x.first())
+            // .map(x => x.shift().reduce((dest, y) => dest.merge(y), x.first()))
             .toList();
     }
 
     static toUnit(instance: Object, proto: Object): Object {
-        if(Object.hasOwnProperty(proto, "__Unit")) return instance;
+        if(proto.hasOwnProperty("__Unit")) return instance;
 
         const triggers = Runtime.declToImpTriggers(Runtime.allTriggers(instance));
         const name     = instance.constructor.name;
@@ -141,7 +159,8 @@ export default class Runtime extends Duplex {
         proto.__triggers        = triggers;
         proto.__actions         = actions;
         proto.__Cursor          = Cursor.for(instance, actions);
-        proto.__sendableActions = actions.map((action, key) => function(...payload: Array<mixed>) {
+
+        /* proto.__sendableActions = actions.map((action, key) => function(...payload: Array<mixed>) {
             return this.__unit.trigger({
                 resource: key,
                 payload:  payload,
@@ -155,10 +174,9 @@ export default class Runtime extends Duplex {
             this.__delay = delay;
 
             return Object.assign({}, this);
-        }).toJS();
+        }).toJS();*/
 
         Object.assign(proto, actions.map(action => action.func).toJS());
-
 
         Object.defineProperty(proto, "__Unit", {
             writeable:    false,
@@ -174,7 +192,7 @@ export default class Runtime extends Duplex {
         init: DeclaredAction.triggered
             .by("message.before")
             .if((...args) => {
-                const unit = args[args.length - 1];
+                const unit = args.pop();
 
                 return (
                     unit.message.isAction() &&
@@ -184,22 +202,22 @@ export default class Runtime extends Duplex {
     };
 
     constructor(bindings?: ?Object) { // eslint-disable-line
-        if(bindings instanceof Runtime) return bindings;
-
         super({
             objectMode: true
         });
 
+        if(bindings instanceof Runtime) return bindings;
+
         const id           = Uuid.uuid();
         const proto        = Object.getPrototypeOf(this);
         const unit         = Runtime.toUnit(this, proto, bindings);
-        const properties   = fromJS(proto.constructor.props || {});
-        const deps         = properties.filter(Runtime.is);
+        const properties   = Runtime.allProperties(proto);
+        // const deps         = properties.filter(Runtime.is);
         const initialProps = properties
             .merge(fromJS(bindings))
             .filter(Runtime.ValueFilter)
             // TODO: use deps
-            .merge(deps.map(() => null))
+            // .merge(deps.map(() => null))
             .set("_unit", new UnitState({
                 description: unit.__actions,
                 id:          id,
@@ -217,7 +235,7 @@ export default class Runtime extends Duplex {
         this.readyPromise = unit
             .trigger(new Message("/actions/init", List.of(initialProps)));
 
-        this.ready()
+        this.ready
             .then(() => {
                 this.isReady = true;
             });
@@ -226,21 +244,21 @@ export default class Runtime extends Duplex {
     }
 
     // zu gettern
-    ready(): Promise<Runtime> {
+    get ready(): Promise<Runtime> {
         return this.readyPromise;
     }
 
-    state(): ?Object {
+    get state(): ?Object {
         if(!(this.cursor instanceof Cursor)) return null;
 
         return this.cursor.update("_unit", x => x.toMap().filter(Runtime.StateFilter)).toJS();
     }
 
-    actions(): Map<string, Object> {
+    get actions(): Map<string, Object> {
         return this.description.map(x => x.toJS()).toJS();
     }
 
-    traces(): List<Trace> {
+    get traces(): List<Trace> {
         return !(this.cursor instanceof Cursor) ? List() : this.cursor.debug.traces;
     }
 
@@ -256,14 +274,16 @@ export default class Runtime extends Duplex {
         this.locked = true;
 
         const message = new Message(data);
-        const cursor  = defaults(this.cursor).to(new this.__Cursor(message.payload.first(), this));
+        const cursor  = !(this.cursor instanceof Cursor) ? new this.__Cursor(message.payload.first(), this) : this.cursor;
 
         return cursor.send.receive(message.setCursor(cursor))
-            // .then(x => x.send.message())
+            .then(x => x.send.message(x.action.description, x.message))
             .then(x => this.emitIfNotRevoverable(x))
-            .then(x => x.send.diff(cursor))
-            .then(x => x.send.finish())
+            .then(x => x instanceof Cursor ? x.send.diff(cursor) : x)
+            .then(x => x instanceof Cursor ? x.send.finish() : x)
             .then(x => {
+                if(!(x instanceof Cursor)) return this;
+
                 this.cursor = x;
                 this.locked = false;
 
@@ -272,13 +292,13 @@ export default class Runtime extends Duplex {
     }
 
     emitIfNotRevoverable(cursor: Cursor) {
-        if(!cursor.action.state.isRecoverable) return this.emit("error", cursor.action.state.currentError);
+        if(cursor.action.state.isRecoverable) return cursor;
 
-        return cursor;
+        return this.emit("error", cursor.action.state.currentError);
     }
 
     init(): Cursor {
-        if(!(this instanceof Cursor)) throw new Error("fucking cursor");
+        if(!(this instanceof Cursor)) throw new InvalidCursorError(this, new Action("Runtime", "init"));
 
         return this;
     }
@@ -286,14 +306,14 @@ export default class Runtime extends Duplex {
     diff(previous: Cursor) {
         return this.update("_unit", x => x
             .update("revision", y => y + 1)
-            .update("history", y => y.push(previous)))
-            .set("diffs", this.diff(previous));
+            .update("history", y => y.push(previous))
+            .set("diffs", this.diff(previous)));
     }
 
     handle(): Promise<Cursor> { // eslint-disable-line
-        if(!(this instanceof Cursor))               throw new Error("fucking cursor");
-        if(!(this.message instanceof Message))      throw new Error("fucking cursor");
-        if(!(this.action instanceof PendingAction)) throw new Error("fucking cursor");
+        if(!(this instanceof Cursor))               throw new InvalidCursorError(this, new Action("Runtime", "handle"));
+        if(!(this.action instanceof PendingAction)) throw new NoActionError(this.action);
+        if(!(this.message instanceof Message))      throw new UnknownMessageError("Runtime", "handle", this.message);
 
         try {
             if(this.action.name === "message") return this;
@@ -328,9 +348,9 @@ export default class Runtime extends Duplex {
     }
 
     message(description: Action, message: Message): Promise<Cursor> {
-        if(!(this instanceof Cursor))        throw new Error("fucking Cursor");
-        if(!(description instanceof Action)) throw new Error("fucking action");
-        if(!(message instanceof Message))    throw new Error("fucking message");
+        if(!(this instanceof Cursor))        throw new InvalidCursorError(this, new Action("Runtime", "message"));
+        if(!(description instanceof Action)) throw new NoActionError(description);
+        if(!(message instanceof Message))    throw new UnknownMessageError("Runtime", "message", message);
 
         return this.send.before(description, message)
             .then(cursor => cursor.action.triggers ? cursor.send.delay(cursor.action.delay).handle() : cursor)
@@ -342,11 +362,13 @@ export default class Runtime extends Duplex {
     }
 
     triggers(): Promise<Cursor> {
+        if(!(this instanceof Cursor)) throw new InvalidCursorError(this, new Action("Runtime", "triggers"));
+
         const action  = this.action;
         const message = this.message;
 
-        if(!(action instanceof PendingAction)) throw new Error("fucking cursor");
-        if(!(message instanceof Message))      throw new Error("fucking cursor");
+        if(!(action instanceof PendingAction)) throw new NoActionError(action);
+        if(!(message instanceof Message))      throw new UnknownMessageError("Runtime", "triggers", message);
 
         return Promise
             .all((action.description: Object)[action.state.type]
@@ -355,7 +377,7 @@ export default class Runtime extends Duplex {
     }
 
     receive(message: Message): Promise<Cursor> {
-        if(!(this.get("_unit") instanceof Object)) return Promise.reject(new Error("unit not present"));
+        if(!(this instanceof Cursor)) throw new InvalidCursorError(this, new Action("Runtime", "receive"));
 
         return this._unit.messageReceived(message);
     }
@@ -368,8 +390,8 @@ export default class Runtime extends Duplex {
     }
 
     guards(): Promise<Cursor> {
-        if(!(this instanceof Cursor))               throw new Error("fucking cursor");
-        if(!(this.action instanceof PendingAction)) throw new Error("fucking cursor");
+        if(!(this instanceof Cursor))               throw new InvalidCursorError(this, new Action("Runtime", "guards"));
+        if(!(this.action instanceof PendingAction)) throw new NoActionError(this.action);
 
         const cursor = this.action.guards();
 
@@ -386,17 +408,6 @@ export default class Runtime extends Duplex {
 
     finish(): Promise<Cursor> {
         return this._unit.messageProcessed();
-    }
-
-    // muss man sehn, ob das nötig is,
-    // glaube eher nich, vlt bei io?
-    progress(): void {
-        assert(false, "Every unit needs to implement a 'progress' action");
-    }
-
-    // vlt eher revert?
-    cancel(): void {
-        assert(false, "Every unit needs to implement a 'cancel' action");
     }
 
     _write(message: *, enc: string, cb: Function) {
