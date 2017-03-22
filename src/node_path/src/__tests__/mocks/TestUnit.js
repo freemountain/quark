@@ -9,14 +9,11 @@ export default class TestUnit extends Runtime {
     static triggers = {
         action: triggered
             .by("message.before")
-            .if((_, unit) => (
-                !unit.message.willTrigger("init") &&
-                unit.message.isAction()
-            )),
+            .if((_, unit) => unit.message.isAction()),
 
         children: triggered
             .by("message.before")
-            .if((_, unit) => unit.message.willTrigger("diffs", "action", "init")),
+            .if(() => true),
 
         diffs: triggered
             .by("message.before")

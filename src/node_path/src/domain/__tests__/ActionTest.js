@@ -3,7 +3,7 @@
 import Action from "../Action";
 import { expect } from "chai";
 import TestUnit from "../../__tests__/mocks/TestUnit";
-import { Map, List } from "immutable";
+import { Map, List, fromJS } from "immutable";
 import Trigger from "../Trigger";
 import DeclaredAction from "../DeclaredAction";
 import Runtime from "../../Runtime";
@@ -16,6 +16,7 @@ import GuardError from "../error/GuardError";
 import UnknownMessageError from "../error/UnknownMessageError";
 import PendingAction from "../PendingAction";
 import State from "../State";
+import Cursor from "../Cursor";
 
 const triggered = DeclaredAction.triggered;
 
@@ -197,6 +198,125 @@ describe("ActionTest", function() {
     afterEach(function() {
         global.Date.now = this.now;
         this.uuid.restore();
+    });
+
+    it("checks LifeCycleHandler errors", function() {
+        const data = fromJS({
+            _unit: (new UnitState({
+                name: "Unit",
+                id:   "id"
+            })),
+            test: "test"
+        });
+        const UnitCursor = Cursor.for(new (class Unit {})(), data.get("_unit").description);
+        const cursor     = new UnitCursor(data);
+        const message    = new Message("/test", List());
+        const error      = new Error("lulu");
+        const descr      = new Action("Test", "handle", List());
+        const descr2     = new Action("Test", "handle", List(), function() {
+            throw error;
+        });
+
+        return Promise.all([
+            descr.func()
+                .catch(e => expect(e.message).to.equal("Invalid cursor of Action for \'Test[handle]\'.")),
+            descr.func.call(cursor).catch(e => expect(e.message).to.equal("Test::handle could not be processed, because your message is invalid. You gave me null.")),
+            descr.func.call(cursor, message).then(x => expect(x.get("test")).to.equal("test")),
+            descr2.func.call(cursor, message).catch(e => expect(e).to.equal(error))
+        ]);
+    });
+
+    it("checks Handler errors", function() {
+        const message = new Message("/test", List());
+        const data    = fromJS({
+            _unit: new UnitState({
+                name: "Unit",
+                id:   "id"
+            }),
+            test: "test"
+        });
+        const error  = new Error("lulu");
+        const descr2 = new Action("Test", "message", List(), function() {
+            throw error;
+        });
+        const UnitCursor = Cursor.for(new (class Unit {})(), Map());
+        const cursor     = (new UnitCursor(data))
+            ._unit.messageReceived(message);
+
+        const UnitCursor2 = Cursor.for(new (class Unit {})(), Map({
+            message: descr2
+        }));
+        const cursor2 = (new UnitCursor2(data))
+            ._unit.messageReceived(message);
+
+        const descr = new Action("Test", "lulu", List());
+
+        return Promise.all([
+            descr.func()
+                .catch(e => expect(e.message).to.equal("Invalid cursor of Action for \'Test[lulu]\'.")),
+            descr.func.call(cursor, message).then(x => {
+                expect(x.get("test")).to.equal("test");
+                expect(x.action.state.hasErrored).to.equal(true);
+                expect(x._unit.messageProcessed().debug.traces.toJS()).to.eql([{
+                    id:     1,
+                    start:  1,
+                    end:    5,
+                    guards: 0,
+                    error:  null,
+                    locked: true,
+                    name:   "Unit::Message</test>",
+                    traces: [{
+                        id:       3,
+                        start:    3,
+                        end:      4,
+                        error:    new TypeError("this.send.message is not a function"),
+                        guards:   0,
+                        locked:   true,
+                        name:     "Unit::lulu",
+                        params:   [],
+                        parent:   1,
+                        traces:   [],
+                        trigger:  "before",
+                        triggers: false
+                    }],
+                    parent:   null,
+                    trigger:  null,
+                    triggers: true,
+                    params:   []
+                }]);
+            }),
+            descr.func.call(cursor2, message).then(x => {
+                expect(x.get("test")).to.equal("test");
+                expect(x.action.state.hasErrored).to.equal(true);
+                expect(x._unit.messageProcessed().debug.traces.toJS()).to.eql([{
+                    id:     2,
+                    start:  2,
+                    end:    8,
+                    guards: 0,
+                    error:  null,
+                    locked: true,
+                    name:   "Unit::Message</test>",
+                    traces: [{
+                        id:       4,
+                        start:    6,
+                        end:      7,
+                        error:    error,
+                        guards:   0,
+                        locked:   true,
+                        name:     "Unit::lulu",
+                        params:   [],
+                        parent:   2,
+                        traces:   [],
+                        trigger:  "before",
+                        triggers: false
+                    }],
+                    parent:   null,
+                    trigger:  null,
+                    triggers: true,
+                    params:   []
+                }]);
+            })
+        ]);
     });
 
     it("creates an Action", function() {

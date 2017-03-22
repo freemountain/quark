@@ -46,17 +46,6 @@ export default class Message extends Record({
         return !this.isAction();
     }
 
-    willTrigger(...actions: Array<string>): boolean {
-        const cursor = this.get("_cursor");
-
-        if(!(cursor instanceof Cursor)) throw new NoCursorError("Message::willTrigger");
-
-        const description = cursor.get("_unit").get("description");
-        const messages    = actions.map(name => new Message(name, this.payload, this.headers));
-
-        return description.some(handler => handler.willTrigger(this.get("_cursor"), messages));
-    }
-
     preparePayload(trigger: Trigger): Message {
         const cursor = this.get("_cursor");
 
@@ -67,14 +56,6 @@ export default class Message extends Record({
         return this
             .set("_initial", payload)
             .set("payload", payload.concat(trigger.params));
-    }
-
-    setAction(action: string) {
-        return this.set("resource", this.path.pop().concat([action]).join("/"));
-    }
-
-    unsetCursor(): Message {
-        return new Message(this.resource, this.payload, this.headers);
     }
 
     setCursor(cursor: Cursor): Message {
@@ -94,14 +75,6 @@ export default class Message extends Record({
                 x instanceof Cursor
             )
         ) ? x.toJS() : x).toArray();
-    }
-
-    get path(): List<string> {
-        return List(this.resource.split("/"));
-    }
-
-    get currentDir(): string {
-        return this.path.last();
     }
 
     get originalPayload(): List<*> {

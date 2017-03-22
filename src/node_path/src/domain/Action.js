@@ -78,7 +78,7 @@ class Action {
 
             const message = data instanceof Message ? data : this.message;
 
-            if(!Message.is(message))            return Promise.resolve(this
+            if(!Message.is(message)) return Promise.resolve(this
                 .debug.trace(description.name, List(), 0, this.action.state.type)
                 .action.state.error(new UnknownMessageError(description.unit, description.name, message))
                 .debug.trace.errored());
@@ -154,18 +154,6 @@ class Action {
 
     setUnit(unit: string): Action {
         return new Action(Object.assign({}, this, { unit }));
-    }
-
-    willTrigger(cursor: Cursor, ...messages: Array<Message>): boolean { // eslint-disable-line
-        // Test!!
-        return List(messages).every(message => ( // eslint-disable-line
-            (this.triggers.has(message.resource) && this.triggers.get(message.resource).shouldTrigger(cursor, message.unboxPayload())) ||
-            (this.before.has(message.resource) && this.before.get(message.resource).shouldTrigger(cursor, message.unboxPayload())) ||
-            (this.progress.has(message.resource) && this.progress.get(message.resource).shouldTrigger(cursor, message.unboxPayload())) ||
-            (this.cancel.has(message.resource) && this.cancel.get(message.resource).shouldTrigger(cursor, message.unboxPayload())) ||
-            (this.done.has(message.resource) && this.done.get(message.resource).shouldTrigger(cursor, message.unboxPayload())) ||
-            (this.error.has(message.resource) && this.error.get(message.resource).shouldTrigger(cursor, message.unboxPayload()))
-        ));
     }
 
     guardsToJS(triggers: Array<{ guards: Array<Object> }>): Array<Object> {

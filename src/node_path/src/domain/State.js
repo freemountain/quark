@@ -38,7 +38,7 @@ export default class State extends Record({
         if(!(cursor.action instanceof PendingAction)) throw new NoActionError(cursor.action);
 
         const action = cursor.action
-            .set("state", this.update("errors", errors => errors.add(e)));
+            .set("state", this.addError(e));
 
         return cursor.update("_unit", unit => unit.set("action", action));
     }

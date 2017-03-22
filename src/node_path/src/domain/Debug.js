@@ -48,11 +48,11 @@ class Debug extends Record({
 
         const cursor = this._cursor;
 
-        if(!(cursor instanceof Cursor))                          throw new InvalidCursorError(cursor);
+        if(!(cursor instanceof Cursor)) throw new InvalidCursorError(cursor);
 
         const action = cursor.action;
 
-        if(!(action instanceof PendingAction))                   throw new NoActionError();
+        if(!(action instanceof PendingAction)) throw new NoActionError(action);
 
         const debug = this.updateCurrentTrace(trace => trace.errored(!(e instanceof Error) ? action.state.currentError : e));
 

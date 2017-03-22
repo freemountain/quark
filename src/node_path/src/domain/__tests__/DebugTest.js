@@ -115,7 +115,7 @@ describe("DebugTest", function() {
         });
 
         expect(() => tracing.debug.setCursor(null).trace.errored(e)).to.throw("InvalidCursorError: Invalid cursor of null for unknown action.");
-        expect(() => tracing.debug.setCursor(new UnitCursor(data)).trace.errored(e)).to.throw("NoActionError: There is no valid ongoing action, got undefined instead.");
+        expect(() => tracing.debug.setCursor(new UnitCursor(data)).trace.errored(e)).to.throw("NoActionError: There is no valid ongoing action, got null instead.");
         expect(tracing.debug.trace.errored(e).debug.traces.first().toJS()).to.eql({
             id:       2,
             start:    2,
