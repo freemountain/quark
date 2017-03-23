@@ -23,7 +23,6 @@ type UnitStateData = {
     previous?:    ?PendingAction,       // eslint-disable-line
     debug?:       Debug,                // eslint-disable-line
     name:         string,               // eslint-disable-line
-    diffs?:       List<Object>,         // eslint-disable-line
     _cursor?:     Cursor                // eslint-disable-line
 }
 
@@ -37,7 +36,6 @@ export default class UnitState extends Record({
     previous:    null,
     debug:       new Debug(),
     name:        "Default",
-    diffs:       List(),
     _cursor:     null
 }) {
     constructor(data: UnitStateData) {

@@ -1,5 +1,5 @@
 import Runtime from "../Runtime";
-import { expect } from "chai";
+import { expect } from "expect-stream";
 import TestUnit from "./mocks/TestUnit";
 import DeclaredAction from "../domain/DeclaredAction";
 import DeclaredTrigger from "../domain/DeclaredTrigger";
@@ -55,8 +55,30 @@ class Inheritance6 extends Inheritance5 {
 }
 
 class Inheritance7 extends Inheritance2 {
+    static triggers = {
+        test: triggered
+            .by("message")
+
+            /* .if((...args) => {
+                const unit = args.pop();
+
+                return (
+                    unit.message.isAction() &&
+                    unit.message.resource.indexOf("/actions/init") !== 0
+                );
+            })*/
+    };
+
     static props = {
         blub: "haha"
+    }
+
+    test() {
+        console.log("lulu");
+    }
+
+    init() {
+        return this.set("bla", "hehe");
     }
 }
 
@@ -85,6 +107,39 @@ class ThrowsError extends Runtime {
             })
     }
 }
+
+/* class AfterError extends TestUnit {
+    after() {
+        throw new Error("huhu");
+    }
+}*/
+
+class MinimalStream extends Runtime {
+    static triggers = {
+        test: triggered
+            .by("message.before")
+            .if((...args) => {
+                const unit = args.pop();
+
+                console.log("test", unit.message.resource.indexOf("/actions/init") === -1);
+                return (
+                    unit.message.isAction() &&
+                    unit.message.resource.indexOf("/actions/init") === -1
+                );
+            })
+    };
+
+    test() {
+        console.log("lulu");
+        // return this.set("bli", "hoho");
+    }
+
+    init() {
+        console.log("init");
+        return this.set("bla", "hehe");
+    }
+}
+
 
 describe("RuntimeTest", function() {
     beforeEach(function() {
@@ -325,6 +380,7 @@ describe("RuntimeTest", function() {
 
         expect(new TestUnit(unit)).to.equal(unit);
         expect(unit.traces.toJS()).to.eql([]);
+        expect(unit.toJS()).to.eql(unit.__actions.toJS());
         expect(Runtime.toUnit(unit, unit.constructor.prototype)).to.equal(unit);
         expect(unit.actions).to.eql({
             message: {
@@ -727,6 +783,7 @@ describe("RuntimeTest", function() {
             .then(x => {
                 expect(x.cursor._unit.previous.state.errors.toJS()).to.eql([]);
                 expect(x.cursor.filter((_, key) => key !== "_unit").toJS()).to.eql({
+                    bla:  "hehe",
                     blub: "huhu",
                     blob: "haha"
                 });
@@ -991,5 +1048,48 @@ describe("RuntimeTest", function() {
         expect(() => Runtime.prototype.guards.call(cursor)).to.throw("NoActionError: There is no valid ongoing action, got 'null' instead.");
 
         expect(() => Runtime.prototype.receive.call()).to.throw("InvalidCursorError: Invalid cursor of undefined for \'Runtime::receive\'.");
+    });
+
+    /* it("catches an error in LifecycleHandler", function() {
+        const unit = new AfterError();
+
+        return unit.trigger(new Message("/actions/lulu"))
+            .catch(() => {
+                console.log("huhU");
+            });
+    });*/
+
+    it("uses a unit as a stream", function(done) {
+        const unit       = new MinimalStream();
+        const expectInit = x => {
+            expect(x.toJS()).to.eql([{ op: "add", path: "/bla", value: "hehe" }]);
+
+            return 0;
+        };
+
+        const expectTest = x => {
+            // expect(x.toJS()).to.eql([]);
+
+            // /test wird iwie nich getriggert, was absolut
+            // keinen sinn macht
+            console.log("test", x.toJS(), unit.cursor.debug.traces.get(1).toString());
+
+            return 1;
+        };
+
+        expect(unit)
+            .to.exactly.produce(function(x) {
+                const resource = unit.cursor._unit.previous.message.resource;
+
+                try {
+                    if(resource === "/actions/init") return expectInit(x, resource);
+
+                    return expectTest(x, resource);
+                } catch(e) {
+                    return -1;
+                }
+            })
+            .on(new Message("/actions/test"))
+            .notify(done);
     });
 });

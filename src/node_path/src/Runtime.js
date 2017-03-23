@@ -201,7 +201,7 @@ export default class Runtime extends Duplex {
             })
     };
 
-    constructor(bindings?: ?Object) { // eslint-disable-line
+    constructor(bindings?: Object) {
         super({
             objectMode: true
         });
@@ -225,8 +225,6 @@ export default class Runtime extends Duplex {
             }));
 
         this.id           = id;
-        this.Props        = properties.constructor;
-        this.description  = unit.__actions;
         this.buffers      = [];
         this.cursor       = null;
         this.locked       = false;
@@ -255,7 +253,7 @@ export default class Runtime extends Duplex {
     }
 
     get actions(): Map<string, Object> {
-        return this.description.map(x => x.toJS()).toJS();
+        return this.__actions.map(x => x.toJS()).toJS();
     }
 
     get traces(): List<Trace> {
@@ -286,6 +284,8 @@ export default class Runtime extends Duplex {
 
                 this.cursor = x;
                 this.locked = false;
+                // hier muss auch wieder ne message rauskommen
+                this.buffers.push(x._unit.previous.diffs);
 
                 return this;
             });
@@ -307,7 +307,8 @@ export default class Runtime extends Duplex {
         return this.update("_unit", x => x
             .update("revision", y => y + 1)
             .update("history", y => y.push(previous))
-            .set("diffs", this.diff(previous)));
+            .set("action", x.action
+                .set("diffs", previous.diff(this).filter(y => y.get("path").indexOf("/_unit") === -1))));
     }
 
     handle(): Promise<Cursor> { // eslint-disable-line
@@ -355,10 +356,11 @@ export default class Runtime extends Duplex {
         return this.send.before(description, message)
             .then(cursor => cursor.action.triggers ? cursor.send.delay(cursor.action.delay).handle() : cursor)
             // .send.after()
-            .then(cursor => cursor.send.after())
-            .catch(e => this
+            .then(cursor => cursor.send.after());
+
+            /* .catch(e => this
                 .action.state.error(e)
-                .debug.trace.errored());
+                .debug.trace.errored());*/
     }
 
     triggers(): Promise<Cursor> {
@@ -413,7 +415,7 @@ export default class Runtime extends Duplex {
     _write(message: *, enc: string, cb: Function) {
         this.trigger(message)
             .then(() => cb())
-            .catch(e => this.emit("error", e));
+            .catch(cb);
 
         return true;
     }
@@ -425,6 +427,6 @@ export default class Runtime extends Duplex {
     }
 
     toJS() {
-        return this.description.toJS();
+        return this.__actions.toJS();
     }
 }

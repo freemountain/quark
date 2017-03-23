@@ -236,6 +236,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 _cursor: null,
                 action:  {
+                    diffs:   [],
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -264,7 +265,6 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                diffs:       [],
                 children:    {},
                 history:     [],
                 previous:    null,
@@ -328,6 +328,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 _cursor: null,
                 action:  {
+                    diffs:   [],
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -356,7 +357,6 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                diffs:       [],
                 children:    {},
                 history:     [],
                 id:          "id",
@@ -420,6 +420,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 _cursor: null,
                 action:  {
+                    diffs:   [],
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -448,7 +449,6 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                diffs:       [],
                 previous:    null,
                 children:    {},
                 history:     [],
@@ -527,6 +527,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 _cursor: null,
                 action:  {
+                    diffs:   [],
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -555,7 +556,6 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                diffs:       [],
                 previous:    null,
                 children:    {},
                 history:     [],
@@ -649,6 +649,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 _cursor: null,
                 action:  {
+                    diffs:   [],
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -677,7 +678,6 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                diffs:       [],
                 children:    {},
                 previous:    null,
                 history:     [],
@@ -783,6 +783,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 _cursor: null,
                 action:  {
+                    diffs:   [],
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -812,7 +813,6 @@ describe("CursorTest", function() { // eslint-disable-line
                     }
                 },
                 children:    {},
-                diffs:       [],
                 previous:    null,
                 history:     [],
                 id:          "id",
@@ -927,6 +927,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 _cursor: null,
                 action:  {
+                    diffs:   [],
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -955,7 +956,6 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                diffs:       [],
                 children:    {},
                 history:     [],
                 previous:    null,
@@ -1071,6 +1071,7 @@ describe("CursorTest", function() { // eslint-disable-line
             _unit: {
                 _cursor: null,
                 action:  {
+                    diffs:   [],
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -1099,7 +1100,6 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                diffs:       [],
                 children:    {},
                 previous:    null,
                 history:     [],
@@ -1219,6 +1219,7 @@ describe("CursorTest", function() { // eslint-disable-line
                 action:   null,
                 children: {},
                 previous: {
+                    diffs:   [],
                     _cursor: null,
                     message: message.toJS(),
                     state:   {
@@ -1269,7 +1270,6 @@ describe("CursorTest", function() { // eslint-disable-line
                         }]
                     }
                 },
-                diffs: [],
                 debug: {
                     traces: [{
                         id:       1,

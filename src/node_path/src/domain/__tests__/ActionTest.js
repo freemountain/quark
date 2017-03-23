@@ -349,7 +349,7 @@ describe("ActionTest", function() {
     });
 
     it("applies an action", function() {
-        const unit = new Test();
+        const unit = new Test({});
 
         const message = (new Message("/actions/test", List.of("test")));
         const descr   = new Action("Test", "test", unit.__triggers, function(name) {

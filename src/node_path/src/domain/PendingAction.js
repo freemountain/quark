@@ -1,5 +1,5 @@
 // @flow
-import { Record } from "immutable";
+import { Record, List } from "immutable";
 import Message from "../Message";
 import Action from "./Action";
 import Trigger from "./Trigger";
@@ -14,7 +14,8 @@ type PendingActionData = {
     description?: ?Action,
     previous?:    ?PendingAction, // eslint-disable-line
     error?:       ?Error,         // eslint-disable-line
-    _cursor?:     Cursor         // eslint-disable-line
+    _cursor?:     Cursor,         // eslint-disable-line
+    diffs?:       ?List<Object>   // eslint-disable-line
 };
 
 export default class PendingAction extends Record({
@@ -25,6 +26,7 @@ export default class PendingAction extends Record({
     previous:    null,
     error:       null,
     _cursor:     null,
+    diffs:       List(),
     _triggers:   false
 }) {
     constructor(data: PendingActionData) {

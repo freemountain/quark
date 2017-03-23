@@ -58,8 +58,10 @@ describe("PendingActionTest", function() {
             _triggers:   false,
             description: description.toJS(),
             error:       null,
+            diffs:       [],
             message:     message.toJS(),
             previous:    {
+                diffs:       [],
                 _cursor:     null,
                 _triggers:   false,
                 description: null,

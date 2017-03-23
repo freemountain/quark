@@ -64,8 +64,7 @@ describe("UnitStateTest", function() {
             debug: {
                 traces:  [],
                 _cursor: null
-            },
-            diffs: []
+            }
         });
 
         expect(internals.get("description").toJS()).to.eql({
@@ -134,6 +133,7 @@ describe("UnitStateTest", function() {
             _cursor: null,
             action:  {
                 _cursor: null,
+                diffs:   [],
                 message: {
                     headers:  {},
                     payload:  [],
@@ -166,7 +166,6 @@ describe("UnitStateTest", function() {
                 }
             },
             previous:    null,
-            diffs:       [],
             children:    {},
             history:     [],
             id:          "id",
@@ -229,6 +228,7 @@ describe("UnitStateTest", function() {
         expect(internals3.toJS()).to.eql({
             _cursor: null,
             action:  {
+                diffs:   [],
                 _cursor: null,
                 message: {
                     headers:  {},
@@ -261,7 +261,6 @@ describe("UnitStateTest", function() {
                 error:    null,
                 previous: null
             },
-            diffs:       [],
             history:     [],
             children:    {},
             id:          "id",
