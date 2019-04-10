@@ -1,7 +1,3 @@
-[submodule "vendor/gel"]
-	path = vendor/gel
-	url = https://github.com/Cutehacks/gel
-
-[submodule "tools/linuxdeployqt"]
-	path = tools/linuxdeployqt
-	url = https://github.com/probonopd/linuxdeployqt
+[submodule "src/plugins/fluid/fluid"]
+	path = src/plugins/fluid/fluid
+	url = https://github.com/lirios/fluid
