@@ -2,10 +2,6 @@
 	path = vendor/gel
 	url = https://github.com/Cutehacks/gel
 
-[submodule "tools/qbs"]
-        path = tools/qbs
-        url = https://github.com/qt-labs/qbs
-
 [submodule "tools/linuxdeployqt"]
 	path = tools/linuxdeployqt
 	url = https://github.com/probonopd/linuxdeployqt
